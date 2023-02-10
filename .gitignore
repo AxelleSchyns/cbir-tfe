@@ -1,3 +1,10 @@
 # ignore folders
 weights_folder/
 results/
+
+# ignore database files
+db_labeled
+db_labeledvectors
+db_unlabeled
+db_unlabeledvectors
+

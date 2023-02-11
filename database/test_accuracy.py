@@ -285,7 +285,11 @@ def test(model, dataset, db_name, extractor, measure, generalise, project_name, 
             rows_lab.append(list(data.conversion.keys())[el])
             
     cm = sklearn.metrics.confusion_matrix(ground_truth, predictions, labels=range(len(os.listdir(data.root)))) # classes predites = colonnes)
-  
+    # ! only working cause the dic is sorted and sklearn is creating cm by sorting the labels
+    rows = sorted(rows)
+    columns = sorted(columns)
+    rows_lab = sorted(rows_lab)
+    columns_lab=sorted(columns_lab)
     df_cm = pd.DataFrame(cm[np.ix_(rows, columns)], index=rows_lab, columns=columns_lab)
     plt.figure(figsize = (10,7))
     sn.heatmap(df_cm, annot=True, xticklabels=True, yticklabels=True)

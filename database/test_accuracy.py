@@ -14,7 +14,28 @@ import seaborn as sn
 import matplotlib.pyplot as plt
 import sklearn.metrics
 import pandas as pd
+from openpyxl import load_workbook
 
+
+def test_each_class(model, dataset, db_name, extractor, measure, name, excel_path):
+    classes = os.listdir(dataset)
+    res = np.zeros((len(classes), 12))
+    i = 0
+    for c in classes:
+        r = test(model, args.path, args.db_name, args.extractor, measure, False, False, c, False)
+        res[i][:] = r
+        i += 1
+    df = pd.DataFrame(res, columns=["top_1_acc", "top_5_acc", "top_1_proj", "top_5_proj", "top_1_sim", "top_5_sim", "maj_acc_class", "maj_acc_proj", "maj_acc_sim", "t_tot", "t_model", "t_search"])
+    df.index = classes
+
+    book = load_workbook(excel_path)
+    writer = pd.ExcelWriter(excel_path, engine = 'openpyxl')
+    writer.book = book
+    if name is None:
+        name = "Sheet ?" 
+    df.to_excel(writer, sheet_name = name)
+    writer.close()
+    
 def load_dict(resume_path, model):
     if os.path.isfile(resume_path):
         checkpoint = torch.load(resume_path)
@@ -99,7 +120,7 @@ class TestDataset(Dataset):
     def __getitem__(self, idx):
         return self.img_list[idx]
 
-def test(model, dataset, db_name, extractor, measure, generalise, project_name, class_name):
+def test(model, dataset, db_name, extractor, measure, generalise, project_name, class_name, see_cms):
     database = db.Database(db_name, model, True, extractor=='transformer')
 
     data = TestDataset(dataset, measure, generalise, project_name, class_name)
@@ -124,7 +145,8 @@ def test(model, dataset, db_name, extractor, measure, generalise, project_name, 
 
     ground_truth = []
     predictions = []
-
+    predictions_maj = []
+    
     t_search = 0
     t_model = 0
     t_tot = 0
@@ -137,12 +159,13 @@ def test(model, dataset, db_name, extractor, measure, generalise, project_name, 
         t_search += t_search_tmp
         
         similar = names[:5]
+        temp = []
 
         already_found_5 = 0
         already_found_5_proj = 0
         already_found_5_sim = 0
         
-	# Retrieve class of images
+    # Retrieve class of images
         end_test = image[0].rfind("/")
         begin_test = image[0].rfind("/", 0, end_test) + 1
         #print(image[0][begin_test:end_test])
@@ -151,17 +174,19 @@ def test(model, dataset, db_name, extractor, measure, generalise, project_name, 
         
         nbr_per_class[image[0][begin_test: end_test]] += 1
         ground_truth.append(data.conversion[image[0][begin_test: end_test]])
-
+        
         for j in range(len(similar)):
             end_retr = similar[j].rfind("/")
             begin_retr = similar[j].rfind("/", 0, end_retr) + 1
+            temp.append(similar[j][begin_retr:end_retr])
+            
             end_retr_proj = similar[j][begin_retr:end_retr].rfind("_")
             end_test_proj = image[0][begin_test: end_test].rfind("_")
             #print(similar[j][begin_retr:end_retr])
             
             # Retrieves label of top 1 result for confusion matrix
             if j == 0:
-            	# if class retrieved is in class of data given
+                # if class retrieved is in class of data given
                 if similar[j][begin_retr:end_retr] in data.conversion:
                     predictions.append(data.conversion[similar[j][begin_retr:end_retr]])
                 else:
@@ -245,7 +270,8 @@ def test(model, dataset, db_name, extractor, measure, generalise, project_name, 
             maj_acc_proj += 1
         if already_found_5_sim > 2:
             maj_acc_sim += 1
-                 
+        predictions_maj.append(data.conversion[max(set(temp), key = temp.count)])
+           
                 
                 
                  
@@ -271,30 +297,53 @@ def test(model, dataset, db_name, extractor, measure, generalise, project_name, 
     print('t_tot:', t_tot)
     print('t_model:', t_model)
     print('t_search:', t_search)
-    columns = []
-    columns_lab = []
-    for el in predictions:
-        if el not in columns:
-            columns.append(el)
-            columns_lab.append(list(data.conversion.keys())[el])
-    rows_lab = []
-    rows = []
-    for el in ground_truth:
-        if el not in rows:
-            rows.append(el)
-            rows_lab.append(list(data.conversion.keys())[el])
-            
-    cm = sklearn.metrics.confusion_matrix(ground_truth, predictions, labels=range(len(os.listdir(data.root)))) # classes predites = colonnes)
-    # ! only working cause the dic is sorted and sklearn is creating cm by sorting the labels
-    rows = sorted(rows)
-    columns = sorted(columns)
-    rows_lab = sorted(rows_lab)
-    columns_lab=sorted(columns_lab)
-    df_cm = pd.DataFrame(cm[np.ix_(rows, columns)], index=rows_lab, columns=columns_lab)
-    plt.figure(figsize = (10,7))
-    sn.heatmap(df_cm, annot=True, xticklabels=True, yticklabels=True)
-    plt.show()
-
+    
+    if see_cms:
+        rows_lab = []
+        rows = []
+        for el in ground_truth:
+            if el not in rows:
+                rows.append(el)
+                rows_lab.append(list(data.conversion.keys())[el])
+        rows = sorted(rows)
+        rows_lab = sorted(rows_lab)
+        
+        # Confusion matrix based on top 1 accuracy
+        columns = []
+        columns_lab = []
+        for el in predictions:
+            if el not in columns:
+                columns.append(el)
+                columns_lab.append(list(data.conversion.keys())[el])
+        columns = sorted(columns)
+        columns_lab=sorted(columns_lab)
+          
+        cm = sklearn.metrics.confusion_matrix(ground_truth, predictions, labels=range(len(os.listdir(data.root)))) # classes predites = colonnes)
+        # ! only working cause the dic is sorted and sklearn is creating cm by sorting the labels
+        df_cm = pd.DataFrame(cm[np.ix_(rows, columns)], index=rows_lab, columns=columns_lab)
+        plt.figure(figsize = (10,7))
+        sn.heatmap(df_cm, annot=True, xticklabels=True, yticklabels=True)
+        plt.show()
+        
+        # Confusion matrix based on maj_class accuracy:
+        columns = []
+        columns_lab = []
+        for el in predictions_maj:
+            if el not in columns:
+                columns.append(el)
+                columns_lab.append(list(data.conversion.keys())[el])
+        columns = sorted(columns)
+        columns_lab = sorted(columns_lab)
+        cm = sklearn.metrics.confusion_matrix(ground_truth, predictions_maj, labels=range(len(os.listdir(data.root)))) # classes predites = colonnes)
+        # ! only working cause the dic is sorted and sklearn is creating cm by sorting the labels
+        df_cm = pd.DataFrame(cm[np.ix_(rows, columns)], index=rows_lab, columns=columns_lab)
+        plt.figure(figsize = (10,7))
+        sn.heatmap(df_cm, annot=True, xticklabels=True, yticklabels=True)
+        plt.show()
+        
+        
+    return [top_1_acc, top_5_acc, top_1_acc_proj, top_5_acc_proj, top_1_acc_sim, top_5_acc_sim, maj_acc_class, maj_acc_proj, maj_acc_sim, t_tot, t_model, t_search]
+    
 
 if __name__ == "__main__":
     parser = ArgumentParser()
@@ -340,7 +389,7 @@ if __name__ == "__main__":
 
     parser.add_argument(
         '--measure',
-        help='random samples from validation set <random>, remove camelyon16_0 and janowczyk6_0 <remove> or all <all>',
+        help='random samples from validation set <random>, remove camelyon16_0 and janowczyk6_0 <remove>, all in separated class <separated> or all <all>',
         default = 'random'
     )
 
@@ -361,7 +410,18 @@ if __name__ == "__main__":
          help='name of the class of the dataset onto which to test the accuracy',
          default=None
     )
-
+    
+    parser.add_argument(
+        '--excel_path',
+        help='path to the excel file where the results must be saved',
+        default = None
+    )
+    
+    parser.add_argument(
+        '--name',
+        help='name to give to the sheet of the excel file',
+        default = None
+    )
     args = parser.parse_args()
     
     if args.gpu_id >= 0:
@@ -377,14 +437,16 @@ if __name__ == "__main__":
         exit(-1)
     if args.extractor == 'vgg16' or args.extractor == 'resnet18':
             model = builder.BuildAutoEncoder(args)     
-	    #total_params = sum(p.numel() for p in model.parameters())
-	    #print('=> num of params: {} ({}M)'.format(total_params, int(total_params * 4 / (1024*1024))))
-	    
+        #total_params = sum(p.numel() for p in model.parameters())
+        #print('=> num of params: {} ({}M)'.format(total_params, int(total_params * 4 / (1024*1024))))
+        
             load_dict(args.weights, model)
             model.model_name = args.extractor
             model.num_features = args.num_features
     else:
         model = Model(num_features=args.num_features, name=args.weights, model=args.extractor,
                   use_dr=args.dr_model, device=device) # eval est par defaut true
-
-    test(model, args.path, args.db_name, args.extractor, args.measure, args.generalise, args.project_name, args.class_name)
+    if args.excel_path is not None:
+        test_each_class(model, args.path, args.db_name, args.extractor, args.measure, args.name, args.excel_path)
+    else:
+        r = test(model, args.path, args.db_name, args.extractor, args.measure, args.generalise, args.project_name, args.class_name, True)

@@ -8,3 +8,5 @@ db_labeledvectors
 db_unlabeled
 db_unlabeledvectors
 
+database/__pycache__/
+

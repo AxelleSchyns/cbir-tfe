@@ -18,7 +18,7 @@ from openpyxl import load_workbook
 
 
 def test_each_class(model, dataset, db_name, extractor, measure, name, excel_path):
-    classes = os.listdir(dataset)
+    classes = sorted(os.listdir(dataset))
     res = np.zeros((len(classes), 12))
     i = 0
     for c in classes:
@@ -342,7 +342,7 @@ def test(model, dataset, db_name, extractor, measure, generalise, project_name, 
         plt.show()
         
         
-    return [top_1_acc, top_5_acc, top_1_acc_proj, top_5_acc_proj, top_1_acc_sim, top_5_acc_sim, maj_acc_class, maj_acc_proj, maj_acc_sim, t_tot, t_model, t_search]
+    return [top_1_acc/ data.__len__(), top_5_acc/ data.__len__(), top_1_acc_proj/ data.__len__(), top_5_acc_proj/ data.__len__(), top_1_acc_sim/ data.__len__(), top_5_acc_sim/ data.__len__(), maj_acc_class/ data.__len__(), maj_acc_proj/ data.__len__(), maj_acc_sim/ data.__len__(), t_tot, t_model, t_search]
     
 
 if __name__ == "__main__":

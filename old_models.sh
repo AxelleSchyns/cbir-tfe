@@ -10,8 +10,6 @@ python database/models.py --model deit --training_data /home/labarvr4090/Documen
 
 python database/models.py --model knet --training_data /home/labarvr4090/Documents/Axelle/cytomine/Data/train --num_epochs 15 --weights weights_folder/5_kimianet
 
-python database/models.py --model knet --training_data /home/labarvr4090/Documents/Axelle/cytomine/Data/train --num_epochs 50 --weights weights_folder/14_kimianet --scheduler exponential
-
 python database/models.py --model knet --training_data /home/labarvr4090/Documents/Axelle/cytomine/Data/train --num_epochs 15 --weights weights_folder/35_kimianet --scheduler exponential --dr_model 
 
 

@@ -13,6 +13,8 @@ import torch.nn.functional as F
 from transformers import CvtForImageClassification, ConvNextForImageClassification, AutoImageProcessor, ConvNextFeatureExtractor
 from torchvision import transforms
 from argparse import ArgumentParser, ArgumentTypeError
+import os
+
 
 class fully_connected(nn.Module):
 	"""docstring for BottleNeck"""
@@ -40,6 +42,9 @@ class Model(nn.Module):
         	self.transformer = False
 
         self.name = name
+        if model == "knet" and device=='cuda:1':
+             os.environ["CUDA_VISIBLE_DEVICES"] = "1" # Data parallel module takes by default first gpu available -> so set only available to 1 and reindex it
+             device = 'cuda:0'
         self.device = device
         self.model_name = model
         #--------------------------------------------------------------------------------------------------------------
@@ -82,14 +87,14 @@ class Model(nn.Module):
             self.forward_function = self.forward_model
             self.model = EfficientNet.from_pretrained('efficientnet-b0').to(device=device)
         elif model == "knet":
-            model = models.densenet121(weights='DenseNet121_Weights.DEFAULT')
-            for param in model.parameters():
+            model_k = models.densenet121(weights='DenseNet121_Weights.DEFAULT')
+            for param in model_k.parameters():
                 param.requires_grad = False
-            model.features = nn.Sequential(model.features , nn.AdaptiveAvgPool2d(output_size= (1,1)))
-            num_ftrs = model.classifier.in_features
-            model_final = fully_connected(model.features, num_ftrs, 30)
-            model = model.to(device)
-            model_final = model_final.to(device)
+            model_k.features = nn.Sequential(model_k.features , nn.AdaptiveAvgPool2d(output_size= (1,1)))
+            model_k = model_k.to(device=device)
+            num_ftrs = model_k.classifier.in_features
+            model_final = fully_connected(model_k.features, num_ftrs, 30)
+            model_final = model_final.to(device=device)
             model_final = nn.DataParallel(model_final)
             model_final.load_state_dict(torch.load('database/KimiaNet_Weights/weights/KimiaNetPyTorchWeights.pth'))
             self.model = model_final
@@ -235,6 +240,7 @@ class Model(nn.Module):
                 for i, (labels, images) in enumerate(loader):
                     if i%1000 == 0:
                         print(i)
+                        
                     if model == 'inception': # Inception needs images of size at least 299 by 299
                     	images = transforms.Resize((299,299))(images)
                     images_gpu = images.to(device=self.device)

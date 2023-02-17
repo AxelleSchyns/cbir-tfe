@@ -92,7 +92,6 @@ class TrainingDataset(Dataset):
             for i in range(26):
                 new_classes.append(self.classes[21 + i])
             self.classes = new_classes
-            print(new_classes)
         self.conversion = {x: i for i, x in enumerate(self.classes)} # Number given the clss
         self.conv_inv = {i: x for i, x in enumerate(self.classes)} # class given the number
         self.image_dict = {}

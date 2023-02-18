@@ -30,16 +30,16 @@ class fully_connected(nn.Module):
 		return  out_3
 class Model(nn.Module):
     def __init__(self, model='densenet', eval=True, batch_size=32, num_features=128,
-                 name='weights', use_dr=True, device='cuda:0', freeze=False):
+                 name='weights', use_dr=True, device='cuda:0', freeze=False, classification = False):
         super(Model, self).__init__()
         print(device)
         self.num_features = num_features
         self.norm = nn.functional.normalize
 	
         if model == 'deit' or model == 'vision' or model == 'swin' or model == 'cvt' or model == 'conv':
-        	self.transformer = True
+            self.transformer = True
         else:
-        	self.transformer = False
+            self.transformer = False
 
         self.name = name
         if model == "knet" and device=='cuda:1':
@@ -47,6 +47,7 @@ class Model(nn.Module):
              device = 'cuda:0'
         self.device = device
         self.model_name = model
+        self.classification = classification
         #--------------------------------------------------------------------------------------------------------------
         #                              Settings of deep ranking
         #--------------------------------------------------------------------------------------------------------------
@@ -127,14 +128,14 @@ class Model(nn.Module):
         elif freeze:
             for param in self.model.parameters():
                 param.requires_grad = False
-
- 	#----------------------------------------------------------------------------------------------------------------
- 	#                                   Modification of the model's last layer
- 	#----------------------------------------------------------------------------------------------------------------
- 	# in features parameters the nb of features from the models last layer
- 	# Given the model, this layer has a different name: classifier densenet, .fc resnet, ._fc effnet,... 
- 	# Localisation can be found by displaying the model: print(self.model) and taking the last layer name
- 	
+        #----------------------------------------------------------------------------------------------------------------
+        #                                   Modification of the model's last layer
+        #----------------------------------------------------------------------------------------------------------------
+        # in features parameters the nb of features from the models last layer
+        # Given the model, this layer has a different name: classifier densenet, .fc resnet, ._fc effnet,... 
+        # Localisation can be found by displaying the model: print(self.model) and taking the last layer name
+        if classification is True:
+            out_features = 67
         if model == 'densenet':
             self.model.classifier = nn.Linear(self.model.classifier.in_features, out_features).to(device=device)
         elif model == 'resnet':
@@ -195,8 +196,13 @@ class Model(nn.Module):
     def train_epochs(self, model, dir, epochs, sched, loss, generalise, lr, decay, beta_lr, gamma, lr_proxies):
         data = dataset.TrainingDataset(dir, model, 2, generalise, self.transformer)
         print('Size of dataset', data.__len__())
+        if self.classification:
+            print("coucou")
+            loss_function = nn.CrossEntropyLoss() 
+            to_optim = [{'params':self.parameters(),'lr':lr,'weight_decay':decay}]
 
-        if loss == 'margin':
+            optimizer = torch.optim.Adam(to_optim)
+        elif loss == 'margin':
             loss_function = MarginLoss(self.device, n_classes=len(data.classes))
 
             to_optim = [{'params':self.parameters(),'lr':lr,'weight_decay':decay},
@@ -242,7 +248,7 @@ class Model(nn.Module):
                         print(i)
                         
                     if model == 'inception': # Inception needs images of size at least 299 by 299
-                    	images = transforms.Resize((299,299))(images)
+                        images = transforms.Resize((299,299))(images)
                     images_gpu = images.to(device=self.device)
                     labels = labels.to(device=self.device)
 
@@ -252,7 +258,6 @@ class Model(nn.Module):
                         out = self.forward(images_gpu.view(-1, 3, 224, 224))
 
                     loss = loss_function(out, labels)
-
                     optimizer.zero_grad(set_to_none=True)
                     loss.backward()
                     optimizer.step()
@@ -418,6 +423,11 @@ if __name__ == "__main__":
         type=float
     )
 
+    parser.add_argument(
+        '--classification',
+        action='store_true'
+    )
+
     args = parser.parse_args()
 
     if args.gpu_id >= 0:
@@ -427,7 +437,7 @@ if __name__ == "__main__":
 
     m = Model(model=args.model, eval=False, batch_size=args.batch_size,
               num_features=args.num_features, name=args.weights,
-              use_dr=args.dr_model, device=device, freeze=args.freeze)
+              use_dr=args.dr_model, device=device, freeze=args.freeze, classification = args.classification)
 
     if args.loss == 'deep_ranking':
         m.train_dr(args.training_data, args.num_epochs, args.lr)

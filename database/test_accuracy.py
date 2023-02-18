@@ -2,7 +2,7 @@ from models import Model
 import torch
 import db
 from PIL import Image
-from argparse import ArgumentParser, ArgumentTypeError
+from argparse import ArgumentParser
 from collections import Counter, defaultdict
 from torch.utils.data import Dataset
 import os
@@ -15,14 +15,14 @@ import matplotlib.pyplot as plt
 import sklearn.metrics
 import pandas as pd
 from openpyxl import load_workbook
-
+import sys
 
 def test_each_class(model, dataset, db_name, extractor, measure, name, excel_path):
     classes = sorted(os.listdir(dataset))
     res = np.zeros((len(classes), 12))
     i = 0
     for c in classes:
-        r = test(model, args.path, args.db_name, args.extractor, measure, False, False, c, False)
+        r = test(model, dataset, db_name, extractor, measure, False, False, c, False)
         res[i][:] = r
         i += 1
     df = pd.DataFrame(res, columns=["top_1_acc", "top_5_acc", "top_1_proj", "top_5_proj", "top_1_sim", "top_5_sim", "maj_acc_class", "maj_acc_proj", "maj_acc_sim", "t_tot", "t_model", "t_search"])
@@ -83,7 +83,7 @@ class TestDataset(Dataset):
         classes_tmp = []
 
         if generalise:
-            self.classes = self.classes[len(classes) // 2:]
+            self.classes = self.classes[len(self.classes) // 2:]
 
         
         if measure != 'random':

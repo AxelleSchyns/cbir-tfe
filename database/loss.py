@@ -174,7 +174,7 @@ class MarginLoss(torch.nn.Module):
         #(Optional) Add regularization penalty on betas.
         if self.nu:
             beta_regularization_loss = torch.sum(beta)
-            loss = loss + beta_regularisation_loss.type(torch.cuda.FloatTensor)
+            loss = loss + beta_regularization_loss.type(torch.cuda.FloatTensor)
 
         return loss
 

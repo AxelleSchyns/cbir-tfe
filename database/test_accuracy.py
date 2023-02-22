@@ -449,4 +449,4 @@ if __name__ == "__main__":
     if args.excel_path is not None:
         test_each_class(model, args.path, args.db_name, args.extractor, args.measure, args.name, args.excel_path)
     else:
-        r = test(model, args.path, args.db_name, args.extractor, args.measure, args.generalise, args.project_name, args.class_name, True)
+        r = test(model, args.path, args.db_name, args.extractor, args.measure, args.generalise, args.project_name, args.class_name, False)

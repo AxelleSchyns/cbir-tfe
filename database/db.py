@@ -117,14 +117,11 @@ class Database:
             images = images.view(-1, 3, 224, 224).to(device=next(self.model.parameters()).device)
             if extractor == 'vgg16' or extractor == 'resnet50':
                 out = encode(self.model, images)
-                print(out.shape)
                 out = out.reshape([out.shape[0],self.model.num_features])
-                print(out.shape)
             
             else:
                 # Encode the images using the given model 
                 out = self.model(images).cpu()
-                print(out.shape)
             self.add(out.numpy(), list(filenames), label)
 
         self.save()

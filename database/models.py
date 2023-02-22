@@ -14,7 +14,11 @@ from transformers import CvtForImageClassification, ConvNextForImageClassificati
 from torchvision import transforms
 from argparse import ArgumentParser, ArgumentTypeError
 import os
-#torch.distributed.init_process_group(backend = "nccl")
+import matplotlib.pyplot as plt
+
+"""os.environ['MASTER_ADDR'] = 'localhost'
+os.environ['MASTER_PORT'] = '8888'
+torch.distributed.init_process_group(backend = "nccl", rank = 0, world_size = 2)"""
 
 class fully_connected(nn.Module):
 	"""docstring for BottleNeck"""
@@ -30,7 +34,7 @@ class fully_connected(nn.Module):
 		return  out_3
 class Model(nn.Module):
     def __init__(self, model='densenet', eval=True, batch_size=32, num_features=128,
-                 name='weights', use_dr=True, device='cuda:0', freeze=False, classification = False):
+                 name='weights', use_dr=True, device='cuda:0', freeze=False, classification = False, parallel = False):
         super(Model, self).__init__()
         print(device)
         self.num_features = num_features
@@ -78,6 +82,7 @@ class Model(nn.Module):
         elif model == 'resnet':
             self.forward_function = self.forward_model
             self.model = models.resnet50(weights='ResNet50_Weights.DEFAULT').to(device=device)
+            #self.model = nn.DataParallel(self.model)
         elif model == "vgg":
             self.forward_function = self.forward_model
             self.model = models.vgg19(weights="VGG19_Weights.DEFAULT").to(device=device)
@@ -112,9 +117,7 @@ class Model(nn.Module):
             self.model = ConvNextForImageClassification.from_pretrained('facebook/convnext-tiny-224').to(device=device)
             self.forward_function = self.forward_model
         elif model == "cvt":
-            print("hey")
             self.model =  CvtForImageClassification.from_pretrained('microsoft/cvt-21').to(device=device)
-            print("hey2")
             self.forward_function = self.forward_model
         elif model == 'deit':
             self.forward_function = self.forward_model
@@ -159,7 +162,8 @@ class Model(nn.Module):
             for module in filter(lambda m: type(m) == nn.LayerNorm, self.model.modules()):
                 module.eval()
                 module.train = lambda _: None
-
+        if parallel:
+            self.model = nn.DataParallel(self.model)
         if eval == True:
             self.load_state_dict(torch.load(name))
             self.eval()
@@ -240,12 +244,13 @@ class Model(nn.Module):
                                              pin_memory=True)
 
         loss_list = []
+        loss_means = []
         try:
             for epoch in range(epochs):
                 start_time = time.time()
-
+                loss_list = []
                 for i, (labels, images) in enumerate(loader):
-                    if i%1000 == 0:
+                    if i%100 == 0:
                         print(i)
                         
                     if model == 'inception': # Inception needs images of size at least 299 by 299
@@ -267,15 +272,20 @@ class Model(nn.Module):
 
                 print("epoch {}, loss = {}, time {}".format(epoch, np.mean(loss_list),
                                                             time.time() - start_time))
-
+                #print(len(loss_list)) 1 loss par batch 
                 print("\n----------------------------------------------------------------\n")
+                loss_means.append(np.mean(loss_list))
                 if sched != None:
                     scheduler.step()
 
                 torch.save(self.state_dict(), self.name)
+            plt.plot(range(epochs),loss_means)
+            print("hey?")
+            plt.show()
 
         except KeyboardInterrupt:
             print("Interrupted")
+        
 
     def train_dr(self, data, num_epochs, lr):
         data = dataset.DRDataset(data)
@@ -429,6 +439,11 @@ if __name__ == "__main__":
         action='store_true'
     )
 
+    parser.add_argument(
+        '--parallel',
+        action = 'store_true'
+    )
+
     args = parser.parse_args()
 
     if args.gpu_id >= 0:
@@ -438,7 +453,7 @@ if __name__ == "__main__":
 
     m = Model(model=args.model, eval=False, batch_size=args.batch_size,
               num_features=args.num_features, name=args.weights,
-              use_dr=args.dr_model, device=device, freeze=args.freeze, classification = args.classification)
+              use_dr=args.dr_model, device=device, freeze=args.freeze, classification = args.classification, parallel=args.parallel)
 
     if args.loss == 'deep_ranking':
         m.train_dr(args.training_data, args.num_epochs, args.lr)

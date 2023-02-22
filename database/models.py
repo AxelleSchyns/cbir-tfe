@@ -250,7 +250,7 @@ class Model(nn.Module):
                 start_time = time.time()
                 loss_list = []
                 for i, (labels, images) in enumerate(loader):
-                    if i%100 == 0:
+                    if i%1000 == 0:
                         print(i)
                         
                     if model == 'inception': # Inception needs images of size at least 299 by 299

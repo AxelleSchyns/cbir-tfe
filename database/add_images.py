@@ -94,7 +94,7 @@ if __name__ == "__main__":
 	    load_dict(args.weights, model)
 	    model.model_name = args.extractor
 	    model.num_features = args.num_features
-    if args.extractor == 'resnet50':
+    if args.extractor == 'resnet18' or args.extractor == "resnet50":
 	    
 	    model = builder.BuildAutoEncoder(args)     
 	    #total_params = sum(p.numel() for p in model.parameters())

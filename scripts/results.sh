@@ -39,11 +39,11 @@ python database/test_accuracy.py --path /home/labarvr4090/Documents/Axelle/cytom
 printf "Densenet 21: indexing \n"
 python database/add_images.py --path /home/labarvr4090/Documents/Axelle/cytomine/Data/test --extractor densenet --weights weights_folder/21_densenet --rewrite --dr_model
 printf "Densenet 21: random \n"
-python database/test_accuracy.py --path /home/labarvr4090/Documents/Axelle/cytomine/Data/validation --extractor densenet --weights weights_folder/21_densenet
+python database/test_accuracy.py --path /home/labarvr4090/Documents/Axelle/cytomine/Data/validation --extractor densenet --weights weights_folder/21_densenet --dr_model
 printf "Densenet 21: remove \n"
-python database/test_accuracy.py --path /home/labarvr4090/Documents/Axelle/cytomine/Data/validation --extractor densenet --weights weights_folder/21_densenet --measure remove
+python database/test_accuracy.py --path /home/labarvr4090/Documents/Axelle/cytomine/Data/validation --extractor densenet --weights weights_folder/21_densenet --measure remove --dr_model
 printf "Densenet 21: all \n"
-python database/test_accuracy.py --path /home/labarvr4090/Documents/Axelle/cytomine/Data/validation --extractor densenet --weights weights_folder/21_densenet --measure all
+python database/test_accuracy.py --path /home/labarvr4090/Documents/Axelle/cytomine/Data/validation --extractor densenet --weights weights_folder/21_densenet --measure all --dr_model
 
 printf "Densenet 22: indexing \n"
 python database/add_images.py --path /home/labarvr4090/Documents/Axelle/cytomine/Data/test --extractor densenet --weights weights_folder/22_densenet --rewrite
@@ -73,23 +73,21 @@ printf "Densenet 31: all \n"
 python database/test_accuracy.py --path /home/labarvr4090/Documents/Axelle/cytomine/Data/validation --extractor densenet --weights weights_folder/31_densenet --measure all 
 
 
-printf "Densenet 37: indexing \n"
-python database/add_images.py --path /home/labarvr4090/Documents/Axelle/cytomine/Data/test --extractor densenet --weights weights_folder/37_densenet --rewrite
 printf "Densenet 37: random \n"
-python database/test_accuracy.py --path /home/labarvr4090/Documents/Axelle/cytomine/Data/validation --extractor densenet --weights weights_folder/37_densenet
+python database/classification_acc.py --path /home/labarvr4090/Documents/Axelle/cytomine/Data/validation --extractor densenet --weights weights_folder/37_densenet
 printf "Densenet 37: remove \n"
-python database/test_accuracy.py --path /home/labarvr4090/Documents/Axelle/cytomine/Data/validation --extractor densenet --weights weights_folder/37_densenet --measure remove
+python database/classification_acc.py --path /home/labarvr4090/Documents/Axelle/cytomine/Data/validation --extractor densenet --weights weights_folder/37_densenet --measure remove
 printf "Densenet 37: all \n"
-python database/test_accuracy.py --path /home/labarvr4090/Documents/Axelle/cytomine/Data/validation --extractor densenet --weights weights_folder/37_densenet --measure all 
+python database/classification_acc.py --path /home/labarvr4090/Documents/Axelle/cytomine/Data/validation --extractor densenet --weights weights_folder/37_densenet --measure all 
 
 printf "Autoencoder 34: indexing \n"
-python database/add_images.py --path /home/labarvr4090/Documents/Axelle/cytomine/Data/test --extractor resnet18 --weights weights_folder/34_autoencoder.pth --rewrite
+python database/add_images.py --path /home/labarvr4090/Documents/Axelle/cytomine/Data/test --extractor resnet18 --weights weights_folder/34_autoencoder.pth --rewrite --num_features 25088
 printf "Autoencoder 34: random \n"
-python database/test_accuracy.py --path /home/labarvr4090/Documents/Axelle/cytomine/Data/validation --extractor resnet18 --weights weights_folder/34_autoencoder.pth
+python database/test_accuracy.py --path /home/labarvr4090/Documents/Axelle/cytomine/Data/validation --extractor resnet18 --weights weights_folder/34_autoencoder.pth --num_features 25088
 printf "Autoencoder 34: remove \n"
-python database/test_accuracy.py --path /home/labarvr4090/Documents/Axelle/cytomine/Data/validation --extractor resnet18 --weights weights_folder/34_autoencoder.pth --measure remove
+python database/test_accuracy.py --path /home/labarvr4090/Documents/Axelle/cytomine/Data/validation --extractor resnet18 --weights weights_folder/34_autoencoder.pth --measure remove --num_features 25088
 printf "Autoencoder 34: all \n"
-python database/test_accuracy.py --path /home/labarvr4090/Documents/Axelle/cytomine/Data/validation --extractor resnet18 --weights weights_folder/34_autoencoder.pth --measure all
+python database/test_accuracy.py --path /home/labarvr4090/Documents/Axelle/cytomine/Data/validation --extractor resnet18 --weights weights_folder/34_autoencoder.pth --measure all --num_features 25088
 
 printf "Knet 39: indexing \n"
 python database/add_images.py --path /home/labarvr4090/Documents/Axelle/cytomine/Data/test --extractor knet --weights weights_folder/39_kimianet --rewrite

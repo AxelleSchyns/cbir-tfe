@@ -115,7 +115,7 @@ class Database:
 
         for i, (images, filenames) in enumerate(loader):
             images = images.view(-1, 3, 224, 224).to(device=next(self.model.parameters()).device)
-            if extractor == 'vgg16' or extractor == 'resnet50':
+            if extractor == 'vgg16' or extractor == 'resnet18':
                 out = encode(self.model, images)
                 out = out.reshape([out.shape[0],self.model.num_features])
             
@@ -139,7 +139,7 @@ class Database:
         else:
             image = self.feat_extract(images=x, return_tensors='pt')['pixel_values'] # Applies the processing for the transformer model
 	
-        if extractor == 'vgg16' or extractor == 'resnet50':
+        if extractor == 'vgg16' or extractor == 'resnet18':
             out = encode(self.model, image.to(device=next(self.model.parameters()).device).view(-1, 3, 224, 224))
             out = out.reshape([out.shape[0],self.model.num_features])
         else:

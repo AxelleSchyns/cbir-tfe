@@ -173,9 +173,6 @@ def test(model, dataset, extractor, measure, generalise, project_name, class_nam
         
         ground_truth.append(data.conversion[image[0][begin_test: end_test]])
         predictions.append(label)
-        print(list(data.conversion.keys())[ground_truth[-1]])
-        print(predictions[-1])
-        print("sep")
         end_retr_proj = label.rfind("_")
         end_test_proj = image[0][begin_test: end_test].rfind("_")
         
@@ -232,12 +229,9 @@ def test(model, dataset, extractor, measure, generalise, project_name, class_nam
                 columns.append(data.conversion[el])
         columns = sorted(columns)
         columns_lab=sorted(columns_lab)
-        print(ground_truth)
-        print(predictions)
         cm = sklearn.metrics.confusion_matrix(ground_truth, new_pred, labels=range(len(os.listdir(data.root)))) # classes predites = colonnes)
         # ! only working cause the dic is sorted and sklearn is creating cm by sorting the labels
-        print(cm.shape)
-        print(len(columns))
+        
         df_cm = pd.DataFrame(cm[np.ix_(rows, columns)], index=rows_lab, columns=columns_lab)
         
         plt.figure(figsize = (10,7))
@@ -254,7 +248,7 @@ if __name__ == "__main__":
     parser.add_argument(
         '--num_features',
         help='number of features to extract',
-        default=128,
+        default=67,
         type=int
     )
 
@@ -347,4 +341,4 @@ if __name__ == "__main__":
     if args.excel_path is not None:
         test_each_class(model, args.path, args.extractor, args.measure, args.name, args.excel_path)
     else:
-        r = test(model, args.path, args.extractor, args.measure, args.generalise, args.project_name, args.class_name, True)
+        r = test(model, args.path, args.extractor, args.measure, args.generalise, args.project_name, args.class_name, False)

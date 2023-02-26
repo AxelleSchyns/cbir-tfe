@@ -2,6 +2,7 @@ from PIL import Image
 import torch
 from torchvision import transforms
 from torch.utils.data import Dataset
+from sklearn.cluster import KMeans
 import os
 import numpy as np
 import copy
@@ -82,7 +83,7 @@ class TrainingDataset(Dataset):
     def __init__(self, root, name, samples_per_class, generalise, transformer=False):
         self.classes = os.listdir(root)
         self.classes.sort()
-        print(self.classes)
+        
         if generalise == 1:
             self.classes = self.classes[:len(self.classes) // 2 + 1]
         if generalise == 2: 
@@ -92,6 +93,29 @@ class TrainingDataset(Dataset):
             for i in range(26):
                 new_classes.append(self.classes[21 + i])
             self.classes = new_classes
+        
+        if generalise == 3:
+            list_img = []
+            for c in self.classes:
+                for dir, subdirs, files in os.walk(os.path.join(root, c)):
+                    for file in files:
+                        img = os.path.join(dir, file)
+                        list_img.append(img)
+            images = [np.array(Image.open(path).convert('RGB')) for path in list_img]
+            images_np = np.stack(images)
+            
+            # Set the number of clusters (i.e., the number of new classes you want to find)
+            n_clusters = 50
+
+            # Initialize MiniBatchKMeans and fit the data
+            kmeans = MiniBatchKMeans(n_clusters=n_clusters, batch_size=10000)
+            kmeans.fit(images_np)
+            self.kmeans = kmeans
+            # Get the cluster labels and centroids
+            self.labels = kmeans.labels_
+            self.centroids = kmeans.cluster_centers
+            self.classes = [i for i in range(0, n_clusters)]
+
         self.conversion = {x: i for i, x in enumerate(self.classes)} # Number given the clss
         self.conv_inv = {i: x for i, x in enumerate(self.classes)} # class given the number
         self.image_dict = {}
@@ -100,15 +124,22 @@ class TrainingDataset(Dataset):
         print("================================")
         print("Loading dataset")
         print("================================")
+        
         i = 0
-        for c in self.classes:
-            for dir, subdirs, files in os.walk(os.path.join(root, c)):
-                for file in files:
-                    img = os.path.join(dir, file)
-                    cls = dir[dir.rfind("/") + 1:]
-                    self.image_dict[i] = (img, self.conversion[cls])
-                    self.image_list[self.conversion[cls]].append(img)
-                    i += 1
+        if generalise == 3:
+            for img in list_img:
+                self.image_dict[i] = (img, self.labels[i])
+                self.image_list[self.labels[i]].append(img)
+                i += 1
+        else:
+            for c in self.classes:
+                for dir, subdirs, files in os.walk(os.path.join(root, c)):
+                    for file in files:
+                        img = os.path.join(dir, file)
+                        cls = dir[dir.rfind("/") + 1:]
+                        self.image_dict[i] = (img, self.conversion[cls])
+                        self.image_list[self.conversion[cls]].append(img)
+                        i += 1
 
         if name == 'deit' or name == 'cvt' or name == 'conv':
             self.transform = transforms.Compose(

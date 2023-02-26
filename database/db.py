@@ -1,5 +1,6 @@
 import faiss
 import models
+import struct
 import torch
 import dataset
 from PIL import Image
@@ -11,6 +12,7 @@ import time
 import json
 import os
 import argparse
+import builder
 
 def encode(model, img):
     with torch.no_grad():
@@ -21,7 +23,7 @@ def encode(model, img):
 class Database:
     def __init__(self, filename, model, load=False, transformer=False, device='cpu'):
         self.name = filename # = name of the database 
-        self.embedding_size = model.num_features
+        self.num_features = model.num_features
         self.model = model
         self.device = device
         self.filename = filename
@@ -36,9 +38,9 @@ class Database:
             self.r = redis.Redis(host='localhost', port='6379', db=0)
         else:
             # No database to load, has to build it 
-            self.index_labeled = faiss.IndexFlatL2(self.embedding_size)
+            self.index_labeled = faiss.IndexFlatL2(self.num_features)
             self.index_labeled = faiss.IndexIDMap(self.index_labeled)
-            self.index_unlabeled = faiss.IndexFlatL2(self.embedding_size)
+            self.index_unlabeled = faiss.IndexFlatL2(self.num_features)
             self.index_unlabeled = faiss.IndexIDMap(self.index_unlabeled)
             self.r = redis.Redis(host='localhost', port='6379', db=0)
             self.r.flushdb()
@@ -78,13 +80,15 @@ class Database:
             self.index_labeled.add_with_ids(x, np.arange(last_id, last_id + x.shape[0])) 
 
             # Open the file of the database corresponding to the labelled case.
-            with open(self.filename + '_labeledvectors', 'a') as file:
+            with open(self.filename + '_labeledvectors', 'ab') as file:
                 # Encode in the file database the images with their name, and gives them the appropriate id
                 # Zip() Creates a list of tuples, with one element of names and one of x (=> allows to iterate on both list at the same time) 
                 for n, x_ in zip(names, x):
                     self.r.set(str(last_id) + 'labeled', n) # Set the name of the image at key = id
                     self.r.set(n, str(last_id) + 'labeled') # Set the id of the image at key = name 
-                    file.write('\n' + str(last_id) + str(x_)) # Writes in the file the id alongside the image 
+                    binary = struct.pack("i"+str(self.num_features)+"f",last_id, *x_)
+                    file.write(binary)
+                    #file.write('\n' + str(last_id) + str(x_)) # Writes in the file the id alongside the image 
                     last_id += 1
 
             self.r.set('last_id_labeled', last_id) # Update the last id to take into account the added images
@@ -94,11 +98,13 @@ class Database:
             last_id = int(self.r.get('last_id_unlabeled').decode('utf-8'))
             self.index_unlabeled.add_with_ids(x, np.arange(last_id, last_id + x.shape[0]))
 
-            with open(self.filename + '_unlabeledvectors', 'a') as file:
+            with open(self.filename + '_unlabeledvectors', 'ab') as file:
                 for n, x_ in zip(names, x):
                     self.r.set(str(last_id) + 'unlabeled', n)
                     self.r.set(n, str(last_id) + 'unlabeled')
-                    file.write('\n' + str(last_id) + str(x_))
+                    binary = struct.pack("i"+str(self.num_features)+"f",last_id, *x_)
+                    file.write(binary)
+                    #file.write('\n' + str(last_id) + str(x_))
                     last_id += 1
 
             self.r.set('last_id_unlabeled', last_id)
@@ -115,8 +121,9 @@ class Database:
 
         for i, (images, filenames) in enumerate(loader):
             images = images.view(-1, 3, 224, 224).to(device=next(self.model.parameters()).device)
-            if extractor == 'vgg16' or extractor == 'resnet18':
+            if extractor == 'vgg11' or extractor == 'resnet18':
                 out = encode(self.model, images)
+                print(out.shape)
                 out = out.reshape([out.shape[0],self.model.num_features])
             
             else:
@@ -139,7 +146,7 @@ class Database:
         else:
             image = self.feat_extract(images=x, return_tensors='pt')['pixel_values'] # Applies the processing for the transformer model
 	
-        if extractor == 'vgg16' or extractor == 'resnet18':
+        if extractor == 'vgg11' or extractor == 'resnet18':
             out = encode(self.model, image.to(device=next(self.model.parameters()).device).view(-1, 3, 224, 224))
             out = out.reshape([out.shape[0],self.model.num_features])
         else:
@@ -248,28 +255,15 @@ class Database:
         batch_size = 128
         x = []
         keys = []
-        with open(self.filename + '_labeledvectors', 'r') as file:
-            with open(self.filename + '_newlabeledvectors', 'w') as newfile:
-                lines = file.readlines()
-                str_num = ''
-                for line in lines:
-                    line = line.replace('\n', '')
-                    idx = line.find('[')
-                    if idx != -1:
-                        nbr = int(line[:idx])
-                        str_num += line[idx+1:]
-                    else:
-                        idx = line.find(']')
-                        if idx != -1:
-                            str_num += line[:idx]
-                            if self.r.get(str(nbr) + 'labeled') is not None:
-                                vec = np.fromstring(str_num, dtype=np.float32, sep=' ')
-                                newfile.write('\n' + str(nbr) + str(vec))
-                                keys.append(nbr)
-                                x.append(vec)
-                                str_num = ''
-                        else:
-                            str_num += line
+        with open(self.filename + '_labeledvectors', 'rb') as file:
+            while True:
+                binary = file.read(4 + self.num_features * 4)
+
+                if not binary:
+                    break
+                index, *vector = struct.unpack("i"+str(self.num_features)+"f", binary)
+                keys.append(index)
+                x.append(np.array(vector))
         if len(x) >= 10:
             num_clusters = int(np.sqrt(self.index_labeled.ntotal))
 
@@ -279,10 +273,11 @@ class Database:
 
             if self.device == 'gpu':
                 res_labeled = faiss.StandardGpuResources()
-                self.index_labeled = faiss.index_cpu_to_gpu(res, 0, self.index_labeled)
+                self.index_labeled = faiss.index_cpu_to_gpu(res_labeled, 0, self.index_labeled)
 
             x = np.array(x, dtype=np.float32)
-
+            print(x.shape)
+            print(self.index_labeled.d)
             self.index_labeled.train(x)
             self.index_labeled.nprobe = num_clusters // 10
 
@@ -296,34 +291,20 @@ class Database:
                     x_ = x[i * batch_size: (i + 1) * batch_size, :]
                     key = keys[i * batch_size: (i+1) * batch_size]
                 self.index_labeled.add_with_ids(x_, np.array(key, dtype=np.int64))
-        os.replace(self.filename + '_newlabeledvectors', self.filename + '_labeledvectors')
 
     def train_unlabeled(self):
         batch_size = 128
         x = []
         keys = []
-        with open(self.filename + '_unlabeledvectors', 'r') as file:
-            with open(self.filename + '_newunlabeledvectors', 'w') as newfile:
-                lines = file.readlines()
-                str_num = ''
-                for line in lines:
-                    line = line.replace('\n', '')
-                    idx = line.find('[')
-                    if idx != -1:
-                        nbr = int(line[:idx])
-                        str_num += line[idx+1:]
-                    else:
-                        idx = line.find(']')
-                        if idx != -1:
-                            str_num += line[:idx]
-                            if self.r.get(str(nbr) + 'unlabeled') is not None:
-                                vec = np.fromstring(str_num, dtype=np.float32, sep=' ')
-                                newfile.write('\n' + str(nbr) + str(vec))
-                                keys.append(nbr)
-                                x.append(vec)
-                                str_num = ''
-                        else:
-                            str_num += line
+        with open(self.filename + '_unlabeledvectors', 'rb') as file:
+            while True:
+                binary = file.read(4 + self.num_features * 4)
+
+                if not binary:
+                    break
+                index, *vector = struct.unpack("i"+str(self.num_features)+"f", binary)
+                keys.append(index)
+                x.append(np.array(vector))
         if len(x) >= 10:
             num_clusters = int(np.sqrt(self.index_unlabeled.ntotal))
             self.quantizer = faiss.IndexFlatL2(self.model.num_features)
@@ -332,7 +313,7 @@ class Database:
 
             if self.device == 'gpu':
                 res_unlabeled = faiss.StandardGpuResources()
-                self.index_unlabeled = faiss.index_cpu_to_gpu(res, 0, self.index_unlabeled)
+                self.index_unlabeled = faiss.index_cpu_to_gpu(res_unlabeled, 0, self.index_unlabeled)
 
             x = np.array(x, dtype=np.float32)
 
@@ -350,7 +331,6 @@ class Database:
                     key = keys[i * batch_size: (i+1) * batch_size]
                 self.index_unlabeled.add_with_ids(x_, np.array(key, dtype=np.int64))
 
-        os.replace(self.filename + '_newunlabeledvectors', self.filename + '_unlabeledvectors')
 
     def save(self):
         if self.device != 'gpu':
@@ -373,7 +353,8 @@ if __name__ == "__main__":
     )
 
     parser.add_argument(
-        '--db_name'
+        '--db_name',
+        default = 'db'
     )
 
     parser.add_argument(
@@ -381,9 +362,28 @@ if __name__ == "__main__":
         action='store_true'
     )
 
-    args = parser.parse_args()
+    parser.add_argument(
+        '--num_features',
+        default = 128,
+        type=int
+    )
 
-    model = models.Model(num_features=128, model=args.extractor, use_dr = False, name=args.weights)
+    parser.add_argument(
+        '--dr_model',
+        action = "store_true" 
+    )
+
+    args = parser.parse_args()
+    if args.extractor == 'vgg11': 
+        model = builder.BuildAutoEncoder(args)     
+        #total_params = sum(p.numel() for p in model.parameters())
+        #print('=> num of params: {} ({}M)'.format(total_params, int(total_params * 4 / (1024*1024))))
+           
+        builder.load_dict(args.weights, model)
+        model.model_name = args.extractor
+        model.num_features = args.num_features
+    else: 
+        model = models.Model(num_features=args.num_features, model=args.extractor, use_dr=args.dr_model, name=args.weights)
     database = Database(args.db_name, model, load=True)
     if args.unlabeled:
         database.train_unlabeled()

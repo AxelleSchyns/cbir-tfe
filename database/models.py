@@ -34,7 +34,7 @@ class fully_connected(nn.Module):
 		return  out_3
 class Model(nn.Module):
     def __init__(self, model='densenet', eval=True, batch_size=32, num_features=128,
-                 name='weights', use_dr=True, device='cuda:0', freeze=False, classification = False, parallel = False):
+                 name='weights', use_dr=True, device='cuda:0', freeze=False, classification = False, parallel = True):
         super(Model, self).__init__()
         print(device)
         self.num_features = num_features

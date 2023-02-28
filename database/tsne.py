@@ -3,7 +3,10 @@ import faiss
 from sklearn.manifold import TSNE
 import matplotlib.pyplot as plt
 from argparse import ArgumentParser
-
+import torch
+import redis
+import time
+import seaborn as sns
 if __name__ == "__main__":
 
     parser = ArgumentParser()
@@ -15,22 +18,35 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     index = faiss.read_index(args.db_name + '_labeled')
-
+    r = redis.Redis(host='localhost', port='6379', db=0)
     # Retrieve the vectors from the index
-    """vectors = np.zeros((index.ntotal, index.d), dtype=np.float32)
-    for i in range(index.ntotal):
-        vectors[i] = index.reconstruct(i)"""
-    vectors = index.reconstruct_n(list(range(index.ntotal)))
-    if isinstance(index, faiss.IndexIDMap):
-        _, labels = index.reconstruct_n(0,index.ntotal)
+    vectors = index.index.reconstruct_n(0, index.ntotal)
 
+    labels = list(range(index.ntotal))
+    names = []
+    for l in labels:
+        n = r.get(str(l) + 'labeled').decode('utf-8')
+        
+        end_retr = n.rfind("/")
+        begin_retr = n.rfind("/", 0, end_retr) + 1
+        names.append(n[begin_retr:end_retr])    
+    
+    classes = list(set(names))
+    conversion = {x: i for i, x in enumerate(classes)}
+    int_names = np.array([conversion[n] for n in names])
     # Perform t-SNE on the vectors
-    tsne = TSNE(n_components=2, perplexity = 30, solver = 'barnes_hut', backend = 'cublas')
+    tsne = TSNE(n_components=2, perplexity = 30, method = 'barnes_hut')
     #tsne = TSNE(n_components=2, perplexity=30.0, early_exaggeration=12.0, learning_rate=200.0, n_iter=1000, metric='euclidean')
+    
+    t = time.time()
     embeddings = tsne.fit_transform(vectors)
+    t_fit = time.time() - t
+    print(t_fit)
 
+    sns.scatterplot(embeddings[:,0], embeddings[:,1], hue=names)
+    plt.show()
     # Visualize the embeddings
-    plt.scatter(embeddings[:,0], embeddings[:,1], c=labels,cmap='viridis')
+    plt.scatter(embeddings[:,0], embeddings[:,1], c=int_names,cmap='viridis')
     plt.colorbar()
     plt.show()
 

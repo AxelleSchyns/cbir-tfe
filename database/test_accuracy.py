@@ -17,12 +17,12 @@ import pandas as pd
 from openpyxl import load_workbook
 import sys
 
-def test_each_class(model, dataset, db_name, extractor, measure, name, excel_path):
+def test_each_class(model, dataset, db_name, extractor, measure, name, excel_path, label):
     classes = sorted(os.listdir(dataset))
     res = np.zeros((len(classes), 12))
     i = 0
     for c in classes:
-        r = test(model, dataset, db_name, extractor, measure, False, False, c, False)
+        r = test(model, dataset, db_name, extractor, measure, False, False, c, False, label=label)
         res[i][:] = r
         i += 1
     df = pd.DataFrame(res, columns=["top_1_acc", "top_5_acc", "top_1_proj", "top_5_proj", "top_1_sim", "top_5_sim", "maj_acc_class", "maj_acc_proj", "maj_acc_sim", "t_tot", "t_model", "t_search"])
@@ -120,7 +120,7 @@ class TestDataset(Dataset):
     def __getitem__(self, idx):
         return self.img_list[idx]
 
-def test(model, dataset, db_name, extractor, measure, generalise, project_name, class_name, see_cms):
+def test(model, dataset, db_name, extractor, measure, generalise, project_name, class_name, see_cms, label):
     database = db.Database(db_name, model, True, extractor=='transformer')
 
     data = TestDataset(dataset, measure, generalise, project_name, class_name)
@@ -153,7 +153,7 @@ def test(model, dataset, db_name, extractor, measure, generalise, project_name, 
 
     for i, image in enumerate(loader):
         t = time.time()
-        names, _, t_model_tmp, t_search_tmp = database.search(Image.open(image[0]).convert('RGB'), extractor)
+        names, _, t_model_tmp, t_search_tmp = database.search(Image.open(image[0]).convert('RGB'), extractor, retrieve_class=label)
         t_tot += time.time() - t
         t_model += t_model_tmp
         t_search += t_search_tmp
@@ -422,6 +422,12 @@ if __name__ == "__main__":
         help='name to give to the sheet of the excel file',
         default = None
     )
+
+    parser.add_argument(
+        '--retrieve_class',
+        default = "true"
+    )
+
     args = parser.parse_args()
     
     if args.gpu_id >= 0:
@@ -435,7 +441,7 @@ if __name__ == "__main__":
     if args.class_name is not None and args.class_name not in os.listdir(args.path):
         print("Class name does not exist")
         exit(-1)
-    if args.extractor == 'vgg16' or args.extractor == 'resnet18':
+    if args.extractor == 'vgg11' or args.extractor == 'resnet18':
             model = builder.BuildAutoEncoder(args)     
         #total_params = sum(p.numel() for p in model.parameters())
         #print('=> num of params: {} ({}M)'.format(total_params, int(total_params * 4 / (1024*1024))))
@@ -447,6 +453,6 @@ if __name__ == "__main__":
         model = Model(num_features=args.num_features, name=args.weights, model=args.extractor,
                   use_dr=args.dr_model, device=device) # eval est par defaut true
     if args.excel_path is not None:
-        test_each_class(model, args.path, args.db_name, args.extractor, args.measure, args.name, args.excel_path)
+        test_each_class(model, args.path, args.db_name, args.extractor, args.measure, args.name, args.excel_path, args.retrieve_class)
     else:
-        r = test(model, args.path, args.db_name, args.extractor, args.measure, args.generalise, args.project_name, args.class_name, False)
+        r = test(model, args.path, args.db_name, args.extractor, args.measure, args.generalise, args.project_name, args.class_name, False, label = args.retrieve_class)

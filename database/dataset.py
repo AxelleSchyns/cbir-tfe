@@ -5,19 +5,24 @@ from torch.utils.data import Dataset
 from sklearn.cluster import MiniBatchKMeans
 import os
 import numpy as np
-import copy
 from collections import defaultdict
-from transformers import DeiTFeatureExtractor, AutoImageProcessor, ConvNextImageProcessor
+from transformers import DeiTFeatureExtractor, ConvNextImageProcessor
 import torch.multiprocessing
 torch.multiprocessing.set_sharing_strategy('file_system')
 import time
 import matplotlib.pyplot as plt
 import dask.array as da
-from dask_ml.cluster import KMeans
+import dask.bag as db
+#import dask_cuda
+import dask.distributed
+from dask_ml.cluster import MiniBatchKMeans as daskMiniK
 from sklearn.metrics import silhouette_score, confusion_matrix
 import seaborn as sn
 import pandas as pd
 # https://github.com/SathwikTejaswi/deep-ranking/blob/master/Code/data_utils.py
+
+
+
 
 class DRDataset(Dataset):
 
@@ -101,16 +106,20 @@ class TrainingDataset(Dataset):
             self.classes = new_classes
         
         if generalise == 3:
+            print("enter generalise 3")
             list_img = []
             for c in self.classes:
                 for dir, subdirs, files in os.walk(os.path.join(root, c)):
                     for file in files:
                         img = os.path.join(dir, file)
                         list_img.append(img)
+            print("end of retrieval of image paths; start stacking")
+            """
+            # Works till 60000 images then the staking kills the running 
             images = [np.array(Image.open(path).convert('RGB').resize((224,224))) for path in list_img]
             images_np = np.stack(images)
             images_np = images_np.reshape(len(images),-1)
-            print("hey")
+            print("end_stacking; start kmeans")
             # Set the number of clusters (i.e., the number of new classes you want to find)
             n_clusters = 5
 
@@ -120,25 +129,59 @@ class TrainingDataset(Dataset):
             X_dask = da.from_array(images_np, chunks=(1000, images_np.shape[1]))
             kmeans = KMeans(n_clusters, init_max_iter=5, oversampling_factor = 10)
             kmeans.fit(X_dask)
-            print(time.time() - t)
+            print(time.time() - t)"""
+            print(len(list_img))
+            n_clusters = 5
+            # Define a function to load and preprocess the images
+            def load_image(image_path):
+                with Image.open(image_path) as image:
+                    image = image.resize((224,224))
+                    image = np.array(image, dtype=np.float32) / 255.0
+                    image = (image - np.array([0.485, 0.456, 0.406])) / np.array([0.229, 0.224, 0.225])
+                return image.reshape(-1)
 
+            # Define a function to generate batches of image paths
+            def batch_image_paths(image_paths, batch_size):
+                for i in range(0, len(image_paths), batch_size):
+                    yield image_paths[i:i+batch_size]
 
+            print("end of data processing; start of kmeans")
+            t = time.time()
+            # Initialize the Online K-means algorithm
+            kmeans = MiniBatchKMeans(n_clusters=n_clusters, batch_size=32)
+            #kmeans = daskMiniK(n_clusters=n_clusters, batch_size=32)
+            # Load the images in batches and update the clusters
+            
+            for batch_paths in batch_image_paths(list_img, 32):
+                #batch_data = da.fromm_array(np.array([load_image(path) for path in bacth_paths]), chunk = 32)
+                batch_data = np.array([load_image(path) for path in batch_paths])
+                kmeans.partial_fit(batch_data)
+            print("Time taken is: "+str(time.time() - t))
+            print("kmeans done")
             # Get the cluster labels and centroids
             self.kmeans = kmeans
-            self.labels = kmeans.labels_
+            self.labels = []
+            silhouette_scores = []
+            t = time.time()
+            for batch_paths in batch_image_paths(list_img, 32):
+                batch_data = np.array([load_image(path) for path in batch_paths])
+                labels = kmeans.predict(batch_data)
+                for l in labels:
+                    self.labels.append(l)
+                batch_silhouette_score = silhouette_score(batch_data, labels)
+                silhouette_scores.append(batch_silhouette_score)
+            print("Labels predictions took: "+str(time.time() - t))
             self.centroids = kmeans.cluster_centers_
 
-            labels_u, counts = np.unique(self.labels.compute(), return_counts = True)
+            labels_u, counts = np.unique(self.labels, return_counts = True)
             plt.bar(labels_u, counts, align = "center")
             for label_u, count in zip(labels_u, counts):
                 plt.text(label_u, count, str(count), ha = 'center', va = 'bottom')
             plt.show()
-            print(self.classes)
+            
             self.classes = [i for i in range(0, n_clusters)]
-            self.labels = self.labels.compute()
 
-            silhouette_scores = silhouette_score(X_dask.compute(), self.labels)
-            print("The silhouette score is: "+str(silhouette_scores))
+            print("The silhouette score is: "+str(np.mean(silhouette_scores)))
 
             # Confusion matrix 
 
@@ -149,7 +192,7 @@ class TrainingDataset(Dataset):
                 end_retr = n.rfind("/")
                 begin_retr = n.rfind("/", 0, end_retr) + 1
                 original_labels.append(n[begin_retr:end_retr])  
-            new_labels = self.labels.tolist()
+            new_labels = self.labels
             past_class = np.unique(original_labels)
             dic = {x: i for i, x in enumerate(past_class)} 
             og_labels_int = []
@@ -169,7 +212,7 @@ class TrainingDataset(Dataset):
             # ! only working cause the dic is sorted and sklearn is creating cm by sorting the labels
             df_cm = pd.DataFrame(cm[rows,:], index=rows_lab)
             plt.figure(figsize = (10,7))
-            sn.heatmap(cm[rows,:], annot=True,xticklabels=True, yticklabels=True)
+            sn.heatmap(df_cm[rows,:], annot=True,xticklabels=True, yticklabels=True)
             plt.show()
 
 
@@ -286,7 +329,7 @@ class TrainingDataset(Dataset):
         if self.model_name == 'deit' or self.model_name == 'cvt' or self.model_name == 'conv':
             img = self.transform(img)
             return class_nbr, self.feature_extractor(images=img, return_tensors='pt')['pixel_values']
-
+        print(class_nbr)
         return class_nbr, self.transform(img)
 
 class AddDataset(Dataset):

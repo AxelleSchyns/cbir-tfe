@@ -121,7 +121,7 @@ class Database:
 
         for i, (images, filenames) in enumerate(loader):
             images = images.view(-1, 3, 224, 224).to(device=next(self.model.parameters()).device)
-            if extractor == 'vgg11' or extractor == 'resnet18':
+            if extractor == 'vgg11' or extractor == 'resnet18' or extractor == 'vgg16':
                 out = encode(self.model, images)
                 print(out.shape)
                 out = out.reshape([out.shape[0],self.model.num_features])
@@ -146,7 +146,7 @@ class Database:
         else:
             image = self.feat_extract(images=x, return_tensors='pt')['pixel_values'] # Applies the processing for the transformer model
 	
-        if extractor == 'vgg11' or extractor == 'resnet18':
+        if extractor == 'vgg11' or extractor == 'resnet18' or extractor == "vgg16":
             out = encode(self.model, image.to(device=next(self.model.parameters()).device).view(-1, 3, 224, 224))
             out = out.reshape([out.shape[0],self.model.num_features])
         else:
@@ -374,7 +374,7 @@ if __name__ == "__main__":
     )
 
     args = parser.parse_args()
-    if args.extractor == 'vgg11': 
+    if args.extractor == 'vgg11' or args.extractor == "vgg16" or args.extractor == "resnet18": 
         model = builder.BuildAutoEncoder(args)     
         #total_params = sum(p.numel() for p in model.parameters())
         #print('=> num of params: {} ({}M)'.format(total_params, int(total_params * 4 / (1024*1024))))

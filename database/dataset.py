@@ -2,7 +2,7 @@ from PIL import Image
 import torch
 from torchvision import transforms
 from torch.utils.data import Dataset
-from sklearn.cluster import KMeans
+from sklearn.cluster import MiniBatchKMeans
 import os
 import numpy as np
 import copy
@@ -10,7 +10,13 @@ from collections import defaultdict
 from transformers import DeiTFeatureExtractor, AutoImageProcessor, ConvNextImageProcessor
 import torch.multiprocessing
 torch.multiprocessing.set_sharing_strategy('file_system')
-
+import time
+import matplotlib.pyplot as plt
+import dask.array as da
+from dask_ml.cluster import KMeans
+from sklearn.metrics import silhouette_score, confusion_matrix
+import seaborn as sn
+import pandas as pd
 # https://github.com/SathwikTejaswi/deep-ranking/blob/master/Code/data_utils.py
 
 class DRDataset(Dataset):
@@ -89,7 +95,7 @@ class TrainingDataset(Dataset):
         if generalise == 2: 
             new_classes = []
             for i in range(10):
-            	new_classes.append(self.classes[i])
+                new_classes.append(self.classes[i])
             for i in range(26):
                 new_classes.append(self.classes[21 + i])
             self.classes = new_classes
@@ -101,20 +107,71 @@ class TrainingDataset(Dataset):
                     for file in files:
                         img = os.path.join(dir, file)
                         list_img.append(img)
-            images = [np.array(Image.open(path).convert('RGB')) for path in list_img]
+            images = [np.array(Image.open(path).convert('RGB').resize((224,224))) for path in list_img]
             images_np = np.stack(images)
-            
+            images_np = images_np.reshape(len(images),-1)
+            print("hey")
             # Set the number of clusters (i.e., the number of new classes you want to find)
-            n_clusters = 50
+            n_clusters = 5
 
             # Initialize MiniBatchKMeans and fit the data
-            kmeans = MiniBatchKMeans(n_clusters=n_clusters, batch_size=10000)
-            kmeans.fit(images_np)
-            self.kmeans = kmeans
+            t = time.time()
+            #kmeans = MiniBatchKMeans(n_clusters=n_clusters, batch_size=1000)
+            X_dask = da.from_array(images_np, chunks=(1000, images_np.shape[1]))
+            kmeans = KMeans(n_clusters, init_max_iter=5, oversampling_factor = 10)
+            kmeans.fit(X_dask)
+            print(time.time() - t)
+
+
             # Get the cluster labels and centroids
+            self.kmeans = kmeans
             self.labels = kmeans.labels_
-            self.centroids = kmeans.cluster_centers
+            self.centroids = kmeans.cluster_centers_
+
+            labels_u, counts = np.unique(self.labels.compute(), return_counts = True)
+            plt.bar(labels_u, counts, align = "center")
+            for label_u, count in zip(labels_u, counts):
+                plt.text(label_u, count, str(count), ha = 'center', va = 'bottom')
+            plt.show()
+            print(self.classes)
             self.classes = [i for i in range(0, n_clusters)]
+            self.labels = self.labels.compute()
+
+            silhouette_scores = silhouette_score(X_dask.compute(), self.labels)
+            print("The silhouette score is: "+str(silhouette_scores))
+
+            # Confusion matrix 
+
+            # Retrieval of old labels - conversion to int
+            original_labels = []
+            for n in list_img:
+                
+                end_retr = n.rfind("/")
+                begin_retr = n.rfind("/", 0, end_retr) + 1
+                original_labels.append(n[begin_retr:end_retr])  
+            new_labels = self.labels.tolist()
+            past_class = np.unique(original_labels)
+            dic = {x: i for i, x in enumerate(past_class)} 
+            og_labels_int = []
+            for el in original_labels:
+                og_labels_int.append(dic[el])
+            rows_lab = []
+
+            # Keep only rows corresponding to original labels
+            rows = []
+            for el in og_labels_int:
+                if el not in rows:
+                    rows.append(el)
+                    rows_lab.append(list(dic.keys())[el])
+            rows = sorted(rows)
+            rows_lab = sorted(rows_lab)
+            cm = confusion_matrix(og_labels_int, new_labels) # classes predites = colonnes)
+            # ! only working cause the dic is sorted and sklearn is creating cm by sorting the labels
+            df_cm = pd.DataFrame(cm[rows,:], index=rows_lab)
+            plt.figure(figsize = (10,7))
+            sn.heatmap(cm[rows,:], annot=True,xticklabels=True, yticklabels=True)
+            plt.show()
+
 
         self.conversion = {x: i for i, x in enumerate(self.classes)} # Number given the clss
         self.conv_inv = {i: x for i, x in enumerate(self.classes)} # class given the number
@@ -153,19 +210,19 @@ class TrainingDataset(Dataset):
                 )
             if name == 'deit':
                 self.feature_extractor = DeiTFeatureExtractor.from_pretrained('facebook/deit-base-distilled-patch16-224',
-		                                                                  size=224, do_center_crop=False,
-		                                                                  image_mean=[0.485, 0.456, 0.406],
-		                                                                  image_std=[0.229, 0.224, 0.225])
-		                                                                  
+                                                                          size=224, do_center_crop=False,
+                                                                          image_mean=[0.485, 0.456, 0.406],
+                                                                          image_std=[0.229, 0.224, 0.225])
+                                                                          
             elif name == 'cvt':
                 self.feature_extractor = ConvNextImageProcessor.from_pretrained("microsoft/cvt-21", size=224, do_center_crop=False,
-		                                                                  image_mean=[0.485, 0.456, 0.406],
-		                                                                  image_std=[0.229, 0.224, 0.225])
+                                                                          image_mean=[0.485, 0.456, 0.406],
+                                                                          image_std=[0.229, 0.224, 0.225])
             elif name == 'conv':
                 self.feature_extractor = ConvNextImageProcessor.from_pretrained("facebook/convnext-tiny-224", size=224, do_center_crop=False,
-		                                                                  image_mean=[0.485, 0.456, 0.406],
-		                                                                  image_std=[0.229, 0.224, 0.225])
-            	
+                                                                          image_mean=[0.485, 0.456, 0.406],
+                                                                          image_std=[0.229, 0.224, 0.225])
+                
         else:
             self.transform = transforms.Compose(
                     [
@@ -251,9 +308,9 @@ class AddDataset(Dataset):
             )
 
         self.transformer = transformer
-	
+    
         if model_name == 'deit':
-        	self.feature_extractor = DeiTFeatureExtractor.from_pretrained('facebook/deit-base-distilled-patch16-224',
+            self.feature_extractor = DeiTFeatureExtractor.from_pretrained('facebook/deit-base-distilled-patch16-224',
                                                                       size=224, do_center_crop=False,
                                                                       image_mean=[0.485, 0.456, 0.406],
                                                                       image_std=[0.229, 0.224, 0.225])
@@ -264,8 +321,8 @@ class AddDataset(Dataset):
                                                                       
         elif model_name == 'conv':
                 self.feature_extractor = ConvNextImageProcessor.from_pretrained("facebook/convnext-tiny-224", size=224, do_center_crop=False,
-		                                                                  image_mean=[0.485, 0.456, 0.406],
-		                                                                  image_std=[0.229, 0.224, 0.225])
+                                                                          image_mean=[0.485, 0.456, 0.406],
+                                                                          image_std=[0.229, 0.224, 0.225])
 
         self.classes = os.listdir(root)
         # self.classes = self.classes[:len(self.classes) // 2 + 1]
@@ -303,18 +360,18 @@ class AddDatasetList(Dataset):
         self.transformer = transformer
 
         if model_name == 'deit':
-        	self.feature_extractor = DeiTFeatureExtractor.from_pretrained('facebook/deit-base-distilled-patch16-224',
+            self.feature_extractor = DeiTFeatureExtractor.from_pretrained('facebook/deit-base-distilled-patch16-224',
                                                                       size=224, do_center_crop=False,
                                                                       image_mean=[0.485, 0.456, 0.406],
                                                                       image_std=[0.229, 0.224, 0.225])
         elif model_name == 'cvt':
-        	self.feature_extractor = ConvNextImageProcessor.from_pretrained("microsoft/cvt-21", size=224, do_center_crop=False,
+            self.feature_extractor = ConvNextImageProcessor.from_pretrained("microsoft/cvt-21", size=224, do_center_crop=False,
                                                                           image_mean=[0.485, 0.456, 0.406],
                                                                           image_std=[0.229, 0.224, 0.225])
         elif model_name == 'conv':
                 self.feature_extractor = ConvNextImageProcessor.from_pretrained("facebook/convnext-tiny-224", size=224, do_center_crop=False,
-		                                                                  image_mean=[0.485, 0.456, 0.406],
-		                                                                  image_std=[0.229, 0.224, 0.225])
+                                                                          image_mean=[0.485, 0.456, 0.406],
+                                                                          image_std=[0.229, 0.224, 0.225])
 
         self.server_name = server_name
         self.id = id

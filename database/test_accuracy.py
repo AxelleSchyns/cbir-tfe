@@ -441,7 +441,7 @@ if __name__ == "__main__":
     if args.class_name is not None and args.class_name not in os.listdir(args.path):
         print("Class name does not exist")
         exit(-1)
-    if args.extractor == 'vgg11' or args.extractor == 'resnet18':
+    if args.extractor == 'vgg11' or args.extractor == 'resnet18' or args.extractor == "vgg16":
             model = builder.BuildAutoEncoder(args)     
         #total_params = sum(p.numel() for p in model.parameters())
         #print('=> num of params: {} ({}M)'.format(total_params, int(total_params * 4 / (1024*1024))))

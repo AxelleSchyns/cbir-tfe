@@ -18,7 +18,6 @@ def load_dict(resume_path, model):
     return model
 
 def BuildAutoEncoder(args):
-
     if args.extractor in ["vgg11", "vgg13", "vgg16", "vgg19"]:
         configs = vgg.get_configs(args.extractor)
         model = vgg.VGGAutoEncoder(configs)

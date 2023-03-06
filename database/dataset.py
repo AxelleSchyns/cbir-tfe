@@ -15,7 +15,7 @@ import dask.array as da
 import dask.bag as db
 #import dask_cuda
 import dask.distributed
-from dask_ml.cluster import MiniBatchKMeans as daskMiniK
+#from dask_ml.cluster import MiniBatchKMeans as daskMiniK
 from sklearn.metrics import silhouette_score, confusion_matrix
 import seaborn as sn
 import pandas as pd
@@ -135,6 +135,7 @@ class TrainingDataset(Dataset):
             # Define a function to load and preprocess the images
             def load_image(image_path):
                 with Image.open(image_path) as image:
+                    image = image.convert('RGB')
                     image = image.resize((224,224))
                     image = np.array(image, dtype=np.float32) / 255.0
                     image = (image - np.array([0.485, 0.456, 0.406])) / np.array([0.229, 0.224, 0.225])
@@ -207,12 +208,13 @@ class TrainingDataset(Dataset):
                     rows.append(el)
                     rows_lab.append(list(dic.keys())[el])
             rows = sorted(rows)
+            print(rows)
             rows_lab = sorted(rows_lab)
             cm = confusion_matrix(og_labels_int, new_labels) # classes predites = colonnes)
             # ! only working cause the dic is sorted and sklearn is creating cm by sorting the labels
             df_cm = pd.DataFrame(cm[rows,:], index=rows_lab)
             plt.figure(figsize = (10,7))
-            sn.heatmap(df_cm[rows,:], annot=True,xticklabels=True, yticklabels=True)
+            sn.heatmap(df_cm, annot=True,xticklabels=True, yticklabels=True)
             plt.show()
 
 
@@ -329,7 +331,7 @@ class TrainingDataset(Dataset):
         if self.model_name == 'deit' or self.model_name == 'cvt' or self.model_name == 'conv':
             img = self.transform(img)
             return class_nbr, self.feature_extractor(images=img, return_tensors='pt')['pixel_values']
-        print(class_nbr)
+        
         return class_nbr, self.transform(img)
 
 class AddDataset(Dataset):

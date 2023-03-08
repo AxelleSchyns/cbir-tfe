@@ -198,8 +198,8 @@ class Model(nn.Module):
     def forward(self, input):
         return self.forward_function(input)
 
-    def train_epochs(self, model, dir, epochs, sched, loss, generalise, lr, decay, beta_lr, gamma, lr_proxies):
-        data = dataset.TrainingDataset(dir, model, 2, generalise, self.transformer)
+    def train_epochs(self, model, dir, epochs, sched, loss, generalise, load, lr, decay, beta_lr, gamma, lr_proxies):
+        data = dataset.TrainingDataset(dir, model, 2, generalise, load, self.transformer)
         print('Size of dataset', data.__len__())
         if self.classification:
             print("coucou")
@@ -444,13 +444,20 @@ if __name__ == "__main__":
         action = 'store_true'
     )
 
+    parser.add_argument(
+        '--load',
+        action = 'store_true'
+    )
+
     args = parser.parse_args()
 
     if args.gpu_id >= 0:
         device = 'cuda:' + str(args.gpu_id)
     else:
         device = 'cpu'
-
+    if args.generalise != 3 and args.load is True:
+        print("Load cannot be used if the 3rd mode is not activated for generalize")
+        exit(-1)
     m = Model(model=args.model, eval=False, batch_size=args.batch_size,
               num_features=args.num_features, name=args.weights,
               use_dr=args.dr_model, device=device, freeze=args.freeze, classification = args.classification, parallel=args.parallel)
@@ -458,5 +465,5 @@ if __name__ == "__main__":
     if args.loss == 'deep_ranking':
         m.train_dr(args.training_data, args.num_epochs, args.lr)
     else:
-        m.train_epochs(args.model, args.training_data, args.num_epochs, args.scheduler, args.loss, args.generalise,
+        m.train_epochs(args.model, args.training_data, args.num_epochs, args.scheduler, args.loss, args.generalise, args.load,
                        args.lr, args.decay, args.beta_lr, args.gamma, args.lr_proxies)

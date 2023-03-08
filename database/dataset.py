@@ -19,6 +19,7 @@ import dask.distributed
 from sklearn.metrics import silhouette_score, confusion_matrix
 import seaborn as sn
 import pandas as pd
+import pickle
 # https://github.com/SathwikTejaswi/deep-ranking/blob/master/Code/data_utils.py
 
 
@@ -91,7 +92,7 @@ class DRDataset(Dataset):
         return (images[0], images[1], images[2])
 
 class TrainingDataset(Dataset):
-    def __init__(self, root, name, samples_per_class, generalise, transformer=False):
+    def __init__(self, root, name, samples_per_class, generalise, load, transformer=False):
         self.classes = os.listdir(root)
         self.classes.sort()
         
@@ -148,29 +149,52 @@ class TrainingDataset(Dataset):
 
             print("end of data processing; start of kmeans")
             t = time.time()
-            # Initialize the Online K-means algorithm
-            kmeans = MiniBatchKMeans(n_clusters=n_clusters, batch_size=32)
-            #kmeans = daskMiniK(n_clusters=n_clusters, batch_size=32)
-            # Load the images in batches and update the clusters
-            
-            for batch_paths in batch_image_paths(list_img, 32):
-                #batch_data = da.fromm_array(np.array([load_image(path) for path in bacth_paths]), chunk = 32)
-                batch_data = np.array([load_image(path) for path in batch_paths])
-                kmeans.partial_fit(batch_data)
-            print("Time taken is: "+str(time.time() - t))
-            print("kmeans done")
-            # Get the cluster labels and centroids
+            if load:
+                kmeans = pickle.load(open("save.pkl","rb"))
+            else:
+                # Initialize the Online K-means algorithm
+                kmeans = MiniBatchKMeans(n_clusters=n_clusters, batch_size=32)
+                #kmeans = daskMiniK(n_clusters=n_clusters, batch_size=32)
+                # Load the images in batches and update the clusters
+                
+                for batch_paths in batch_image_paths(list_img, 32):
+                    #batch_data = da.fromm_array(np.array([load_image(path) for path in bacth_paths]), chunk = 32)
+                    batch_data = np.array([load_image(path) for path in batch_paths])
+                    kmeans.partial_fit(batch_data)
+                print("Time taken is: "+str(time.time() - t))
+                print("kmeans done")
+                pickle.dump(kmeans, open("save.pkl","wb"))
+                # Get the cluster labels and centroids
             self.kmeans = kmeans
             self.labels = []
             silhouette_scores = []
             t = time.time()
+            print("size of image list is "+str(len(list_img)))
+            i = 0
+            temp = None
+            temp_batch = None 
             for batch_paths in batch_image_paths(list_img, 32):
+                if i%1000:
+                    print("at iteration: "+str(i)+"/"+str(int(len(list_img)/32)))
+                i+= 1
                 batch_data = np.array([load_image(path) for path in batch_paths])
                 labels = kmeans.predict(batch_data)
                 for l in labels:
                     self.labels.append(l)
-                batch_silhouette_score = silhouette_score(batch_data, labels)
-                silhouette_scores.append(batch_silhouette_score)
+
+                if temp is not None:
+                    labels = np.concatenate((temp, labels))
+                    batch_data = np.concatenate((temp_batch, batch_data))
+                    temp = None
+
+                temp_l, _ = np.unique(labels, return_counts = True)
+                
+                if len(temp_l) > 1:
+                    batch_silhouette_score = silhouette_score(batch_data, labels)
+                    silhouette_scores.append(batch_silhouette_score)
+                else:
+                    temp = labels
+                    temp_batch = batch_data
             print("Labels predictions took: "+str(time.time() - t))
             self.centroids = kmeans.cluster_centers_
 
@@ -208,7 +232,6 @@ class TrainingDataset(Dataset):
                     rows.append(el)
                     rows_lab.append(list(dic.keys())[el])
             rows = sorted(rows)
-            print(rows)
             rows_lab = sorted(rows_lab)
             cm = confusion_matrix(og_labels_int, new_labels) # classes predites = colonnes)
             # ! only working cause the dic is sorted and sklearn is creating cm by sorting the labels

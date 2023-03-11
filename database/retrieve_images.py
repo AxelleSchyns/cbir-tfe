@@ -75,7 +75,9 @@ if __name__ == "__main__":
         default=10,
         type=int
     )
-
+    parser.add_argument(
+        '--results_dir'
+    )
     args = parser.parse_args()
 
     if args.gpu_id >= 0:
@@ -93,9 +95,9 @@ if __name__ == "__main__":
     
     if args.extractor == 'vgg16' or args.extractor == 'resnet18':
         model = builder.BuildAutoEncoder(args)     
-	#total_params = sum(p.numel() for p in model.parameters())
-	#print('=> num of params: {} ({}M)'.format(total_params, int(total_params * 4 / (1024*1024))))
-	    
+    #total_params = sum(p.numel() for p in model.parameters())
+    #print('=> num of params: {} ({}M)'.format(total_params, int(total_params * 4 / (1024*1024))))
+        
         load_dict(args.weights, model)
         model.model_name = args.extractor
         model.num_features = args.num_features
@@ -107,14 +109,12 @@ if __name__ == "__main__":
     retriever = ImageRetriever(args.db_name, model)
 
     names = retriever.retrieve(Image.open(args.path).convert('RGB'), args.extractor, args.nrt_neigh)
-    print("hey1")
-    dir = '/home/lab/Documents/Axelle/cytomine/tfe2-master/results'
+    dir = args.results_dir
     names_only = []
     for n in names:
-    	names_only.append(n[n.rfind('/')+1:])
-    	#print(n[n.rfind('/', 0, n.rfind('/') - 1):])
-    	img = Image.open(n)
-    	img.save(os.path.join(dir,n[n.rfind('/')+1:]))
-    	
+        names_only.append(n[n.rfind('/')+1:])
+        img = Image.open(n)
+        img.save(os.path.join(dir,n[n.rfind('/')+1:]))
+        
     print("The names of the nearest images are: "+str(names_only))
     

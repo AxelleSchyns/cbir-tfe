@@ -60,6 +60,13 @@ if __name__ == "__main__":
         action='store_true'
     )
 
+    parser.add_argument(
+        '--generalise',
+        default='0',
+        help='train on only part of the classes of images',
+        type=int
+    )
+
     args = parser.parse_args()
 
     if args.gpu_id >= 0:
@@ -102,5 +109,5 @@ if __name__ == "__main__":
 
     database = Database(args.db_name, model, load= not args.rewrite, transformer=args.extractor=='transformer')
     t = time.time()
-    database.add_dataset(args.path, args.extractor, label = not args.unlabeled)
+    database.add_dataset(args.path, args.extractor, args.generalise, label = not args.unlabeled)
     print("T_indexing = "+str(time.time() - t))

@@ -131,8 +131,7 @@ class TrainingDataset(Dataset):
             kmeans = KMeans(n_clusters, init_max_iter=5, oversampling_factor = 10)
             kmeans.fit(X_dask)
             print(time.time() - t)"""
-            print(len(list_img))
-            n_clusters = 5
+            n_clusters = 67
             # Define a function to load and preprocess the images
             def load_image(image_path):
                 with Image.open(image_path) as image:
@@ -149,96 +148,101 @@ class TrainingDataset(Dataset):
 
             print("end of data processing; start of kmeans")
             t = time.time()
-            if load:
-                kmeans = pickle.load(open("save.pkl","rb"))
+            if load == "complete":
+                self.kmeans = pickle.load(open("kmeans.pkl","rb"))
+                self.labels = pickle.load(open("labels_kmeans.pkl","rb"))
+                if len(self.labels) != len(list_img):
+                    print("Number of loaded labels do not correspond to length of the data")
+                    exit(-1)
             else:
-                # Initialize the Online K-means algorithm
-                kmeans = MiniBatchKMeans(n_clusters=n_clusters, batch_size=32)
-                #kmeans = daskMiniK(n_clusters=n_clusters, batch_size=32)
-                # Load the images in batches and update the clusters
+                if load != "partial":
+                    # Initialize the Online K-means algorithm
+                    self.kmeans = MiniBatchKMeans(n_clusters=n_clusters, batch_size=128)
+                    #kmeans = daskMiniK(n_clusters=n_clusters, batch_size=32)
+                    # Load the images in batches and update the clusters
+                    
+                    for batch_paths in batch_image_paths(list_img, 128):
+                        #batch_data = da.fromm_array(np.array([load_image(path) for path in bacth_paths]), chunk = 32)
+                        batch_data = np.array([load_image(path) for path in batch_paths])
+                        self.kmeans.partial_fit(batch_data)
+                    print("Time taken is: "+str(time.time() - t))
+                    print("kmeans done")
+                    pickle.dump(self.kmeans, open("kmeans.pkl","wb"))
                 
-                for batch_paths in batch_image_paths(list_img, 32):
-                    #batch_data = da.fromm_array(np.array([load_image(path) for path in bacth_paths]), chunk = 32)
+                # Retrieve the new labels of the images + compute silhouette score
+                self.labels = []
+                silhouette_scores = []
+                t = time.time()
+                i = 0
+                temp = None # If the batch contains only one new label, has to combine it with the next one
+                temp_batch = None # Because the silhouette score needs at least 2 different labels
+                for batch_paths in batch_image_paths(list_img, 128):
+                    if i%1000 == 0:
+                        print("at iteration: "+str(i)+"/"+str(int(len(list_img)/128)))
+                    i+= 1
+
                     batch_data = np.array([load_image(path) for path in batch_paths])
-                    kmeans.partial_fit(batch_data)
-                print("Time taken is: "+str(time.time() - t))
-                print("kmeans done")
-                pickle.dump(kmeans, open("save.pkl","wb"))
-                # Get the cluster labels and centroids
-            self.kmeans = kmeans
-            self.labels = []
-            silhouette_scores = []
-            t = time.time()
-            print("size of image list is "+str(len(list_img)))
-            i = 0
-            temp = None
-            temp_batch = None 
-            for batch_paths in batch_image_paths(list_img, 32):
-                if i%1000:
-                    print("at iteration: "+str(i)+"/"+str(int(len(list_img)/32)))
-                i+= 1
-                batch_data = np.array([load_image(path) for path in batch_paths])
-                labels = kmeans.predict(batch_data)
-                for l in labels:
-                    self.labels.append(l)
+                    labels = self.kmeans.predict(batch_data)
+                    for l in labels:
+                        self.labels.append(l)
 
-                if temp is not None:
-                    labels = np.concatenate((temp, labels))
-                    batch_data = np.concatenate((temp_batch, batch_data))
-                    temp = None
+                    # Previous batch contained only one label ->> merge it with the new
+                    if temp is not None:
+                        labels = np.concatenate((temp, labels))
+                        batch_data = np.concatenate((temp_batch, batch_data))
+                        temp = None
 
-                temp_l, _ = np.unique(labels, return_counts = True)
+                    # Check the number of different labels in batch 
+                    temp_l, _ = np.unique(labels, return_counts = True)
+                    if len(temp_l) > 1:
+                        batch_silhouette_score = silhouette_score(batch_data, labels)
+                        silhouette_scores.append(batch_silhouette_score)
+                    else:
+                        temp = labels
+                        temp_batch = batch_data
+                pickle.dump(self.labels, open("labels_kmeans.pkl","wb"))
+                print("The silhouette score is: "+str(np.mean(silhouette_scores)))
+                print("Labels predictions took: "+str(time.time() - t))
+
+                # Histogram of new classes
+                labels_u, counts = np.unique(self.labels, return_counts = True)
+                plt.bar(labels_u, counts, align = "center")
+                for label_u, count in zip(labels_u, counts):
+                    plt.text(label_u, count, str(count), ha = 'center', va = 'bottom')
+                plt.show()
                 
-                if len(temp_l) > 1:
-                    batch_silhouette_score = silhouette_score(batch_data, labels)
-                    silhouette_scores.append(batch_silhouette_score)
-                else:
-                    temp = labels
-                    temp_batch = batch_data
-            print("Labels predictions took: "+str(time.time() - t))
-            self.centroids = kmeans.cluster_centers_
+                self.classes = [i for i in range(0, n_clusters)]
 
-            labels_u, counts = np.unique(self.labels, return_counts = True)
-            plt.bar(labels_u, counts, align = "center")
-            for label_u, count in zip(labels_u, counts):
-                plt.text(label_u, count, str(count), ha = 'center', va = 'bottom')
-            plt.show()
-            
-            self.classes = [i for i in range(0, n_clusters)]
+                # Confusion matrix 
+                # Retrieval of old labels - conversion to int
+                original_labels = []
+                for n in list_img:
+                    end_retr = n.rfind("/")
+                    begin_retr = n.rfind("/", 0, end_retr) + 1
+                    original_labels.append(n[begin_retr:end_retr])  
+                past_class = np.unique(original_labels)
+                dic = {x: i for i, x in enumerate(past_class)} 
+                og_labels_int = []
+                for el in original_labels:
+                    og_labels_int.append(dic[el])
 
-            print("The silhouette score is: "+str(np.mean(silhouette_scores)))
-
-            # Confusion matrix 
-
-            # Retrieval of old labels - conversion to int
-            original_labels = []
-            for n in list_img:
+                new_labels = self.labels
                 
-                end_retr = n.rfind("/")
-                begin_retr = n.rfind("/", 0, end_retr) + 1
-                original_labels.append(n[begin_retr:end_retr])  
-            new_labels = self.labels
-            past_class = np.unique(original_labels)
-            dic = {x: i for i, x in enumerate(past_class)} 
-            og_labels_int = []
-            for el in original_labels:
-                og_labels_int.append(dic[el])
-            rows_lab = []
-
-            # Keep only rows corresponding to original labels
-            rows = []
-            for el in og_labels_int:
-                if el not in rows:
-                    rows.append(el)
-                    rows_lab.append(list(dic.keys())[el])
-            rows = sorted(rows)
-            rows_lab = sorted(rows_lab)
-            cm = confusion_matrix(og_labels_int, new_labels) # classes predites = colonnes)
-            # ! only working cause the dic is sorted and sklearn is creating cm by sorting the labels
-            df_cm = pd.DataFrame(cm[rows,:], index=rows_lab)
-            plt.figure(figsize = (10,7))
-            sn.heatmap(df_cm, annot=True,xticklabels=True, yticklabels=True)
-            plt.show()
+                # Keep only rows corresponding to original labels
+                rows = []
+                rows_lab = []
+                for el in og_labels_int:
+                    if el not in rows:
+                        rows.append(el)
+                        rows_lab.append(list(dic.keys())[el])
+                rows = sorted(rows)
+                rows_lab = sorted(rows_lab)
+                cm = confusion_matrix(og_labels_int, new_labels) # classes predites = colonnes)
+                # ! only working cause the dic is sorted and sklearn is creating cm by sorting the labels
+                df_cm = pd.DataFrame(cm[rows,:], index=rows_lab)
+                plt.figure(figsize = (10,7))
+                sn.heatmap(df_cm, annot=True,xticklabels=True, yticklabels=True)
+                plt.show()
 
 
         self.conversion = {x: i for i, x in enumerate(self.classes)} # Number given the clss

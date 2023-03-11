@@ -446,7 +446,8 @@ if __name__ == "__main__":
 
     parser.add_argument(
         '--load',
-        action = 'store_true'
+        default = None,
+        type = str
     )
 
     args = parser.parse_args()

@@ -3,7 +3,7 @@ import faiss
 from sklearn.manifold import TSNE
 import matplotlib.pyplot as plt
 from argparse import ArgumentParser
-import torch
+import utils
 import redis
 import time
 import seaborn as sns
@@ -26,10 +26,7 @@ if __name__ == "__main__":
     names = []
     for l in labels:
         n = r.get(str(l) + 'labeled').decode('utf-8')
-        
-        end_retr = n.rfind("/")
-        begin_retr = n.rfind("/", 0, end_retr) + 1
-        names.append(n[begin_retr:end_retr])    
+        names.append(utils.get_class(n))    
     
     classes = list(set(names))
     conversion = {x: i for i, x in enumerate(classes)}

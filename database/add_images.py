@@ -81,24 +81,11 @@ if __name__ == "__main__":
         print("The path mentionned is not a folder")
         exit(-1)
     
-    if args.extractor == 'vgg16' or args.extractor == "vgg11":
+    if args.extractor == 'vgg16' or args.extractor == "vgg11" or args.extractor == 'resnet18' or args.extractor == "resnet50":
         model = builder.BuildAutoEncoder(args)     
-        #total_params = sum(p.numel() for p in model.parameters())
-        #print('=> num of params: {} ({}M)'.format(total_params, int(total_params * 4 / (1024*1024))))
-           
         builder.load_dict(args.weights, model)
         model.model_name = args.extractor
         model.num_features = args.num_features
-    elif args.extractor == 'resnet18' or args.extractor == "resnet50":
-        
-        model = builder.BuildAutoEncoder(args)     
-        #total_params = sum(p.numel() for p in model.parameters())
-        #print('=> num of params: {} ({}M)'.format(total_params, int(total_params * 4 / (1024*1024))))
-        
-        builder.load_dict(args.weights, model)
-        model.model_name = args.extractor
-        model.num_features = args.num_features
-        
     else:
         model = models.Model(model=args.extractor, use_dr=args.dr_model, num_features=args.num_features, name=args.weights,
                            device=device)

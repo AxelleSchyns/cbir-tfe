@@ -20,6 +20,7 @@ from sklearn.metrics import silhouette_score, confusion_matrix
 import seaborn as sn
 import pandas as pd
 import pickle
+from utils import load_image, batch_image_paths
 # https://github.com/SathwikTejaswi/deep-ranking/blob/master/Code/data_utils.py
 
 
@@ -96,25 +97,29 @@ class TrainingDataset(Dataset):
         self.classes = os.listdir(root)
         self.classes.sort()
         
+        # Keep only half the classes
         if generalise == 1:
             self.classes = self.classes[:len(self.classes) // 2 + 1]
-        if generalise == 2: 
+        # Keep haf the images by sleectioning (arbittrarly) the classes to keep
+        elif generalise == 2: 
             new_classes = []
             for i in range(10):
                 new_classes.append(self.classes[i])
             for i in range(26):
                 new_classes.append(self.classes[21 + i])
             self.classes = new_classes
-        
-        if generalise == 3:
-            print("enter generalise 3")
+        # Create new classes from the data through kmeans
+        elif generalise == 3:
+            # Create list of image paths 
             list_img = []
             for c in self.classes:
                 for dir, subdirs, files in os.walk(os.path.join(root, c)):
                     for file in files:
                         img = os.path.join(dir, file)
                         list_img.append(img)
-            print("end of retrieval of image paths; start stacking")
+            print("End of retrieval of image paths.")
+
+            # First version of kmeans used - bug with too many images
             """
             # Works till 60000 images then the staking kills the running 
             images = [np.array(Image.open(path).convert('RGB').resize((224,224))) for path in list_img]
@@ -131,23 +136,10 @@ class TrainingDataset(Dataset):
             kmeans = KMeans(n_clusters, init_max_iter=5, oversampling_factor = 10)
             kmeans.fit(X_dask)
             print(time.time() - t)"""
+            # Execute kmeans or load preexisting models & labels
             n_clusters = 67
-            # Define a function to load and preprocess the images
-            def load_image(image_path):
-                with Image.open(image_path) as image:
-                    image = image.convert('RGB')
-                    image = image.resize((224,224))
-                    image = np.array(image, dtype=np.float32) / 255.0
-                    image = (image - np.array([0.485, 0.456, 0.406])) / np.array([0.229, 0.224, 0.225])
-                return image.reshape(-1)
-
-            # Define a function to generate batches of image paths
-            def batch_image_paths(image_paths, batch_size):
-                for i in range(0, len(image_paths), batch_size):
-                    yield image_paths[i:i+batch_size]
-
-            print("end of data processing; start of kmeans")
-            t = time.time()
+            
+            # Kmeans previously trained and labels already predicted
             if load == "complete":
                 self.kmeans = pickle.load(open("kmeans.pkl","rb"))
                 self.labels = pickle.load(open("labels_kmeans.pkl","rb"))
@@ -155,21 +147,34 @@ class TrainingDataset(Dataset):
                     print("Number of loaded labels do not correspond to length of the data")
                     exit(-1)
             else:
+                # Kmeans not trained yet
                 if load != "partial":
-                    # Initialize the Online K-means algorithm
-                    self.kmeans = MiniBatchKMeans(n_clusters=n_clusters, batch_size=128)
-                    #kmeans = daskMiniK(n_clusters=n_clusters, batch_size=32)
-                    # Load the images in batches and update the clusters
-                    
-                    for batch_paths in batch_image_paths(list_img, 128):
-                        #batch_data = da.fromm_array(np.array([load_image(path) for path in bacth_paths]), chunk = 32)
-                        batch_data = np.array([load_image(path) for path in batch_paths])
-                        self.kmeans.partial_fit(batch_data)
-                    print("Time taken is: "+str(time.time() - t))
-                    print("kmeans done")
+                    print("Start of kmeans")
+                    # Elbow plot - temporary
+                    ks = [1, 5, 10, 15, 20, 25, 30, 35, 40, 45, 50, 55, 60, 65, 67]
+                    distortions = []
+                    for k in ks:
+                        t = time.time()
+                        print(k)
+                        # Initialize the Online K-means algorithm
+                        self.kmeans = MiniBatchKMeans(n_clusters=k, batch_size=128, init="k-means++",n_init = 3)
+                        # Load the images in batches and update the clusters
+                        for batch_paths in batch_image_paths(list_img, 128):
+                            batch_data = np.array([load_image(path) for path in batch_paths])
+                            self.kmeans.partial_fit(batch_data)
+                        distortions.append(self.kmeans.inertia_)
+                        print("Time taken is: "+ str(time.time() - t))
+                    plt.figure(figsize=(16,8))
+                    plt.plot(ks, distortions, 'bx-')
+                    plt.xlabel('k')
+                    plt.ylabel('Distortion')
+                    plt.title('The Elbow Method showing the optimal k')
+                    plt.show()
+                    print("Kmeans done")
                     pickle.dump(self.kmeans, open("kmeans.pkl","wb"))
                 
                 # Retrieve the new labels of the images + compute silhouette score
+                print("Start of label predictions")
                 self.labels = []
                 silhouette_scores = []
                 t = time.time()

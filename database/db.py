@@ -14,11 +14,7 @@ import os
 import argparse
 import builder
 import pickle 
-def encode(model, img):
-    with torch.no_grad():
-        code = model.module.encoder(img).cpu()
-
-    return code
+import utils
 
 class Database:
     def __init__(self, filename, model, load=False, transformer=False, device='cpu'):
@@ -72,7 +68,7 @@ class Database:
         else:
                 self.feat_extract = None                                                                 
     # x = vector of images 
-    def add(self, x, names, label, generalise):
+    def add(self, x, names, label, generalise=0, labels=None):
         if label:
             last_id = int(self.r.get('last_id_labeled').decode('utf-8'))
             # Add x.shape ids and images to the current list of ids of Faiss. 
@@ -83,15 +79,20 @@ class Database:
             with open(self.filename + '_labeledvectors', 'ab') as file:
                 # Encode in the file database the images with their name, and gives them the appropriate id
                 # Zip() Creates a list of tuples, with one element of names and one of x (=> allows to iterate on both list at the same time) 
-                for n, x_ in zip(names, x):
-                    if generalise == 3:
+                if generalise == 3:
+                    for n, x_, l in zip(names, x, labels):
                         n = str(n)
-                    self.r.set(str(last_id) + 'labeled', n) # Set the name of the image at key = id
-                    self.r.set(n, str(last_id) + 'labeled') # Set the id of the image at key = name 
-                    binary = struct.pack("i"+str(self.num_features)+"f",last_id, *x_)
-                    file.write(binary)
-                    #file.write('\n' + str(last_id) + str(x_)) # Writes in the file the id alongside the image 
-                    last_id += 1
+                        self.r.set(str(last_id)+ 'labeled', {"value1":n, "value2":l})
+                        self.r.set(n, str(last_id)+'labeled')
+                        last_id += 1
+                else:
+                    for n, x_  in zip(names, x):
+                        self.r.set(str(last_id) + 'labeled', n) # Set the name of the image at key = id
+                        self.r.set(n, str(last_id) + 'labeled') # Set the id of the image at key = name 
+                        binary = struct.pack("i"+str(self.num_features)+"f",last_id, *x_)
+                        file.write(binary)
+                        #file.write('\n' + str(last_id) + str(x_)) # Writes in the file the id alongside the image 
+                        last_id += 1
 
             self.r.set('last_id_labeled', last_id) # Update the last id to take into account the added images
 
@@ -114,7 +115,7 @@ class Database:
             self.r.set('last_id_unlabeled', last_id)
 
     @torch.no_grad()
-    def add_dataset(self, data_root, extractor, generalise, name_list=[], label=True):
+    def add_dataset(self, data_root, extractor, generalise=0, name_list=[], label=True):
         # Create a dataset from a directory root
         if name_list == []:
             data = dataset.AddDataset(data_root, extractor, self.transformer)
@@ -126,29 +127,24 @@ class Database:
         for i, (images, filenames) in enumerate(loader):
             images = images.view(-1, 3, 224, 224).to(device=next(self.model.parameters()).device)
             if extractor == 'vgg11' or extractor == 'resnet18' or extractor == 'vgg16':
-                out = encode(self.model, images)
+                out = utils.encode(self.model, images)
                 out = out.reshape([out.shape[0],self.model.num_features])
             
             else:
                 # Encode the images using the given model 
                 out = self.model(images).cpu()
             if generalise == 3:
-                def load_image(image_path):
-                    with Image.open(image_path) as image:
-                        image = image.convert('RGB')
-                        image = image.resize((224,224))
-                        image = np.array(image, dtype=np.float32) / 255.0
-                        image = (image - np.array([0.485, 0.456, 0.406])) / np.array([0.229, 0.224, 0.225])
-                    return image.reshape(-1)
                 kmeans = pickle.load(open("kmeans.pkl","rb"))
-                batch_data = np.array([load_image(path) for path in filenames])
-                filenames = kmeans.predict(batch_data)
-            self.add(out.numpy(), list(filenames), label, generalise)
+                batch_data = np.array([utils.load_image(path) for path in filenames])
+                labels = kmeans.predict(batch_data)
+                self.add(out.numpy(), list(filenames), label, generalise, labels)
+            else:
+                self.add(out.numpy(), list(filenames), label, generalise)
         self.save()
 
 
     @torch.no_grad()
-    def search(self, x, extractor, nrt_neigh=10, retrieve_class='true'):
+    def search(self, x, extractor, generalise=0, nrt_neigh=10, retrieve_class='true'):
         t_model = time.time()
         if not self.feat_extract: # feat_extract is None in case of non transformer model thus True here 
             image = transforms.Resize((224, 224))(x)
@@ -160,8 +156,8 @@ class Database:
         else:
             image = self.feat_extract(images=x, return_tensors='pt')['pixel_values'] # Applies the processing for the transformer model
 	
-        if extractor == 'vgg11' or extractor == 'resnet18' or extractor == "vgg16":
-            out = encode(self.model, image.to(device=next(self.model.parameters()).device).view(-1, 3, 224, 224))
+        if extractor == 'vgg11' or extractor == 'resnet18' or extractor == "vgg16" or extractor == "resnet50":
+            out = utils.encode(self.model, image.to(device=next(self.model.parameters()).device).view(-1, 3, 224, 224))
             out = out.reshape([out.shape[0],self.model.num_features])
         else:
             # Retrieves the result from the model
@@ -174,25 +170,48 @@ class Database:
             distance, labels = self.index_labeled.search(out.cpu().numpy(), nrt_neigh) 
 
             labels = [l for l in list(labels[0]) if l != -1]
-
+            
             # retrieves the names of the images based on their index
-            names = []
-            for l in labels:
-                n = self.r.get(str(l) + 'labeled').decode('utf-8')
-                names.append(n)
+            values = []
+            if generalise == 3:
+                names = []
+                labs = []
+                for l in labels:
+                    v = self.r.get(str(l) + 'labeled').decode('utf-8')
+                    v = json.loads(v)
+                    names.append(v["value1"])
+                    labs.append(v["value2"])
+                values.append(names)
+                values.append(labs)
+            else:
+                for l in labels:
+                    v = self.r.get(str(l) + 'labeled').decode('utf-8')
+                    values.append(v)
             t_search = time.time() - t_search
 
-            return names, distance.tolist(), t_model, t_search
+            return values, distance.tolist(), t_model, t_search
         elif retrieve_class == 'false':
             distance, labels = self.index_unlabeled.search(out.cpu().numpy(), nrt_neigh)
             labels = [l for l in list(labels[0]) if l != -1]
-            names = []
-            for l in labels:
-                n = self.r.get(str(l) + 'unlabeled').decode('utf-8')
-                names.append(n)
+            # retrieves the names of the images based on their index
+            values = []
+            if generalise == 3:
+                names = []
+                labs = []
+                for l in labels:
+                    v = self.r.get(str(l) + 'unlabeled').decode('utf-8')
+                    v = json.loads(v)
+                    names.append(v["value1"])
+                    labs.append(v["value2"])
+                values.append(names)
+                values.append(labs)
+            else:
+                for l in labels:
+                    v = self.r.get(str(l) + 'unlabeled').decode('utf-8')
+                    values.append(v)
             t_search = time.time() - t_search
 
-            return names, distance.tolist(), t_model, t_search
+            return values, distance.tolist(), t_model, t_search
         elif retrieve_class == 'mix':
             # retrieves nrt_neigh best in both cases
             distance_l, labels_l = self.index_labeled.search(out.cpu().numpy(), nrt_neigh)
@@ -388,11 +407,8 @@ if __name__ == "__main__":
     )
 
     args = parser.parse_args()
-    if args.extractor == 'vgg11' or args.extractor == "vgg16" or args.extractor == "resnet18": 
-        model = builder.BuildAutoEncoder(args)     
-        #total_params = sum(p.numel() for p in model.parameters())
-        #print('=> num of params: {} ({}M)'.format(total_params, int(total_params * 4 / (1024*1024))))
-           
+    if args.extractor == 'vgg11' or args.extractor == "vgg16" or args.extractor == "resnet18" or args.extractor == "resnet50": 
+        model = builder.BuildAutoEncoder(args)
         builder.load_dict(args.weights, model)
         model.model_name = args.extractor
         model.num_features = args.num_features

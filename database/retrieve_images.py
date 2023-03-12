@@ -1,23 +1,10 @@
 from db import Database
-from argparse import ArgumentParser, ArgumentTypeError
+from argparse import ArgumentParser
 import models
 from PIL import Image
-import time
-import torch
 import os
 import builder
-
-def load_dict(resume_path, model):
-    if os.path.isfile(resume_path):
-        checkpoint = torch.load(resume_path)
-        model_dict = model.state_dict()
-        model_dict.update(checkpoint['state_dict'])
-        model.load_state_dict(model_dict)
-        # delete to release more space
-        del checkpoint
-    else:
-        sys.exit("=> No checkpoint found at '{}'".format(resume_path))
-    return model
+import utils
 
 class ImageRetriever:
     def __init__(self, db_name, model):
@@ -86,19 +73,16 @@ if __name__ == "__main__":
         device = 'cpu'
 
     if args.path is None:
-        print(usage)
+        print("You need to specify a path!")
         exit(-1)
 
     if not os.path.isfile(args.path):
         print('Path mentionned is not a file')
         exit(-1)
     
-    if args.extractor == 'vgg16' or args.extractor == 'resnet18':
-        model = builder.BuildAutoEncoder(args)     
-    #total_params = sum(p.numel() for p in model.parameters())
-    #print('=> num of params: {} ({}M)'.format(total_params, int(total_params * 4 / (1024*1024))))
-        
-        load_dict(args.weights, model)
+    if args.extractor == 'vgg16' or args.extractor == 'vgg11' or args.extractor == 'resnet18' or args.extractor == 'resnet50':
+        model = builder.BuildAutoEncoder(args)
+        utils.load_dict(args.weights, model)
         model.model_name = args.extractor
         model.num_features = args.num_features
     

@@ -122,7 +122,9 @@ class Model(nn.Module):
         elif model == 'deit':
             self.forward_function = self.forward_model
             self.model = DeiTForImageClassification.from_pretrained('facebook/deit-base-distilled-patch16-224').to(device=device)
-        
+        else:
+            print("model entered is not supported")
+            exit(-1)
         #----------------------------------------------------------------------------------------------------------------
         #                                  Freeze of model parameters
         #----------------------------------------------------------------------------------------------------------------
@@ -202,7 +204,6 @@ class Model(nn.Module):
         data = dataset.TrainingDataset(dir, model, 2, generalise, load, self.transformer)
         print('Size of dataset', data.__len__())
         if self.classification:
-            print("coucou")
             loss_function = nn.CrossEntropyLoss() 
             to_optim = [{'params':self.parameters(),'lr':lr,'weight_decay':decay}]
 

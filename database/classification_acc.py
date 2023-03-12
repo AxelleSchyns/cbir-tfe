@@ -37,18 +37,7 @@ def test_each_class(model, dataset, extractor, measure, name, excel_path):
         name = "Sheet ?" 
     df.to_excel(writer, sheet_name = name)
     writer.close()
-    
-def load_dict(resume_path, model):
-    if os.path.isfile(resume_path):
-        checkpoint = torch.load(resume_path)
-        model_dict = model.state_dict()
-        model_dict.update(checkpoint['state_dict'])
-        model.load_state_dict(model_dict)
-        # delete to release more space
-        del checkpoint
-    else:
-        sys.exit("=> No checkpoint found at '{}'".format(resume_path))
-    return model
+
 
 class TestDataset(Dataset):
     def __init__(self, root, measure, generalise,name=None, class_name =None):
@@ -327,14 +316,11 @@ if __name__ == "__main__":
     if args.class_name is not None and args.class_name not in os.listdir(args.path):
         print("Class name does not exist")
         exit(-1)
-    if args.extractor == 'vgg16' or args.extractor == 'resnet18':
-            model = builder.BuildAutoEncoder(args)     
-        #total_params = sum(p.numel() for p in model.parameters())
-        #print('=> num of params: {} ({}M)'.format(total_params, int(total_params * 4 / (1024*1024))))
-        
-            load_dict(args.weights, model)
-            model.model_name = args.extractor
-            model.num_features = args.num_features
+    if args.extractor == 'vgg16' or args.extractor == 'vgg11' or args.extractor == 'resnet18' or args.extractor == 'resnet50':
+        model = builder.BuildAutoEncoder(args)  
+        builder.load_dict(args.weights, model)
+        model.model_name = args.extractor
+        model.num_features = args.num_features
     else:
         model = Model(num_features=args.num_features, name=args.weights, model=args.extractor,
                   use_dr=args.dr_model, device=device, classification=True) # eval est par defaut true

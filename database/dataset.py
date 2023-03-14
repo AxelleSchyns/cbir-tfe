@@ -21,6 +21,7 @@ import seaborn as sn
 import pandas as pd
 import pickle
 from utils import load_image, batch_image_paths
+import random
 # https://github.com/SathwikTejaswi/deep-ranking/blob/master/Code/data_utils.py
 
 
@@ -117,6 +118,7 @@ class TrainingDataset(Dataset):
                     for file in files:
                         img = os.path.join(dir, file)
                         list_img.append(img)
+            random.shuffle(list_img)
             print("End of retrieval of image paths.")
 
             # First version of kmeans used - bug with too many images
@@ -137,7 +139,7 @@ class TrainingDataset(Dataset):
             kmeans.fit(X_dask)
             print(time.time() - t)"""
             # Execute kmeans or load preexisting models & labels
-            n_clusters = 67
+            n_clusters = 10
             
             # Kmeans previously trained and labels already predicted
             if load == "complete":
@@ -151,28 +153,28 @@ class TrainingDataset(Dataset):
                 if load != "partial":
                     print("Start of kmeans")
                     # Elbow plot - temporary
-                    ks = [1, 5, 10, 15, 20, 25, 30, 35, 40, 45, 50, 55, 60, 65, 67]
-                    distortions = []
-                    for k in ks:
-                        t = time.time()
-                        print(k)
-                        # Initialize the Online K-means algorithm
-                        self.kmeans = MiniBatchKMeans(n_clusters=k, batch_size=128, init="k-means++",n_init = 3)
-                        # Load the images in batches and update the clusters
-                        for batch_paths in batch_image_paths(list_img, 128):
+                    #ks = [1, 5, 10, 15, 20, 25, 30, 35, 40, 45, 50, 55, 60, 65, 67]
+                    #distortions = []
+                    #for k in ks:
+                    t = time.time()
+                    # Initialize the Online K-means algorithm
+                    self.kmeans = MiniBatchKMeans(n_clusters=n_clusters, batch_size=128, init="k-means++",n_init = 3)
+                    # Load the images in batches and update the clusters
+                    for batch_paths in batch_image_paths(list_img, 128):
                             batch_data = np.array([load_image(path) for path in batch_paths])
                             self.kmeans.partial_fit(batch_data)
-                        distortions.append(self.kmeans.inertia_)
-                        print("Time taken is: "+ str(time.time() - t))
-                    plt.figure(figsize=(16,8))
-                    plt.plot(ks, distortions, 'bx-')
-                    plt.xlabel('k')
-                    plt.ylabel('Distortion')
-                    plt.title('The Elbow Method showing the optimal k')
-                    plt.show()
+                        #distortions.append(self.kmeans.inertia_)
+                    print("Time taken is: "+ str(time.time() - t))
+                    #plt.figure(figsize=(16,8))
+                    #plt.plot(ks, distortions, 'bx-')
+                    #plt.xlabel('k')
+                    #plt.ylabel('Distortion')
+                    #plt.title('The Elbow Method showing the optimal k')
+                    #plt.show()
                     print("Kmeans done")
                     pickle.dump(self.kmeans, open("kmeans.pkl","wb"))
-                
+                else:
+                    self.kmeans = pickle.load(open("kmeans.pkl","rb"))
                 # Retrieve the new labels of the images + compute silhouette score
                 print("Start of label predictions")
                 self.labels = []
@@ -188,7 +190,12 @@ class TrainingDataset(Dataset):
 
                     batch_data = np.array([load_image(path) for path in batch_paths])
                     labels = self.kmeans.predict(batch_data)
+
+                    im_lab = {}
+                    j = 0
                     for l in labels:
+                        im_lab[batch_paths[j]] = l
+                        j+= 1
                         self.labels.append(l)
 
                     # Previous batch contained only one label ->> merge it with the new
@@ -226,6 +233,7 @@ class TrainingDataset(Dataset):
                     begin_retr = n.rfind("/", 0, end_retr) + 1
                     original_labels.append(n[begin_retr:end_retr])  
                 past_class = np.unique(original_labels)
+                past_class.sort()
                 dic = {x: i for i, x in enumerate(past_class)} 
                 og_labels_int = []
                 for el in original_labels:

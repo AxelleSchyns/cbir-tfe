@@ -17,6 +17,149 @@ import pandas as pd
 from openpyxl import load_workbook
 import builder
 import utils
+
+def compute_results_kmeans(names, labels):
+    print("hey")
+
+def compute_results(names, data, predictions, class_im, proj_im, top_1_acc, top_5_acc, maj_acc, predictions_maj):
+    similar = names[:5]
+    temp = []
+    already_found_5 = 0
+    already_found_5_proj = 0
+    already_found_5_sim = 0
+    
+    for j in range(len(similar)):
+        class_retr = utils.get_class(similar[j])
+        temp.append(class_retr)
+        proj_retr = utils.get_proj(similar[j])
+        
+        # Retrieves label of top 1 result for confusion matrix
+        if j == 0:
+            # if class retrieved is in class of data given
+            if class_retr in data.conversion:
+                predictions.append(data.conversion[class_retr])
+            else:
+                predictions.append("other") # to keep a trace of the data for the cm
+        
+        # Class retrieved is same as query
+        if class_retr == class_im: 
+            if already_found_5 == 0:
+                top_5_acc[0] += 1
+                if already_found_5_proj == 0:
+                    top_5_acc[1] += 1
+                if already_found_5_sim == 0:
+                    top_5_acc[2] += 1
+        
+                if j == 0:
+                    top_1_acc[0] += 1
+                    if already_found_5_proj == 0:
+                        top_1_acc[1] += 1
+                    if already_found_5_sim == 0:
+                        top_1_acc[2] += 1
+            already_found_5 += 1 # One of the 5best results matches the label of the query ->> no need to check further
+            already_found_5_proj += 1
+            already_found_5_sim +=1
+            
+        # Class retrieved is in the same project as query
+        elif proj_retr == proj_im:
+            if already_found_5_proj == 0:
+                top_5_acc[1] += 1
+                if already_found_5_sim == 0:
+                    top_5_acc[2] += 1
+                if j == 0:
+                    if already_found_5_sim == 0:
+                        top_1_acc[2] += 1
+                    top_1_acc[1] += 1
+                already_found_5_sim += 1
+                already_found_5_proj += 1
+        
+        
+        # Class retrieved is in a project whose content is similar to the query ->> check
+        else:       
+            # 'janowczyk'
+            if proj_im[0:len(proj_im)-2] == proj_retr[0:len(proj_retr)-2]:
+                if already_found_5_sim == 0: 
+                    top_5_acc[2] += 1
+                    if j == 0:
+                        top_1_acc[2] += 1
+                already_found_5_sim += 1
+            elif proj_im == "cells_no_aug" and proj_retr == "patterns_no_aug":
+                if already_found_5_sim == 0: 
+                    top_5_acc[2] += 1
+                    if j == 0:
+                        top_1_acc[2] += 1
+                already_found_5_sim += 1
+            elif proj_retr == "cells_no_aug" and proj_im == "patterns_no_aug":
+                if already_found_5_sim == 0: 
+                    top_5_acc[2] += 1
+                    if j == 0:
+                        top_1_acc[2] += 1
+                already_found_5_sim += 1
+            elif proj_retr == "mitos2014" and proj_im == "tupac_mitosis":
+                if already_found_5_sim == 0: 
+                    top_5_acc[2] += 1
+                    if j == 0:
+                        top_1_acc[2] += 1
+                already_found_5_sim += 1
+            elif proj_im == "mitos2014" and proj_retr == "tupac_mitosis":
+                if already_found_5_sim == 0: 
+                    top_5_acc[2] += 1
+                    if j == 0:
+                        top_1_acc[2] += 1
+                already_found_5_sim += 1
+    if already_found_5 > 2:
+        maj_acc[0] += 1
+    if already_found_5_proj > 2:
+        maj_acc[1] += 1
+    if already_found_5_sim > 2:
+        maj_acc[2] += 1
+    predictions_maj.append(data.conversion[max(set(temp), key = temp.count)])
+
+    return predictions, predictions_maj, top_1_acc, top_5_acc, maj_acc
+
+def display_cm(ground_truth, data, predictions, predictions_maj):
+    rows_lab = []
+    rows = []
+    for el in ground_truth:
+        if el not in rows:
+            rows.append(el)
+            rows_lab.append(list(data.conversion.keys())[el])
+    rows = sorted(rows)
+    rows_lab = sorted(rows_lab)
+    
+    # Confusion matrix based on top 1 accuracy
+    columns = []
+    columns_lab = []
+    for el in predictions:
+        if el not in columns:
+            columns.append(el)
+            columns_lab.append(list(data.conversion.keys())[el])
+    columns = sorted(columns)
+    columns_lab=sorted(columns_lab)
+        
+    cm = sklearn.metrics.confusion_matrix(ground_truth, predictions, labels=range(len(os.listdir(data.root)))) # classes predites = colonnes)
+    # ! only working cause the dic is sorted and sklearn is creating cm by sorting the labels
+    df_cm = pd.DataFrame(cm[np.ix_(rows, columns)], index=rows_lab, columns=columns_lab)
+    plt.figure(figsize = (10,7))
+    sn.heatmap(df_cm, annot=True, xticklabels=True, yticklabels=True)
+    plt.show()
+    
+    # Confusion matrix based on maj_class accuracy:
+    columns = []
+    columns_lab = []
+    for el in predictions_maj:
+        if el not in columns:
+            columns.append(el)
+            columns_lab.append(list(data.conversion.keys())[el])
+    columns = sorted(columns)
+    columns_lab = sorted(columns_lab)
+    cm = sklearn.metrics.confusion_matrix(ground_truth, predictions_maj, labels=range(len(os.listdir(data.root)))) # classes predites = colonnes)
+    # ! only working cause the dic is sorted and sklearn is creating cm by sorting the labels
+    df_cm = pd.DataFrame(cm[np.ix_(rows, columns)], index=rows_lab, columns=columns_lab)
+    plt.figure(figsize = (10,7))
+    sn.heatmap(df_cm, annot=True, xticklabels=True, yticklabels=True)
+    plt.show()
+
 def test_each_class(model, dataset, db_name, extractor, measure, name, excel_path, label):
     classes = sorted(os.listdir(dataset))
     res = np.zeros((len(classes), 12))
@@ -116,15 +259,9 @@ def test(model, dataset, db_name, extractor, measure, generalise, project_name, 
     loader = torch.utils.data.DataLoader(data, batch_size=1, shuffle=False,
                                          num_workers=4, pin_memory=True)
 
-    top_1_acc = 0
-    top_5_acc = 0
-    top_1_acc_proj = 0
-    top_5_acc_proj = 0
-    top_1_acc_sim = 0
-    top_5_acc_sim = 0
-    maj_acc_class = 0
-    maj_acc_proj = 0
-    maj_acc_sim = 0
+    top_1_acc = np.zeros((3,1)) # in order: class - project - similarity 
+    top_5_acc = np.zeros((3,1))
+    maj_acc = np.zeros((3,1))
 
     nbr_per_class = Counter()
 
@@ -142,165 +279,38 @@ def test(model, dataset, db_name, extractor, measure, generalise, project_name, 
         t_tot += time.time() - t
         t_model += t_model_tmp
         t_search += t_search_tmp
-        
-        similar = names[:5]
-        temp = []
 
-        already_found_5 = 0
-        already_found_5_proj = 0
-        already_found_5_sim = 0
-        
+        if generalise == 3:
+            labs = names[1]
+            names = names[0]
+
         # Retrieve class of images
         class_im = utils.get_class(image[0])
         proj_im = utils.get_proj(image[0])
         nbr_per_class[class_im] += 1
         ground_truth.append(data.conversion[class_im])
-        
-        for j in range(len(similar)):
-            class_retr = utils.get_class(similar[j])
-            temp.append(class_retr)
-            proj_retr = utils.get_proj(similar[j])
-            
-            # Retrieves label of top 1 result for confusion matrix
-            if j == 0:
-                # if class retrieved is in class of data given
-                if class_retr in data.conversion:
-                    predictions.append(data.conversion[class_retr])
-                else:
-                    predictions.append("other") # to keep a trace of the data for the cm
-            
-            # Class retrieved is same as query
-            if class_retr == class_im: 
-                if already_found_5 == 0:
-                    top_5_acc += 1
-                    if already_found_5_proj == 0:
-                        top_5_acc_proj += 1
-                    if already_found_5_sim == 0:
-                        top_5_acc_sim += 1
-           
-                    if j == 0:
-                        top_1_acc += 1
-                        if already_found_5_proj == 0:
-                            top_1_acc_proj += 1
-                        if already_found_5_sim == 0:
-                            top_1_acc_sim += 1
-                already_found_5 += 1 # One of the 5best results matches the label of the query ->> no need to check further
-                already_found_5_proj += 1
-                already_found_5_sim +=1
-                
-            # Class retrieved is in the same project as query
-            elif proj_retr == proj_im:
-                 if already_found_5_proj == 0:
-                    top_5_acc_proj += 1
-                    if already_found_5_sim == 0:
-                        top_5_acc_sim += 1
-                    if j == 0:
-                        if already_found_5_sim == 0:
-                            top_1_acc_sim += 1
-                        top_1_acc_proj += 1
-                 already_found_5_sim += 1
-                 already_found_5_proj += 1
-            
-            
-            # Class retrieved is in a project whose content is similar to the query ->> check
-            else:       
-                # 'janowczyk'
-                if proj_im[0:len(proj_im)-2] == proj_retr[0:len(proj_retr)-2]:
-                    if already_found_5_sim == 0: 
-                        top_5_acc_sim += 1
-                        if j == 0:
-                            top_1_acc_sim += 1
-                    already_found_5_sim += 1
-                elif proj_im == "cells_no_aug" and proj_retr == "patterns_no_aug":
-                    if already_found_5_sim == 0: 
-                        top_5_acc_sim += 1
-                        if j == 0:
-                            top_1_acc_sim += 1
-                    already_found_5_sim += 1
-                elif proj_retr == "cells_no_aug" and proj_im == "patterns_no_aug":
-                    if already_found_5_sim == 0: 
-                        top_5_acc_sim += 1
-                        if j == 0:
-                            top_1_acc_sim += 1
-                    already_found_5_sim += 1
-                elif proj_retr == "mitos2014" and proj_im == "tupac_mitosis":
-                    if already_found_5_sim == 0: 
-                        top_5_acc_sim += 1
-                        if j == 0:
-                            top_1_acc_sim += 1
-                    already_found_5_sim += 1
-                elif proj_im == "mitos2014" and proj_retr == "tupac_mitosis":
-                    if already_found_5_sim == 0: 
-                        top_5_acc_sim += 1
-                        if j == 0:
-                            top_1_acc_sim += 1
-                    already_found_5_sim += 1
-        if already_found_5 > 2:
-            maj_acc_class += 1
-        if already_found_5_proj > 2:
-            maj_acc_proj += 1
-        if already_found_5_sim > 2:
-            maj_acc_sim += 1
-        predictions_maj.append(data.conversion[max(set(temp), key = temp.count)])
 
-    print("top-1 accuracy : ", top_1_acc / data.__len__())
-    print("top-5 accuracy : ", top_5_acc / data.__len__())
-    print("top-1 accuracy proj : ", top_1_acc_proj / data.__len__())
-    print("top-5 accuracy proj : ", top_5_acc_proj / data.__len__())
-    print("top-1 accuracy sim : ", top_1_acc_sim / data.__len__())
-    print("top-5 accuracy sim : ", top_5_acc_sim / data.__len__())
-    print("maj accuracy class : ", maj_acc_class / data.__len__())
-    print("maj accuracy proj : ", maj_acc_proj / data.__len__())
-    print("maj accuracy sim : ", maj_acc_sim / data.__len__())
+        # Compute accuracy 
+        predictions, predictions_maj, top_1_acc, top_5_acc, maj_acc = compute_results(names, data, predictions, class_im, proj_im, top_1_acc,top_5_acc,maj_acc,predictions_maj)
+
+    print("top-1 accuracy : ", top_1_acc[0] / data.__len__())
+    print("top-5 accuracy : ", top_5_acc[0] / data.__len__())
+    print("top-1 accuracy proj : ", top_1_acc[1] / data.__len__())
+    print("top-5 accuracy proj : ", top_5_acc[1] / data.__len__())
+    print("top-1 accuracy sim : ", top_1_acc[2]/ data.__len__())
+    print("top-5 accuracy sim : ", top_5_acc[2] / data.__len__())
+    print("maj accuracy class : ", maj_acc[0] / data.__len__())
+    print("maj accuracy proj : ", maj_acc[1] / data.__len__())
+    print("maj accuracy sim : ", maj_acc[2] / data.__len__())
     print('t_tot:', t_tot)
     print('t_model:', t_model)
     print('t_search:', t_search)
     
     if see_cms:
-        rows_lab = []
-        rows = []
-        for el in ground_truth:
-            if el not in rows:
-                rows.append(el)
-                rows_lab.append(list(data.conversion.keys())[el])
-        rows = sorted(rows)
-        rows_lab = sorted(rows_lab)
-        
-        # Confusion matrix based on top 1 accuracy
-        columns = []
-        columns_lab = []
-        for el in predictions:
-            if el not in columns:
-                columns.append(el)
-                columns_lab.append(list(data.conversion.keys())[el])
-        columns = sorted(columns)
-        columns_lab=sorted(columns_lab)
-          
-        cm = sklearn.metrics.confusion_matrix(ground_truth, predictions, labels=range(len(os.listdir(data.root)))) # classes predites = colonnes)
-        # ! only working cause the dic is sorted and sklearn is creating cm by sorting the labels
-        df_cm = pd.DataFrame(cm[np.ix_(rows, columns)], index=rows_lab, columns=columns_lab)
-        plt.figure(figsize = (10,7))
-        sn.heatmap(df_cm, annot=True, xticklabels=True, yticklabels=True)
-        plt.show()
-        
-        # Confusion matrix based on maj_class accuracy:
-        columns = []
-        columns_lab = []
-        for el in predictions_maj:
-            if el not in columns:
-                columns.append(el)
-                columns_lab.append(list(data.conversion.keys())[el])
-        columns = sorted(columns)
-        columns_lab = sorted(columns_lab)
-        cm = sklearn.metrics.confusion_matrix(ground_truth, predictions_maj, labels=range(len(os.listdir(data.root)))) # classes predites = colonnes)
-        # ! only working cause the dic is sorted and sklearn is creating cm by sorting the labels
-        df_cm = pd.DataFrame(cm[np.ix_(rows, columns)], index=rows_lab, columns=columns_lab)
-        plt.figure(figsize = (10,7))
-        sn.heatmap(df_cm, annot=True, xticklabels=True, yticklabels=True)
-        plt.show()
+        display_cm(ground_truth, data, predictions, predictions_maj)
         
         
-    return [top_1_acc/ data.__len__(), top_5_acc/ data.__len__(), top_1_acc_proj/ data.__len__(), top_5_acc_proj/ data.__len__(), top_1_acc_sim/ data.__len__(), top_5_acc_sim/ data.__len__(), maj_acc_class/ data.__len__(), maj_acc_proj/ data.__len__(), maj_acc_sim/ data.__len__(), t_tot, t_model, t_search]
+    return [top_1_acc[0]/ data.__len__(), top_5_acc[0]/ data.__len__(), top_1_acc[1]/ data.__len__(), top_5_acc[1]/ data.__len__(), top_1_acc[2]/ data.__len__(), top_5_acc[2]/ data.__len__(), maj_acc[0]/ data.__len__(), maj_acc[1]/ data.__len__(), maj_acc[2]/ data.__len__(), t_tot, t_model, t_search]
     
 
 if __name__ == "__main__":
@@ -353,7 +363,8 @@ if __name__ == "__main__":
 
     parser.add_argument(
         '--generalise',
-        help='use only half the classes to compute the accuracy'
+        help='use only half the classes to compute the accuracy',
+        default = 0
     )
     
     parser.add_argument(

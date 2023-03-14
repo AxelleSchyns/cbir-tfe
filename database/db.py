@@ -81,8 +81,9 @@ class Database:
                 # Zip() Creates a list of tuples, with one element of names and one of x (=> allows to iterate on both list at the same time) 
                 if generalise == 3:
                     for n, x_, l in zip(names, x, labels):
-                        n = str(n)
-                        self.r.set(str(last_id)+ 'labeled', {"value1":n, "value2":l})
+                        l = str(l)
+                        json_val = json.dumps([{'name':n}, {'label':l}])
+                        self.r.set(str(last_id)+ 'labeled', json_val)
                         self.r.set(n, str(last_id)+'labeled')
                         last_id += 1
                 else:
@@ -102,15 +103,21 @@ class Database:
             self.index_unlabeled.add_with_ids(x, np.arange(last_id, last_id + x.shape[0]))
 
             with open(self.filename + '_unlabeledvectors', 'ab') as file:
-                for n, x_ in zip(names, x):
-                    if generalise == 3:
-                        n = str(n)
-                    self.r.set(str(last_id) + 'unlabeled', n)
-                    self.r.set(n, str(last_id) + 'unlabeled')
-                    binary = struct.pack("i"+str(self.num_features)+"f",last_id, *x_)
-                    file.write(binary)
-                    #file.write('\n' + str(last_id) + str(x_))
-                    last_id += 1
+                if generalise == 3:
+                    for n, x_, l in zip(names, x, labels):
+                        l = str(l)
+                        json_val = json.dumps([{'name':n}, {'label':l}])
+                        self.r.set(str(last_id)+ 'unlabeled', json_val)
+                        self.r.set(n, str(last_id)+'unlabeled')
+                        last_id += 1
+                else:
+                    for n, x_  in zip(names, x):
+                        self.r.set(str(last_id) + 'unlabeled', n) # Set the name of the image at key = id
+                        self.r.set(n, str(last_id) + 'unlabeled') # Set the id of the image at key = name 
+                        binary = struct.pack("i"+str(self.num_features)+"f",last_id, *x_)
+                        file.write(binary)
+                        #file.write('\n' + str(last_id) + str(x_)) # Writes in the file the id alongside the image 
+                        last_id += 1
 
             self.r.set('last_id_unlabeled', last_id)
 
@@ -179,8 +186,8 @@ class Database:
                 for l in labels:
                     v = self.r.get(str(l) + 'labeled').decode('utf-8')
                     v = json.loads(v)
-                    names.append(v["value1"])
-                    labs.append(v["value2"])
+                    names.append(v[0]['name'])
+                    labs.append(v[1]['label'])
                 values.append(names)
                 values.append(labs)
             else:
@@ -201,8 +208,8 @@ class Database:
                 for l in labels:
                     v = self.r.get(str(l) + 'unlabeled').decode('utf-8')
                     v = json.loads(v)
-                    names.append(v["value1"])
-                    labs.append(v["value2"])
+                    names.append(v[0]['name'])
+                    labs.append(v[1]['label'])
                 values.append(names)
                 values.append(labs)
             else:
@@ -226,24 +233,45 @@ class Database:
 
             _, labels = index.search(np.array([[0]], dtype=np.float32), nrt_neigh)
 
-            names = []
+            values = []
             distance = []
             labels = [l for l in list(labels[0]) if l != -1]
-            for l in labels:
-                # Label comes from labelled list (in the first half of the reconstructed vector) 
-                if l < nrt_neigh:
-                    if l < len(labels_l):
-                        n = self.r.get(str(labels_l[l]) + 'labeled').decode('utf-8')
-                        distance.append(distance_l[0][l])
-                        names.append(n)
-                else: # Label comes from unlabelled list 
-                    if l < len(labels_u) + nrt_neigh:
-                        n = self.r.get(str(labels_u[l - nrt_neigh]) + 'unlabeled').decode('utf-8')
-                        distance.append(distance_u[0][l - nrt_neigh])
-                        names.append(n)
+            if generalise == 3:
+                names = []
+                labs = []
+                for l in labels:
+                    if l < nrt_neigh:
+                        if l < len(labels_l):
+                            v = self.r.get(str(labels_l[l]) + 'labeled').decode('utf-8')
+                            v = json.loads(v)
+                            names.append(v[0]['name'])
+                            labs.append(v[1]['label'])
+                            distance.append(distance_l[0][l])
+                    else:
+                        if l < len(labels_u) + nrt_neigh:
+                            v = self.r.get(str(labels_l[l]) + 'unlabeled').decode('utf-8')
+                            v = json.loads(v)
+                            names.append(v[0]['name'])
+                            labs.append(v[1]['label'])
+                            distance.append(distance_l[0][l])
+                values.append(names)
+                values.append(labs)
+            else:
+                for l in labels:
+                    # Label comes from labelled list (in the first half of the reconstructed vector) 
+                    if l < nrt_neigh:
+                        if l < len(labels_l): #Check there is no mistake and w<e are not trying to access and index that does not exist
+                            v = self.r.get(str(labels_l[l]) + 'labeled').decode('utf-8')
+                            distance.append(distance_l[0][l])
+                            values.append(v)
+                    else: # Label comes from unlabelled list 
+                        if l < len(labels_u) + nrt_neigh:
+                            v = self.r.get(str(labels_u[l - nrt_neigh]) + 'unlabeled').decode('utf-8')
+                            distance.append(distance_u[0][l - nrt_neigh])
+                            values.append(v)
             t_search = time.time() - t_search
 
-            return names, np.array(distance).reshape(1, -1).tolist(), t_model, t_search
+            return values, np.array(distance).reshape(1, -1).tolist(), t_model, t_search
 
     def remove(self, name):
         key = self.r.get(name).decode('utf-8')

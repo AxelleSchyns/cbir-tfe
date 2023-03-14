@@ -17,9 +17,55 @@ import pandas as pd
 from openpyxl import load_workbook
 import builder
 import utils
+import pickle
 
-def compute_results_kmeans(names, labels):
-    print("hey")
+def compute_old_new(label, name, class_im, image, wrong_old, wrong_new, data):
+    kmeans = pickle.load(open("kmeans.pkl","rb"))
+    batch_data = np.array([utils.load_image(image[0])])
+    lab = kmeans.predict(batch_data)[0]
+
+    class_retr = utils.get_class(name)
+    if str(lab) == label: 
+        if class_retr != class_im:
+            wrong_old[data.conversion[class_im]] += 1
+    
+    else:
+        if class_retr == class_im:
+            wrong_new[data.conversion[class_im]]+=1
+    return wrong_new, wrong_old
+
+
+def compute_results_kmeans(labels, image, top_1_k, top_5_k, maj_k, predictions_kmeans, ground_truth_kmeans):
+    kmeans = pickle.load(open("kmeans.pkl","rb"))
+    batch_data = np.array([utils.load_image(image[0])])
+    label = kmeans.predict(batch_data)[0]
+    ground_truth_kmeans.append(label)
+    already_found_5 = 0
+    conversion_kmeans =  []
+    for i in range(kmeans.cluster_centers_.shape[0]):
+        conversion_kmeans.append(str(i))
+
+    
+    for j in range(5):
+        if j == 0:
+            if labels[j] in conversion_kmeans:
+                predictions_kmeans.append(int(labels[j]))
+            else:
+                predictions_kmeans.append(-1)
+        if labels[j] == str(label):
+            if already_found_5 == 0:
+                top_5_k += 1
+                if j == 0:
+                    top_1_k += 1
+            already_found_5 += 1
+        
+    if already_found_5 > 2:
+        maj_k += 1
+    
+    return top_1_k, top_5_k, maj_k, predictions_kmeans, ground_truth_kmeans
+
+
+
 
 def compute_results(names, data, predictions, class_im, proj_im, top_1_acc, top_5_acc, maj_acc, predictions_maj):
     similar = names[:5]
@@ -116,6 +162,12 @@ def compute_results(names, data, predictions, class_im, proj_im, top_1_acc, top_
     predictions_maj.append(data.conversion[max(set(temp), key = temp.count)])
 
     return predictions, predictions_maj, top_1_acc, top_5_acc, maj_acc
+
+def display_cm_kmeans(ground_truth_k, predictions_k):
+    cm = sklearn.metrics.confusion_matrix(ground_truth_k, predictions_k, labels = range(10))
+    plt.figure(figsize = (10,7))
+    sn.heatmap(cm, annot=True, xticklabels=True, yticklabels=True)
+    plt.show()
 
 def display_cm(ground_truth, data, predictions, predictions_maj):
     rows_lab = []
@@ -263,32 +315,45 @@ def test(model, dataset, db_name, extractor, measure, generalise, project_name, 
     top_5_acc = np.zeros((3,1))
     maj_acc = np.zeros((3,1))
 
+    
+
     nbr_per_class = Counter()
 
     ground_truth = []
     predictions = []
     predictions_maj = []
     
+    if generalise == 3:
+        ground_truth_k = []
+        predictions_k = []
+        top_1_k = 0
+        top_5_k = 0
+        maj_k = 0
+        wrong_old = np.zeros((67,1))
+        wrong_new = np.zeros((67,1))
+
     t_search = 0
     t_model = 0
     t_tot = 0
 
     for i, image in enumerate(loader):
         t = time.time()
-        names, _, t_model_tmp, t_search_tmp = database.search(Image.open(image[0]).convert('RGB'), extractor, retrieve_class=label)
+        names, _, t_model_tmp, t_search_tmp = database.search(Image.open(image[0]).convert('RGB'), extractor, retrieve_class=label, generalise=generalise)
         t_tot += time.time() - t
         t_model += t_model_tmp
         t_search += t_search_tmp
-
-        if generalise == 3:
-            labs = names[1]
-            names = names[0]
 
         # Retrieve class of images
         class_im = utils.get_class(image[0])
         proj_im = utils.get_proj(image[0])
         nbr_per_class[class_im] += 1
         ground_truth.append(data.conversion[class_im])
+
+        if generalise == 3:
+            labs = names[1]
+            names = names[0]
+            top_1_k, top_5_k, maj_k, ground_truth_k, predictions_k = compute_results_kmeans( labs, image, top_1_k, top_5_k, maj_k, predictions_k, ground_truth_k)
+            wrong_new, wrong_old = compute_old_new(labs[0], names[0], class_im, image, wrong_old, wrong_new, data)
 
         # Compute accuracy 
         predictions, predictions_maj, top_1_acc, top_5_acc, maj_acc = compute_results(names, data, predictions, class_im, proj_im, top_1_acc,top_5_acc,maj_acc,predictions_maj)
@@ -302,12 +367,24 @@ def test(model, dataset, db_name, extractor, measure, generalise, project_name, 
     print("maj accuracy class : ", maj_acc[0] / data.__len__())
     print("maj accuracy proj : ", maj_acc[1] / data.__len__())
     print("maj accuracy sim : ", maj_acc[2] / data.__len__())
+    print(generalise)
+    if generalise == 3:
+        print("Top 1 accuracy on new labels: ", top_1_k / data.__len__())
+        print("Top 5 accuracy on new labels: ", top_5_k / data.__len__())
+        print("Maj accuracy on new labels: ", maj_k / data.__len__())
+        for j in range(67):
+            wrong_new[j] = wrong_new[j] / nbr_per_class[list(data.conversion.keys())[j]]
+            wrong_old[j] = wrong_old[j] / nbr_per_class[list(data.conversion.keys())[j]]
+        print("Percentage of wrong old labels, correct new labels per class: ", wrong_old)
+        print("Percentage of correct old labels, wrong new labels per class: ", wrong_new)
     print('t_tot:', t_tot)
     print('t_model:', t_model)
     print('t_search:', t_search)
     
     if see_cms:
         display_cm(ground_truth, data, predictions, predictions_maj)
+        if generalise == 3:
+            display_cm_kmeans(ground_truth_k, predictions_k)
         
         
     return [top_1_acc[0]/ data.__len__(), top_5_acc[0]/ data.__len__(), top_1_acc[1]/ data.__len__(), top_5_acc[1]/ data.__len__(), top_1_acc[2]/ data.__len__(), top_5_acc[2]/ data.__len__(), maj_acc[0]/ data.__len__(), maj_acc[1]/ data.__len__(), maj_acc[2]/ data.__len__(), t_tot, t_model, t_search]
@@ -364,7 +441,8 @@ if __name__ == "__main__":
     parser.add_argument(
         '--generalise',
         help='use only half the classes to compute the accuracy',
-        default = 0
+        default = 0,
+        type= int
     )
     
     parser.add_argument(
@@ -421,4 +499,4 @@ if __name__ == "__main__":
     if args.excel_path is not None:
         test_each_class(model, args.path, args.db_name, args.extractor, args.measure, args.name, args.excel_path, args.retrieve_class)
     else:
-        r = test(model, args.path, args.db_name, args.extractor, args.measure, args.generalise, args.project_name, args.class_name, False, label = args.retrieve_class)
+        r = test(model, args.path, args.db_name, args.extractor, args.measure, args.generalise, args.project_name, args.class_name, True, label = args.retrieve_class)

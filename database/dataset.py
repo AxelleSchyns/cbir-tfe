@@ -111,6 +111,7 @@ class TrainingDataset(Dataset):
             self.classes = new_classes
         # Create new classes from the data through kmeans
         elif generalise == 3:
+            dic_labs = {}
             # Create list of image paths 
             list_img = []
             for c in self.classes:
@@ -144,10 +145,12 @@ class TrainingDataset(Dataset):
             # Kmeans previously trained and labels already predicted
             if load == "complete":
                 self.kmeans = pickle.load(open("kmeans.pkl","rb"))
-                self.labels = pickle.load(open("labels_kmeans.pkl","rb"))
-                if len(self.labels) != len(list_img):
-                    print("Number of loaded labels do not correspond to length of the data")
-                    exit(-1)
+                dic_labs = pickle.load(open("labels_kmeans.pkl","rb"))
+                for im in list_img:
+                    if im in dic_labs:
+                        self.labels.append(dic_labs[im])
+                    else:
+                        self.labels.append(self.kmeans.predict(np.array([load_image(im)]))[0])
             else:
                 # Kmeans not trained yet
                 if load != "partial":
@@ -191,10 +194,9 @@ class TrainingDataset(Dataset):
                     batch_data = np.array([load_image(path) for path in batch_paths])
                     labels = self.kmeans.predict(batch_data)
 
-                    im_lab = {}
                     j = 0
                     for l in labels:
-                        im_lab[batch_paths[j]] = l
+                        dic_labs[batch_paths[j]] = l 
                         j+= 1
                         self.labels.append(l)
 
@@ -212,7 +214,7 @@ class TrainingDataset(Dataset):
                     else:
                         temp = labels
                         temp_batch = batch_data
-                pickle.dump(self.labels, open("labels_kmeans.pkl","wb"))
+                pickle.dump(dic_labs, open("labels_kmeans.pkl","wb"))
                 print("The silhouette score is: "+str(np.mean(silhouette_scores)))
                 print("Labels predictions took: "+str(time.time() - t))
 

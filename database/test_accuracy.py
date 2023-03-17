@@ -19,7 +19,7 @@ import builder
 import utils
 import pickle
 
-def compute_old_new(label, name, class_im, image, wrong_old, wrong_new, data):
+def compute_old_new(label, name, class_im, image, wrong_old, wrong_new, data, div):
     kmeans = pickle.load(open("kmeans.pkl","rb"))
     batch_data = np.array([utils.load_image(image[0])])
     lab = kmeans.predict(batch_data)[0]
@@ -28,11 +28,13 @@ def compute_old_new(label, name, class_im, image, wrong_old, wrong_new, data):
     if str(lab) == label: 
         if class_retr != class_im:
             wrong_old[data.conversion[class_im]] += 1
+            div[data.conversion[class_im]] += 1
     
     else:
         if class_retr == class_im:
             wrong_new[data.conversion[class_im]]+=1
-    return wrong_new, wrong_old
+            div[data.conversion[class_im]] += 1
+    return wrong_new, wrong_old, div
 
 
 def compute_results_kmeans(labels, image, top_1_k, top_5_k, maj_k, predictions_kmeans, ground_truth_kmeans):
@@ -212,15 +214,21 @@ def display_cm(ground_truth, data, predictions, predictions_maj):
     sn.heatmap(df_cm, annot=True, xticklabels=True, yticklabels=True)
     plt.show()
 
-def test_each_class(model, dataset, db_name, extractor, measure, name, excel_path, label):
+def test_each_class(model, dataset, db_name, extractor, measure, name, excel_path, label, generalise=0):
     classes = sorted(os.listdir(dataset))
-    res = np.zeros((len(classes), 12))
+    if generalise == 3:
+        res = np.zeros((len(classes), 18))
+    else:
+        res = np.zeros((len(classes), 12))
     i = 0
     for c in classes:
-        r = test(model, dataset, db_name, extractor, measure, False, False, c, False, label=label)
+        r = test(model, dataset, db_name, extractor, measure, False, False, c, False, label=label, generalise=generalise)
         res[i][:] = r
         i += 1
-    df = pd.DataFrame(res, columns=["top_1_acc", "top_5_acc", "top_1_proj", "top_5_proj", "top_1_sim", "top_5_sim", "maj_acc_class", "maj_acc_proj", "maj_acc_sim", "t_tot", "t_model", "t_search"])
+    if generalise == 3:
+        df = pd.DataFrame(res, columns=["top_1_acc", "top_5_acc", "top_1_proj", "top_5_proj", "top_1_sim", "top_5_sim", "maj_acc_class", "maj_acc_proj", "maj_acc_sim", "t_tot", "t_model", "t_search", "top_1_k", "top_5_k","maj_k","wrong_new", "wrong_old", "div"])
+    else:
+        df = pd.DataFrame(res, columns=["top_1_acc", "top_5_acc", "top_1_proj", "top_5_proj", "top_1_sim", "top_5_sim", "maj_acc_class", "maj_acc_proj", "maj_acc_sim", "t_tot", "t_model", "t_search"])
     df.index = classes
 
     book = load_workbook(excel_path)
@@ -315,8 +323,6 @@ def test(model, dataset, db_name, extractor, measure, generalise, project_name, 
     top_5_acc = np.zeros((3,1))
     maj_acc = np.zeros((3,1))
 
-    
-
     nbr_per_class = Counter()
 
     ground_truth = []
@@ -331,6 +337,7 @@ def test(model, dataset, db_name, extractor, measure, generalise, project_name, 
         maj_k = 0
         wrong_old = np.zeros((67,1))
         wrong_new = np.zeros((67,1))
+        div = np.zeros((67,1))
 
     t_search = 0
     t_model = 0
@@ -353,10 +360,12 @@ def test(model, dataset, db_name, extractor, measure, generalise, project_name, 
             labs = names[1]
             names = names[0]
             top_1_k, top_5_k, maj_k, ground_truth_k, predictions_k = compute_results_kmeans( labs, image, top_1_k, top_5_k, maj_k, predictions_k, ground_truth_k)
-            wrong_new, wrong_old = compute_old_new(labs[0], names[0], class_im, image, wrong_old, wrong_new, data)
+            
+            wrong_new, wrong_old, div = compute_old_new(labs[0], names[0], class_im, image, wrong_old, wrong_new, data, div)
 
         # Compute accuracy 
         predictions, predictions_maj, top_1_acc, top_5_acc, maj_acc = compute_results(names, data, predictions, class_im, proj_im, top_1_acc,top_5_acc,maj_acc,predictions_maj)
+
 
     print("top-1 accuracy : ", top_1_acc[0] / data.__len__())
     print("top-5 accuracy : ", top_5_acc[0] / data.__len__())
@@ -372,11 +381,15 @@ def test(model, dataset, db_name, extractor, measure, generalise, project_name, 
         print("Top 1 accuracy on new labels: ", top_1_k / data.__len__())
         print("Top 5 accuracy on new labels: ", top_5_k / data.__len__())
         print("Maj accuracy on new labels: ", maj_k / data.__len__())
-        for j in range(67):
-            wrong_new[j] = wrong_new[j] / nbr_per_class[list(data.conversion.keys())[j]]
-            wrong_old[j] = wrong_old[j] / nbr_per_class[list(data.conversion.keys())[j]]
+        if class_name is None:
+            for j in range(67):
+                if nbr_per_class[list(data.conversion.keys())[j]] != 0:
+                    wrong_new[j] = wrong_new[j] / nbr_per_class[list(data.conversion.keys())[j]]
+                    wrong_old[j] = wrong_old[j] / nbr_per_class[list(data.conversion.keys())[j]]
+                    div[j] = div[j] / nbr_per_class[list(data.conversion.keys())[j]]
         print("Percentage of wrong old labels, correct new labels per class: ", wrong_old)
         print("Percentage of correct old labels, wrong new labels per class: ", wrong_new)
+        print("Percentage of divergence per class: ", div)
     print('t_tot:', t_tot)
     print('t_model:', t_model)
     print('t_search:', t_search)
@@ -386,8 +399,14 @@ def test(model, dataset, db_name, extractor, measure, generalise, project_name, 
         if generalise == 3:
             display_cm_kmeans(ground_truth_k, predictions_k)
         
+    if generalise == 3:
+        if class_name is None:
+            return [top_1_acc[0]/ data.__len__(), top_5_acc[0]/ data.__len__(), top_1_acc[1]/ data.__len__(), top_5_acc[1]/ data.__len__(), top_1_acc[2]/ data.__len__(), top_5_acc[2]/ data.__len__(), maj_acc[0]/ data.__len__(), maj_acc[1]/ data.__len__(), maj_acc[2]/ data.__len__(), t_tot, t_model, t_search, top_1_k, top_5_k, maj_k]
+        else:
+            return [top_1_acc[0]/ data.__len__(), top_5_acc[0]/ data.__len__(), top_1_acc[1]/ data.__len__(), top_5_acc[1]/ data.__len__(), top_1_acc[2]/ data.__len__(), top_5_acc[2]/ data.__len__(), maj_acc[0]/ data.__len__(), maj_acc[1]/ data.__len__(), maj_acc[2]/ data.__len__(), t_tot, t_model, t_search, top_1_k, top_5_k, maj_k, wrong_new[class_name], wrong_old[class_name], div[class_name]]
         
-    return [top_1_acc[0]/ data.__len__(), top_5_acc[0]/ data.__len__(), top_1_acc[1]/ data.__len__(), top_5_acc[1]/ data.__len__(), top_1_acc[2]/ data.__len__(), top_5_acc[2]/ data.__len__(), maj_acc[0]/ data.__len__(), maj_acc[1]/ data.__len__(), maj_acc[2]/ data.__len__(), t_tot, t_model, t_search]
+    else:
+        return [top_1_acc[0]/ data.__len__(), top_5_acc[0]/ data.__len__(), top_1_acc[1]/ data.__len__(), top_5_acc[1]/ data.__len__(), top_1_acc[2]/ data.__len__(), top_5_acc[2]/ data.__len__(), maj_acc[0]/ data.__len__(), maj_acc[1]/ data.__len__(), maj_acc[2]/ data.__len__(), t_tot, t_model, t_search]
     
 
 if __name__ == "__main__":

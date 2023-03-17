@@ -22,7 +22,7 @@ if __name__ == "__main__":
     # Retrieve the vectors from the index
     vectors = index.index.reconstruct_n(0, index.ntotal)
 
-    labels = list(range(index.ntotal))
+    labels = list(range(index.ntotal)) # WILL NOT WORK WHEN REMOVING IDS
     names = []
     for l in labels:
         n = r.get(str(l) + 'labeled').decode('utf-8')

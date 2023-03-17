@@ -44,8 +44,8 @@ class Database:
             self.r.set('last_id_labeled', 0) # Set a value in redis with key = last_id_labeled
             self.r.set('last_id_unlabeled', 0)
 
-            open(filename + '_labeledvectors', 'w').close()
-            open(filename + '_unlabeledvectors', 'w').close()
+            open(filename + '_labeledvectors', 'wb').close()
+            open(filename + '_unlabeledvectors', 'wb').close()
 
         if device == 'gpu':
             self.index_labeled = faiss.index_cpu_to_gpu(res_labeled, 0, self.index_labeled)
@@ -76,24 +76,26 @@ class Database:
             self.index_labeled.add_with_ids(x, np.arange(last_id, last_id + x.shape[0])) 
 
             # Open the file of the database corresponding to the labelled case.
-            with open(self.filename + '_labeledvectors', 'ab') as file:
-                # Encode in the file database the images with their name, and gives them the appropriate id
-                # Zip() Creates a list of tuples, with one element of names and one of x (=> allows to iterate on both list at the same time) 
-                if generalise == 3:
-                    for n, x_, l in zip(names, x, labels):
-                        l = str(l)
-                        json_val = json.dumps([{'name':n}, {'label':l}])
-                        self.r.set(str(last_id)+ 'labeled', json_val)
-                        self.r.set(n, str(last_id)+'labeled')
-                        last_id += 1
-                else:
-                    for n, x_  in zip(names, x):
-                        self.r.set(str(last_id) + 'labeled', n) # Set the name of the image at key = id
-                        self.r.set(n, str(last_id) + 'labeled') # Set the id of the image at key = name 
-                        binary = struct.pack("i"+str(self.num_features)+"f",last_id, *x_)
-                        file.write(binary)
-                        #file.write('\n' + str(last_id) + str(x_)) # Writes in the file the id alongside the image 
-                        last_id += 1
+            #with open(self.filename + '_labeledvectors', 'ab') as file:
+            # Encode in the file database the images with their name, and gives them the appropriate id
+            # Zip() Creates a list of tuples, with one element of names and one of x (=> allows to iterate on both list at the same time) 
+            if generalise == 3:
+                for n, x_, l in zip(names, x, labels):
+                    l = str(l)
+                    json_val = json.dumps([{'name':n}, {'label':l}])
+                    self.r.set(str(last_id)+ 'labeled', json_val)
+                    self.r.set(n, str(last_id)+'labeled')
+                    #binary = struct.pack("i"+str(self.num_features)+"f",last_id, *x_)
+                    #file.write(binary)
+                    last_id += 1
+            else:
+                for n, x_  in zip(names, x):
+                    self.r.set(str(last_id) + 'labeled', n) # Set the name of the image at key = id
+                    self.r.set(n, str(last_id) + 'labeled') # Set the id of the image at key = name 
+                    #binary = struct.pack("i"+str(self.num_features)+"f",last_id, *x_)
+                    #file.write(binary)
+                    #file.write('\n' + str(last_id) + str(x_)) # Writes in the file the id alongside the image 
+                    last_id += 1
 
             self.r.set('last_id_labeled', last_id) # Update the last id to take into account the added images
 
@@ -102,22 +104,23 @@ class Database:
             last_id = int(self.r.get('last_id_unlabeled').decode('utf-8'))
             self.index_unlabeled.add_with_ids(x, np.arange(last_id, last_id + x.shape[0]))
 
-            with open(self.filename + '_unlabeledvectors', 'ab') as file:
-                if generalise == 3:
-                    for n, x_, l in zip(names, x, labels):
-                        l = str(l)
-                        json_val = json.dumps([{'name':n}, {'label':l}])
-                        self.r.set(str(last_id)+ 'unlabeled', json_val)
-                        self.r.set(n, str(last_id)+'unlabeled')
-                        last_id += 1
-                else:
-                    for n, x_  in zip(names, x):
-                        self.r.set(str(last_id) + 'unlabeled', n) # Set the name of the image at key = id
-                        self.r.set(n, str(last_id) + 'unlabeled') # Set the id of the image at key = name 
-                        binary = struct.pack("i"+str(self.num_features)+"f",last_id, *x_)
-                        file.write(binary)
-                        #file.write('\n' + str(last_id) + str(x_)) # Writes in the file the id alongside the image 
-                        last_id += 1
+            #with open(self.filename + '_unlabeledvectors', 'ab') as file:
+            if generalise == 3:
+                for n, x_, l in zip(names, x, labels):
+                    l = str(l)
+                    json_val = json.dumps([{'name':n}, {'label':l}])
+                    self.r.set(str(last_id)+ 'unlabeled', json_val)
+                    self.r.set(n, str(last_id)+'unlabeled')
+                    #binary = struct.pack("i"+str(self.num_features)+"f",last_id, *x_)
+                    #file.write(binary)
+                    last_id += 1
+            else:
+                for n, x_  in zip(names, x):
+                    self.r.set(str(last_id) + 'unlabeled', n) # Set the name of the image at key = id
+                    self.r.set(n, str(last_id) + 'unlabeled') # Set the id of the image at key = name 
+                    #binary = struct.pack("i"+str(self.num_features)+"f",last_id, *x_)
+                    #file.write(binary)
+                    last_id += 1
 
             self.r.set('last_id_unlabeled', last_id)
 
@@ -130,16 +133,21 @@ class Database:
         else:
             data = dataset.AddDatasetList(data_root, extractor, name_list, self.transformer)
         loader = torch.utils.data.DataLoader(data, batch_size=128, num_workers=12, pin_memory=True)
-
+        t_model = 0
+        t_indexing = 0
         for i, (images, filenames) in enumerate(loader):
             images = images.view(-1, 3, 224, 224).to(device=next(self.model.parameters()).device)
             if extractor == 'vgg11' or extractor == 'resnet18' or extractor == 'vgg16':
+                t = time.time()
                 out = utils.encode(self.model, images)
                 out = out.reshape([out.shape[0],self.model.num_features])
-            
+                t_model = t_model + (time.time() - t)
             else:
                 # Encode the images using the given model 
+                t = time.time()
                 out = self.model(images).cpu()
+                t_model = t_model + (time.time() - t)
+            t = time.time()
             if generalise == 3:
                 kmeans = pickle.load(open("kmeans.pkl","rb"))
                 batch_data = np.array([utils.load_image(path) for path in filenames])
@@ -147,12 +155,15 @@ class Database:
                 self.add(out.numpy(), list(filenames), label, generalise, labels)
             else:
                 self.add(out.numpy(), list(filenames), label, generalise)
+            t_indexing = t_indexing + (time.time() - t)
+        print("Time of the model: "+str(t_model))
+        print("Time of the indexing: "+str(t_indexing))
         self.save()
+        
 
 
     @torch.no_grad()
     def search(self, x, extractor, generalise=0, nrt_neigh=10, retrieve_class='true'):
-        t_model = time.time()
         if not self.feat_extract: # feat_extract is None in case of non transformer model thus True here 
             image = transforms.Resize((224, 224))(x)
             image = transforms.ToTensor()(image)
@@ -162,14 +173,16 @@ class Database:
             )(image)
         else:
             image = self.feat_extract(images=x, return_tensors='pt')['pixel_values'] # Applies the processing for the transformer model
-	
+        
+        t_model = time.time()
         if extractor == 'vgg11' or extractor == 'resnet18' or extractor == "vgg16" or extractor == "resnet50":
             out = utils.encode(self.model, image.to(device=next(self.model.parameters()).device).view(-1, 3, 224, 224))
             out = out.reshape([out.shape[0],self.model.num_features])
+            t_model = time.time() - t_model
         else:
             # Retrieves the result from the model
             out = self.model(image.to(device=next(self.model.parameters()).device).view(-1, 3, 224, 224))
-        t_model = time.time() - t_model
+            t_model = time.time() - t_model
         t_search = time.time()
 
         if retrieve_class == 'true':
@@ -312,10 +325,24 @@ class Database:
 
         os.remove(name) # ? 
 
-    def train_labeled(self):
+    def train_labeled(self, generalise):
         batch_size = 128
         x = []
         keys = []
+        all_keys = self.r.keys("*")
+        for k in all_keys:
+            k = k.decode("utf-8")
+            # Only keep the indexes as keys, not tthe names nor last_id 
+            if k.find('/') == -1 and k.find('_')==-1:
+                end_ind = k.find('l')
+                index = k[:end_ind]
+                keys.append(index)
+                index = int(index)
+                vec = self.index_labeled.index.reconstruct(index)
+                x.append(vec)
+            #elif k.find('_') != - 1 and k.find('/')==-1:
+            #    print(k)
+        """# Keep momentarily to debug if needed
         with open(self.filename + '_labeledvectors', 'rb') as file:
             while True:
                 binary = file.read(4 + self.num_features * 4)
@@ -323,8 +350,14 @@ class Database:
                 if not binary:
                     break
                 index, *vector = struct.unpack("i"+str(self.num_features)+"f", binary)
+                vec = all_index.index.reconstruct(index)
+                vector = np.array(vector)
+                if not np.array_equal(vec, vector):
+                    print(vector)
+                    print(vec)
+                    print(vector-vec)
                 keys.append(index)
-                x.append(np.array(vector))
+                x.append(np.array(vector))"""
         if len(x) >= 10:
             num_clusters = int(np.sqrt(self.index_labeled.ntotal))
 
@@ -336,9 +369,7 @@ class Database:
                 res_labeled = faiss.StandardGpuResources()
                 self.index_labeled = faiss.index_cpu_to_gpu(res_labeled, 0, self.index_labeled)
 
-            x = np.array(x, dtype=np.float32)
-            print(x.shape)
-            print(self.index_labeled.d)
+            x = np.asarray(x, dtype=np.float32)
             self.index_labeled.train(x)
             self.index_labeled.nprobe = num_clusters // 10
 
@@ -434,6 +465,12 @@ if __name__ == "__main__":
         action = "store_true" 
     )
 
+    parser.add_argument(
+        '--generalise',
+        default = 0,
+        type = int
+    )
+
     args = parser.parse_args()
     if args.extractor == 'vgg11' or args.extractor == "vgg16" or args.extractor == "resnet18" or args.extractor == "resnet50": 
         model = builder.BuildAutoEncoder(args)
@@ -444,7 +481,7 @@ if __name__ == "__main__":
         model = models.Model(num_features=args.num_features, model=args.extractor, use_dr=args.dr_model, name=args.weights)
     database = Database(args.db_name, model, load=True)
     if args.unlabeled:
-        database.train_unlabeled()
+        database.train_unlabeled(args.generalise)
     else:
-        database.train_labeled()
+        database.train_labeled(args.generalise)
     database.save()

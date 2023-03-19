@@ -16,10 +16,6 @@ from argparse import ArgumentParser, ArgumentTypeError
 import os
 import matplotlib.pyplot as plt
 
-"""os.environ['MASTER_ADDR'] = 'localhost'
-os.environ['MASTER_PORT'] = '8888'
-torch.distributed.init_process_group(backend = "nccl", rank = 0, world_size = 2)"""
-
 class fully_connected(nn.Module):
 	"""docstring for BottleNeck"""
 	def __init__(self, model, num_ftrs, num_classes):
@@ -58,7 +54,7 @@ class Model(nn.Module):
         if use_dr and not self.transformer:
             out_features = 4096 # From deep ranking, 
             # Second and third network for deep ranking - parameters from the article (see page 18 of the thesis)
-            # 3 input channels because 3 netwroks are put in // and fed a different image. 
+            # 3 input channels because 3 networks are put in // and fed a different image. 
             self.first_conv1 = nn.Conv2d(3, 96, kernel_size=8, padding=1, stride=16).to(device=device)
             self.first_conv2 = nn.MaxPool2d(3, 4, 1).to(device=device)
 
@@ -220,7 +216,7 @@ class Model(nn.Module):
 
             to_optim = [
                 {'params':self.parameters(), 'weight_decay':0},
-                {'params':loss_function.parameters(), 'lr': lr_proxies},
+                {'params':loss_function.parameters(), 'lr': lr_proxies}, # Allows to update automaticcaly the proxies vectors when doing a step of the optimizer
             ]
 
             optimizer = torch.optim.Adam(to_optim, lr=lr, eps=1)
@@ -263,7 +259,6 @@ class Model(nn.Module):
                         out = self.forward(images_gpu)
                     else:
                         out = self.forward(images_gpu.view(-1, 3, 224, 224))
-
                     loss = loss_function(out, labels)
                     optimizer.zero_grad(set_to_none=True)
                     loss.backward()
@@ -281,7 +276,6 @@ class Model(nn.Module):
 
                 torch.save(self.state_dict(), self.name)
             plt.plot(range(epochs),loss_means)
-            print("hey?")
             plt.show()
 
         except KeyboardInterrupt:

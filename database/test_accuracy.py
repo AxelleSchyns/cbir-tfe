@@ -494,6 +494,11 @@ if __name__ == "__main__":
         default = "true"
     )
 
+    parser.add_argument(
+        '--parallel',
+        action = 'store_true'
+    )
+
     args = parser.parse_args()
     
     if args.gpu_id >= 0:
@@ -514,7 +519,7 @@ if __name__ == "__main__":
             model.num_features = args.num_features
     else:
         model = Model(num_features=args.num_features, name=args.weights, model=args.extractor,
-                  use_dr=args.dr_model, device=device) # eval est par defaut true
+                  use_dr=args.dr_model, device=device, parallel=args.parallel) # eval est par defaut true
     if args.excel_path is not None:
         test_each_class(model, args.path, args.db_name, args.extractor, args.measure, args.name, args.excel_path, args.retrieve_class)
     else:

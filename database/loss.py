@@ -28,12 +28,13 @@ def distanceweightedsampling(batch, labels, lower_cutoff=0.5, upper_cutoff=1.4, 
     positives, negatives = [],[]
     labels_visited = []
     anchors = []
-
+    # Browse over the images of the batches 
     for i in range(bs):
+        # Retrieve in neg all the images of the batch with a different label than i and in pos the ones with same label
         neg = labels!=labels[i]; pos = labels==labels[i]
 
         use_contr = np.random.choice(2, p=[1-contrastive_p, contrastive_p])
-        if np.sum(pos)>1:
+        if np.sum(pos)>1: # If there are other images of same labels in batch
             anchors.append(i)
             if use_contr:
                 positives.append(i)
@@ -182,7 +183,7 @@ class MarginLoss(torch.nn.Module):
 class ProxyNCA_prob(torch.nn.Module):
     def __init__(self, nb_classes, sz_embed, scale, device):
         torch.nn.Module.__init__(self)
-        self.proxies = torch.nn.Parameter(torch.randn(nb_classes, sz_embed) / 8).to(device=device)
+        self.proxies = torch.nn.Parameter(torch.randn(nb_classes, sz_embed) / 8).to(device=device) ## define the proxy as learnable parameters
         self.scale = scale
         self.device = device
 
@@ -192,7 +193,7 @@ class ProxyNCA_prob(torch.nn.Module):
         # in the paper T = 1/9, therefore, scale = sart(1/(1/9)) = sqrt(9) = 3
         #  we need to apply sqrt because the pairwise distance is calculated as norm^2
 
-        P = self.scale * F.normalize(P, p = 2, dim = -1)
+        P = self.scale * F.normalize(P, p = 2, dim = -1) # Not so required? even harmful? TO CHECK 
         X = self.scale * F.normalize(X, p = 2, dim = -1)
 
         D = pairwise_distance(

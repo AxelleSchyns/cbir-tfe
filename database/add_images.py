@@ -67,11 +67,6 @@ if __name__ == "__main__":
         type=int
     )
 
-    parser.add_argument(
-        '--parallel',
-        action = 'store_true'
-    )
-
     args = parser.parse_args()
 
     if args.gpu_id >= 0:
@@ -93,7 +88,7 @@ if __name__ == "__main__":
         model.num_features = args.num_features
     else:
         model = models.Model(model=args.extractor, use_dr=args.dr_model, num_features=args.num_features, name=args.weights,
-                           device=device, parallel=args.parallel)
+                           device=device)
 
     if model is None:
         print("Unkown feature extractor")

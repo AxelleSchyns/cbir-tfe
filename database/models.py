@@ -286,12 +286,15 @@ class Model(nn.Module):
             print("Interrupted")
         
 
-    def train_dr(self, data, num_epochs, lr, loss_name):
+    def train_dr(self, data, num_epochs, lr, loss_name, augmented):
         if loss_name == 'triplet':
             pair = False
         else:
             pair = True
-        data = dataset.DRDataset(data, pair = pair)
+        if not augmented:
+            augmented = None
+        print(augmented)
+        data = dataset.DRDataset(data, pair = pair, transform = augmented)
         print('Size of dataset', data.__len__())
 
         loader = torch.utils.data.DataLoader(data, batch_size=self.batch_size,
@@ -309,6 +312,7 @@ class Model(nn.Module):
             loss_function = torch.nn.CosineEmbeddingLoss()
         optimizer = torch.optim.Adam(self.parameters(), lr=lr)
         loss_list = []
+        loss_means = []
         try:
             for epoch in range(num_epochs):
                 start_time = time.time()
@@ -355,6 +359,7 @@ class Model(nn.Module):
 
                 print("epoch {}, batch {}, loss = {}".format(epoch, i,
                                                              np.mean(loss_list)))
+                loss_means.append(np.mean(loss_list))
                 loss_list.clear()
                 print("time for epoch {}".format(time.time()- start_time))
                 try:
@@ -367,6 +372,8 @@ class Model(nn.Module):
                     lr /= 2
                     for param in optimizer.param_groups:
                         param['lr'] = lr
+            plt.plot(range(num_epochs),loss_means)
+            plt.show()
         except KeyboardInterrupt:
             print("Interrupted")
 
@@ -488,6 +495,11 @@ if __name__ == "__main__":
         type = str
     )
 
+    parser.add_argument(
+        '--augmented',
+        action = 'store_true'
+    )
+
     args = parser.parse_args()
 
     if args.gpu_id >= 0:
@@ -503,7 +515,7 @@ if __name__ == "__main__":
 
     siamese_losses = ['triplet', 'contrastive', 'BCE', 'cosine']
     if args.loss in siamese_losses:
-        m.train_dr(args.training_data, args.num_epochs, args.lr, loss_name = args.loss)
+        m.train_dr(args.training_data, args.num_epochs, args.lr, loss_name = args.loss, augmented=args.augmented)
     
     else:
         m.train_epochs(args.model, args.training_data, args.num_epochs, args.scheduler, args.loss, args.generalise, args.load,

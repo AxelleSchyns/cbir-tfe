@@ -9,6 +9,7 @@ from transformers import DeiTFeatureExtractor, ConvNextImageProcessor
 import torch.multiprocessing
 torch.multiprocessing.set_sharing_strategy('file_system')
 import kmeans
+import random
 # https://github.com/SathwikTejaswi/deep-ranking/blob/master/Code/data_utils.py
 
 
@@ -31,6 +32,24 @@ class DRDataset(Dataset):
                     )
                 ]
             )
+            self.augmented = False
+        else:
+            transform = transforms.Compose(
+                [transforms.RandomVerticalFlip(.5),
+                transforms.RandomHorizontalFlip(.5),
+                transforms.ColorJitter(brightness=.4, contrast=.4, saturation=.4, hue=.4),
+                transforms.RandomResizedCrop(224),
+                transforms.RandomApply([transforms.GaussianBlur(23)]),
+                transforms.RandomRotation(random.randint(0,360)),
+                transforms.RandomGrayscale(0.05),
+                transforms.ToTensor(),
+                transforms.Normalize(
+                    mean=[0.485, 0.456, 0.406],
+                    std=[0.229, 0.224, 0.225]
+                )
+                ]
+            )
+            self.augmented = True
         self.pair = pair
         self.root = root
         self.transform = transform
@@ -74,12 +93,29 @@ class DRDataset(Dataset):
             else:
                 return [p1, p2]
 
-
+    def _augmented_sample(self, idx):
+        im, im_class = self.big_dict[idx]
+        numbers = list(range(self.num_classes))
+        class3 = np.random.choice(numbers)
+        im3 = np.random.choice(self.image_dict[self.rev_dict[class3]])
+        p1 = os.path.join(self.root, self.rev_dict[im_class], im)
+        p3 = os.path.join(self.root, self.rev_dict[class3], im3)
+        if not self.pair:
+            return [p1, p1, p3]
+        else: 
+            # Make a negative pair
+            if idx % 2 != 0:
+                return [p1, p3]
+            else:
+                return [p1, p1]
     def __len__(self):
         return self.num_elements
 
     def __getitem__(self, idx):
-        paths = self._sample(idx)
+        if self.augmented is False:
+            paths = self._sample(idx)
+        else:
+            paths = self._augmented_sample(idx)
         images = []
         for i in paths:
             tmp = Image.open(i).convert('RGB')
@@ -89,6 +125,7 @@ class DRDataset(Dataset):
             return (images[0], images[1], images[2])
         else:
             return (images[0], images[1], idx%2)
+
 
 class TrainingDataset(Dataset):
     def __init__(self, root, name, samples_per_class, generalise, load, transformer=False):

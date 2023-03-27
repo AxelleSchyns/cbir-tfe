@@ -16,7 +16,7 @@ import kmeans
 
 class DRDataset(Dataset):
 
-    def __init__(self, root='image_folder', transform=None):
+    def __init__(self, root='image_folder', transform=None, pair = False):
         if transform == None:
             transform = transforms.Compose(
                 [
@@ -31,7 +31,7 @@ class DRDataset(Dataset):
                     )
                 ]
             )
-
+        self.pair = pair
         self.root = root
         self.transform = transform
         self.rev_dict = {}
@@ -65,7 +65,15 @@ class DRDataset(Dataset):
         p1 = os.path.join(self.root, self.rev_dict[im_class], im)
         p2 = os.path.join(self.root, self.rev_dict[im_class], im2)
         p3 = os.path.join(self.root, self.rev_dict[class3], im3)
-        return [p1, p2, p3]
+        if not self.pair:
+            return [p1, p2, p3]
+        else: 
+            # Make a negative pair
+            if idx % 2 != 0:
+                return [p1, p3]
+            else:
+                return [p1, p2]
+
 
     def __len__(self):
         return self.num_elements
@@ -77,8 +85,10 @@ class DRDataset(Dataset):
             tmp = Image.open(i).convert('RGB')
             tmp = self.transform(tmp)
             images.append(tmp)
-
-        return (images[0], images[1], images[2])
+        if not self.pair:
+            return (images[0], images[1], images[2])
+        else:
+            return (images[0], images[1], idx%2)
 
 class TrainingDataset(Dataset):
     def __init__(self, root, name, samples_per_class, generalise, load, transformer=False):

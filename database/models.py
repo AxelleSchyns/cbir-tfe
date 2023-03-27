@@ -7,7 +7,7 @@ from transformers import DeiTForImageClassification
 import dataset
 import numpy as np
 import time
-from loss import MarginLoss, ProxyNCA_prob, NormSoftmax
+from loss import MarginLoss, ProxyNCA_prob, NormSoftmax, SimpleBCELoss, ContrastiveLoss
 from efficientnet_pytorch import EfficientNet
 import torch.nn.functional as F
 from transformers import CvtForImageClassification, ConvNextForImageClassification, AutoImageProcessor, ConvNextFeatureExtractor
@@ -15,6 +15,7 @@ from torchvision import transforms
 from argparse import ArgumentParser, ArgumentTypeError
 import os
 import matplotlib.pyplot as plt
+from pytorch_metric_learning import losses
 
 class fully_connected(nn.Module):
 	"""docstring for BottleNeck"""
@@ -160,13 +161,14 @@ class Model(nn.Module):
             for module in filter(lambda m: type(m) == nn.LayerNorm, self.model.modules()):
                 module.eval()
                 module.train = lambda _: None
-        if parallel:
-            self.model = nn.DataParallel(self.model)
+        
         if eval == True:
             self.load_state_dict(torch.load(name))
             self.eval()
             self.eval = True
         else:
+            if parallel:
+                self.model = nn.DataParallel(self.model)
             self.train()
             self.eval = False
             self.batch_size = batch_size
@@ -273,51 +275,92 @@ class Model(nn.Module):
                 loss_means.append(np.mean(loss_list))
                 if sched != None:
                     scheduler.step()
-
+                try:
+                    self.model = self.model.module
+                except AttributeError:
+                    self.model = self.model
                 torch.save(self.state_dict(), self.name)
             plt.plot(range(epochs),loss_means)
             plt.show()
-
         except KeyboardInterrupt:
             print("Interrupted")
         
 
-    def train_dr(self, data, num_epochs, lr):
-        data = dataset.DRDataset(data)
+    def train_dr(self, data, num_epochs, lr, loss_name):
+        if loss_name == 'triplet':
+            pair = False
+        else:
+            pair = True
+        data = dataset.DRDataset(data, pair = pair)
         print('Size of dataset', data.__len__())
 
         loader = torch.utils.data.DataLoader(data, batch_size=self.batch_size,
                                              shuffle=True, num_workers=12,
                                              pin_memory=True)
-        loss_function = torch.nn.TripletMarginLoss()
+        if loss_name == 'triplet':
+            loss_function = torch.nn.TripletMarginLoss()
+        elif loss_name == 'BCE':
+            loss_function = SimpleBCELoss()
+            #loss_function = SimpleBCELoss2()
+        elif loss_name == 'contrastive':
+            loss_function = ContrastiveLoss()
+            #loss_function = losses.ContrastiveLoss() 
+        else:
+            loss_function = torch.nn.CosineEmbeddingLoss()
         optimizer = torch.optim.Adam(self.parameters(), lr=lr)
         loss_list = []
         try:
             for epoch in range(num_epochs):
                 start_time = time.time()
+                if not pair:
+                    for i, (image0, image1, image2) in enumerate(loader):
+                        if i%1000 == 0:
+                            print("at batch:"+str(i)+" on "+str(int(data.__len__()/self.batch_size)))
+                        image0 = image0.to(device='cuda:0')
+                        image1 = image1.to(device='cuda:0')
+                        image2 = image2.to(device='cuda:0')
 
-                for i, (image0, image1, image2) in enumerate(loader):
-                    image0 = image0.to(device='cuda:0')
-                    image1 = image1.to(device='cuda:0')
-                    image2 = image2.to(device='cuda:0')
+                        out0 = self.forward(image0).cpu()
+                        out1 = self.forward(image1).cpu()
+                        out2 = self.forward(image2).cpu()
 
-                    out0 = self.forward(image0).cpu()
-                    out1 = self.forward(image1).cpu()
-                    out2 = self.forward(image2).cpu()
+                        loss = loss_function(out0, out1, out2)
 
-                    loss = loss_function(out0, out1, out2)
+                        optimizer.zero_grad(set_to_none=True)
+                        loss.backward()
+                        optimizer.step()
 
-                    optimizer.zero_grad(set_to_none=True)
-                    loss.backward()
-                    optimizer.step()
+                        loss_list.append(loss.item())
+                else:
+                    for i, (image0, image1, label) in enumerate(loader):
+                        if i%1000 == 0:
+                            print("at batch "+str(i)+" on "+str(int(data.__len__()/ self.batch_size)))
+                        image0 = image0.to(device='cuda:0')
+                        image1 = image1.to(device='cuda:0')
 
-                    loss_list.append(loss.item())
+                        out0 = self.forward(image0).cpu()
+                        out1 = self.forward(image1).cpu()
+
+                        if loss_name == 'cosine': # Cosine uses -1 for negative labels and 1 for positive
+                            label[label == 1] = -1
+                            label[label == 0] = 1
+
+                        loss = loss_function(out0, out1, label)
+
+                        optimizer.zero_grad(set_to_none=True)
+                        loss.backward()
+                        optimizer.step()
+
+                        loss_list.append(loss.item())
 
                 print("epoch {}, batch {}, loss = {}".format(epoch, i,
                                                              np.mean(loss_list)))
                 loss_list.clear()
                 print("time for epoch {}".format(time.time()- start_time))
-
+                try:
+                    self.model = self.model.module
+                except AttributeError:
+                    self.model = self.model
                 torch.save(self.state_dict(), self.name)
 
                 if (epoch + 1) % 4:
@@ -384,7 +427,7 @@ if __name__ == "__main__":
     parser.add_argument(
         '--loss',
         default='margin',
-        help='<margin, proxy_nca_pp, softmax, deep_ranking>'
+        help='<margin, proxy_nca_pp, softmax, triplet, contrastive, BCE, cosine>'
     )
 
     parser.add_argument(
@@ -458,8 +501,10 @@ if __name__ == "__main__":
               num_features=args.num_features, name=args.weights,
               use_dr=args.dr_model, device=device, freeze=args.freeze, classification = args.classification, parallel=args.parallel)
 
-    if args.loss == 'deep_ranking':
-        m.train_dr(args.training_data, args.num_epochs, args.lr)
+    siamese_losses = ['triplet', 'contrastive', 'BCE', 'cosine']
+    if args.loss in siamese_losses:
+        m.train_dr(args.training_data, args.num_epochs, args.lr, loss_name = args.loss)
+    
     else:
         m.train_epochs(args.model, args.training_data, args.num_epochs, args.scheduler, args.loss, args.generalise, args.load,
                        args.lr, args.decay, args.beta_lr, args.gamma, args.lr_proxies)

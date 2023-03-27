@@ -22,8 +22,8 @@ def make_list_images(classes, root):
 
 def load_kmeans(list_img):
     labels = []
-    kmeans = pickle.load(open("kmeans.pkl","rb"))
-    dic_labs = pickle.load(open("labels_kmeans.pkl","rb"))
+    kmeans = pickle.load(open("weights_folder/kmeans.pkl","rb"))
+    dic_labs = pickle.load(open("weights_folder/labels_kmeans.pkl","rb"))
     for im in list_img:
         if im in dic_labs:
             labels.append(dic_labs[im])
@@ -40,7 +40,7 @@ def train_kmeans(n_clusters, list_img):
         batch_data = np.array([utils.load_image(path) for path in batch_paths])
         kmeans.partial_fit(batch_data)
     print("KMeans training time is: "+ str(time.time() - t))
-    pickle.dump(kmeans, open("kmeans.pkl","wb"))
+    pickle.dump(kmeans, open("weights_folder/kmeans.pkl","wb"))
 
     return kmeans
 
@@ -106,7 +106,7 @@ def get_labels(list_img, kmeans):
             temp_labs = labs
             temp_batch = batch_data
 
-    pickle.dump(dic_labs, open("labels_kmeans.pkl","wb"))
+    pickle.dump(dic_labs, open("weights_folder/labels_kmeans.pkl","wb"))
     print("The silhouette score is: "+str(np.mean(silhouette_scores)))
     print("Labels predictions took: "+str(time.time() - t))
 
@@ -183,7 +183,7 @@ def execute_kmeans(load, list_img):
             print(len(list_img))
             kmeans = train_kmeans(n_clusters, list_img)
         else:
-            kmeans = pickle.load(open("kmeans.pkl","rb"))   
+            kmeans = pickle.load(open("weights_folder/kmeans.pkl","rb"))   
         labels = get_labels(list_img, kmeans)
 
         display_graph(labels, list_img)

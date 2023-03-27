@@ -5,7 +5,7 @@ import sklearn
 import sklearn.preprocessing
 
 # https://github.com/Confusezius/Revisiting_Deep_Metric_Learning_PyTorch/blob/efddbf23ccbe267f055867b4e1c7c6693e2447c9/batchminer/rho_distance.py#L13
-def distanceweightedsampling(batch, labels, lower_cutoff=0.5, upper_cutoff=1.4, contrastive_p=.2):
+def distanceweightedsampling(batch, labels, lower_cutoff=0.5, upper_cutoff=1.4, contrastive_p=0.2):
     """
     This methods finds all available triplets in a batch given by the classes provided in labels, and select
     triplets based on distance sampling introduced in 'Sampling Matters in Deep Embedding Learning'.
@@ -22,32 +22,37 @@ def distanceweightedsampling(batch, labels, lower_cutoff=0.5, upper_cutoff=1.4, 
     """
     if isinstance(labels, torch.Tensor): labels = labels.detach().cpu().numpy()
     bs = batch.shape[0]
-
-    distances    = pdist(batch.detach()).clamp(min=lower_cutoff)
+    distances    = pdist(batch.detach()).clamp(min=lower_cutoff) # Compute all pairwise distances of the samples 
 
     positives, negatives = [],[]
     labels_visited = []
     anchors = []
-    # Browse over the images of the batches 
+    # Browse over the images of the batches to select a positive and negative other sample
     for i in range(bs):
         # Retrieve in neg all the images of the batch with a different label than i and in pos the ones with same label
         neg = labels!=labels[i]; pos = labels==labels[i]
 
-        use_contr = np.random.choice(2, p=[1-contrastive_p, contrastive_p])
+        use_contr = np.random.choice(2, p=[1-contrastive_p, contrastive_p]) # randomly decides if it will use a constrastive or distance_weighted triplet
         if np.sum(pos)>1: # If there are other images of same labels in batch
             anchors.append(i)
             if use_contr:
                 positives.append(i)
-                #Sample negatives by distance
+                #Sample negatives at random
                 pos[i] = 0
                 negatives.append(np.random.choice(np.where(pos)[0]))
             else:
                 q_d_inv = inverse_sphere_distances(batch, distances[i], labels, labels[i])
                 #Sample positives randomly
                 pos[i] = 0
-                positives.append(np.random.choice(np.where(pos)[0]))
-                #Sample negatives by distance
-                negatives.append(np.random.choice(bs,p=q_d_inv))
+                p = np.random.choice(2, p=[1,0])
+                if p==1:
+                    negatives.append(np.random.choice(np.where(pos)[0]))
+                    #Sample negatives by distance
+                    positives.append(np.random.choice(bs,p=q_d_inv))
+                else:
+                    positives.append(np.random.choice(np.where(pos)[0]))
+                    #Sample negatives by distance
+                    negatives.append(np.random.choice(bs,p=q_d_inv))
 
     sampled_triplets = [[a,p,n] for a,p,n in zip(list(range(bs)), positives, negatives)]
     return sampled_triplets
@@ -284,3 +289,67 @@ class NormSoftmax(torch.nn.Module):
         loss = torch.nn.CrossEntropyLoss()(class_mapped_batch/self.temperature, labels.to(torch.long))
 
         return loss
+
+
+# https://pchanda.github.io/Siamese_plots_torch/
+class SimpleBCELoss(torch.nn.Module): # Exist other implementations where the 2 embeddddings are concat and pass through a sigmoid
+    def __init__(self):
+        super(SimpleBCELoss,self).__init__()
+        self.bce_loss = torch.nn.BCELoss()
+            
+    def forward(self,output1,output2,label):
+        edist = torch.nn.PairwiseDistance(p=2,keepdim=True)(output1,output2)
+        edist = torch.sigmoid(edist)
+        loss_bce = self.bce_loss(edist,label)
+        return loss_bce
+# https://pchanda.github.io/Siamese_plots_torch/ and https://github.com/pytorch/examples/blob/main/siamese_network/main.py
+class SimpleBCELoss2(torch.nn.Module):
+    def __init__(self):
+        super(SimpleBCELoss,self).__init__()
+        self.bce_loss = torch.nn.BCELoss()
+        self.fc = torch.nn.Sequential(
+            torch.nn.Linear(self.fc_in_features * 2, 256),
+            torch.nn.ReLU(inplace=True),
+            torch.nn.Linear(256, 1),
+        )
+        self.sigmoid = torch.nn.Sigmoid()
+
+        self.fc.apply(self.init_weights)
+        
+    def init_weights(self, m):
+        if isinstance(m, torch.nn.Linear):
+            torch.nn.init.xavier_uniform_(m.weight)
+            m.bias.data.fill_(0.01)
+        
+    def forward(self,output1,output2,label):
+        # concatenate both images' features
+        output = torch.cat((output1, output2), 1)
+
+        # pass the concatenation to the linear layers
+        output = self.fc(output)
+
+        # pass the out of the linear layers to sigmoid layer
+        output = self.sigmoid(output)
+        loss_bce = self.bce_loss(output,label)
+        return loss_bce
+
+    
+# https://pchanda.github.io/Siamese_plots_torch/
+class ContrastiveLoss(torch.nn.Module): 
+    """
+    Contrastive loss function - first version
+    Based on: http://yann.lecun.com/exdb/publis/pdf/hadsell-chopra-lecun-06.pdf
+    """
+
+    def __init__(self, margin=5):
+        super(ContrastiveLoss, self).__init__()
+        self.margin = margin
+
+    def forward(self, output1, output2, label):
+        # label = 0 if positive pair, 1 otherwise
+        euclidean_distance = F.pairwise_distance(output1, output2, keepdim = True)
+        loss_contrastive = torch.mean((1-label) * torch.pow(euclidean_distance, 2) +
+                                      (label) * torch.pow(torch.clamp(self.margin - euclidean_distance, min=0.0), 2))
+
+        pred = (self.margin < euclidean_distance).type(torch.float)         
+        return loss_contrastive

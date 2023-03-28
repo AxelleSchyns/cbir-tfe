@@ -286,15 +286,15 @@ class Model(nn.Module):
             print("Interrupted")
         
 
-    def train_dr(self, data, num_epochs, lr, loss_name, augmented):
+    def train_dr(self, data, num_epochs, lr, loss_name, augmented, contrastive):
         if loss_name == 'triplet':
             pair = False
         else:
             pair = True
         if not augmented:
             augmented = None
-        print(augmented)
-        data = dataset.DRDataset(data, pair = pair, transform = augmented)
+
+        data = dataset.DRDataset(data, pair = pair, transform = augmented, contrastive=contrastive)
         print('Size of dataset', data.__len__())
 
         loader = torch.utils.data.DataLoader(data, batch_size=self.batch_size,
@@ -500,6 +500,12 @@ if __name__ == "__main__":
         action = 'store_true'
     )
 
+    parser.add_argument(
+        '--non_contrastive',
+        action = 'store_true'
+    )
+
+
     args = parser.parse_args()
 
     if args.gpu_id >= 0:
@@ -515,7 +521,7 @@ if __name__ == "__main__":
 
     siamese_losses = ['triplet', 'contrastive', 'BCE', 'cosine']
     if args.loss in siamese_losses:
-        m.train_dr(args.training_data, args.num_epochs, args.lr, loss_name = args.loss, augmented=args.augmented)
+        m.train_dr(args.training_data, args.num_epochs, args.lr, loss_name = args.loss, augmented=args.augmented, contrastive = not args.non_contrastive)
     
     else:
         m.train_epochs(args.model, args.training_data, args.num_epochs, args.scheduler, args.loss, args.generalise, args.load,

@@ -1,3 +1,4 @@
+import time
 from PIL import Image
 import torch
 from torchvision import transforms
@@ -17,7 +18,7 @@ import random
 
 class DRDataset(Dataset):
 
-    def __init__(self, root='image_folder', transform=None, pair = False):
+    def __init__(self, root='image_folder', transform=None, pair = False, contrastive = True):
         if transform == None:
             transform = transforms.Compose(
                 [
@@ -50,6 +51,7 @@ class DRDataset(Dataset):
                 ]
             )
             self.augmented = True
+        self.contrastive = contrastive
         self.pair = pair
         self.root = root
         self.transform = transform
@@ -88,7 +90,7 @@ class DRDataset(Dataset):
             return [p1, p2, p3]
         else: 
             # Make a negative pair
-            if idx % 2 != 0:
+            if idx % 2 != 0 and self.contrastive:
                 return [p1, p3]
             else:
                 return [p1, p2]
@@ -104,7 +106,7 @@ class DRDataset(Dataset):
             return [p1, p1, p3]
         else: 
             # Make a negative pair
-            if idx % 2 != 0:
+            if idx % 2 != 0 and self.contrastive:
                 return [p1, p3]
             else:
                 return [p1, p1]

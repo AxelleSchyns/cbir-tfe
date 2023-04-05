@@ -164,12 +164,119 @@ def cm(list_img, labels):
     sn.heatmap(df_cm, annot=True,xticklabels=True, yticklabels=True)
     plt.show()
 
+    return df_cm.to_numpy()
+
 def display_graph(labels, list_img):
     # Histogram of new classes
     histo(labels)
 
     # Confusion matrix 
-    cm(list_img, labels)
+    cm_obj = cm(list_img, labels)
+
+    return cm_obj
+
+# Analyse the repartition of the new labels according to the original classes
+def analyse_clusters(cm_obj):
+
+    # Compute the percentage of each cluster in each class
+    # Compute nb of non zeros elements in each row
+    nb_non_zeros = np.count_nonzero(cm_obj, axis=1)
+    print(nb_non_zeros)
+
+    # Change cm in percentage values
+    cm_class = cm_obj / np.sum(cm_obj, axis=1)[:,None]
+    cm_cluster = cm_obj / np.sum(cm_obj, axis=0)[None,:]
+
+    for j in range(0,5):
+        # subplots of the percentage of each cluster in each class 
+        if j != 4:
+            fig, axs = plt.subplots(4, 4, figsize=(16,16))
+            fig, axs1 = plt.subplots(4, 4, figsize=(16,16))
+        else:
+            fig, axs = plt.subplots(1, 3, figsize=(12,4))
+            fig, axs1 = plt.subplots(1, 3, figsize=(12,4))
+        axs = axs.ravel()
+        axs1 = axs1.ravel()
+        for i in range(0,16):
+            w = np.sum(cm_obj, axis = 1)[16*j+i] / np.sum(cm_obj)
+            print("pot width:"+str(w)+"for # images"+str(np.sum(cm_obj, axis = 1)[16*j+i]))
+            if w > 0.25:
+                w = w * 2
+            elif w > 0.15:
+                w = w * 2.5
+            elif w > 0.1:
+                w = w * 3
+            elif w > 0.05:
+                w = w * 4
+            elif w > 0.01:
+                w = w * 5
+            elif w > 0.001:
+                w = w * 7
+            else:
+                w = w * 9
+
+            nb_clusters = nb_non_zeros[16*j + i]
+            dist = cm_class[16*j + i]
+            print("Class "+str(16*j + i)+" has "+str(nb_clusters)+" clusters")
+            print("Class "+str(16*j + i)+" has the following distribution of clusters: "+str(dist))
+
+            # Boxplot of the percentage of each cluster in each class
+            indexes = np.nonzero(dist)
+            axs1[i].boxplot(dist[indexes], widths = w )
+            axs1[i].set_title("Class "+str(16*j + i))
+            # Add text with the number of clusters upper right
+            axs1[i].text(0.7, 0.95, "# clusters:"+str(nb_clusters), transform=axs1[i].transAxes, fontsize=10, verticalalignment='top')               
+
+            # Histogram of the percentage of each cluster in each class
+            axs[i].bar(range(0,10), dist)
+            axs[i].set_title("Class "+str(16*j + i))
+            axs[i].set_ylabel("Percentage")
+
+            if j == 4 and i == 2:
+                break
+        plt.show()
+
+    # subplots of the percentage of each class in each cluster
+    fig, axs = plt.subplots(2, 5, figsize=(16,16))
+    fig1, axs1 = plt.subplots(2, 5, figsize=(16,16))
+    axs = axs.ravel()
+    axs1 = axs1.ravel()
+    for i in range(0,10):
+        dist = cm_cluster[:,i]
+        
+        axs1[i].set_title("Boxplot of Cluster "+str(i))
+        nb_classes = np.count_nonzero(dist)
+        
+        print("Cluster "+str(i)+" has "+str(nb_classes)+" classes")
+        print("Cluster "+str(i)+" has the following distribution of classes: "+str(dist))
+
+        # get indexes of non zero elements
+        indexes = np.nonzero(dist)
+        # boxplot
+        axs1[i].boxplot(dist[indexes])
+
+        # histogram
+        axs[i].bar(range(0,67), dist)
+        axs[i].set_title("Cluster "+str(i))
+        axs[i].set_xlabel("Class")
+        axs[i].set_ylabel("Percentage")
+
+        # Other measures
+        print("Cluster "+str(i)+" has the following measures:")
+        print("Mean: "+str(np.mean(dist[indexes])))
+        print("Median: "+str(np.median(dist[indexes])))
+        print("Variance: "+str(np.var(dist[indexes])))
+        print("Max: "+str(np.max(dist[indexes])))
+        print("Min: "+str(np.min(dist[indexes])))
+
+
+    plt.show()
+
+
+
+
+
+
 
 def execute_kmeans(load, list_img):
     n_clusters = 10
@@ -186,7 +293,9 @@ def execute_kmeans(load, list_img):
             kmeans = pickle.load(open("weights_folder/kmeans.pkl","rb"))   
         labels = get_labels(list_img, kmeans)
 
-        display_graph(labels, list_img)
+    cm_obj = display_graph(labels, list_img)
+
+    analyse_clusters(cm_obj)
     
     return kmeans, labels, classes
 

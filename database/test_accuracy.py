@@ -118,8 +118,8 @@ def compute_results(names, data, predictions, class_im, proj_im, top_1_acc, top_
                     if already_found_5_sim == 0:
                         top_1_acc[2] += 1
                     top_1_acc[1] += 1
-                already_found_5_sim += 1
-                already_found_5_proj += 1
+            already_found_5_sim += 1
+            already_found_5_proj += 1
         
         
         # Class retrieved is in a project whose content is similar to the query ->> check

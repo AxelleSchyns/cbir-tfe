@@ -82,7 +82,7 @@ if __name__ == "__main__":
     
     if args.extractor == 'vgg16' or args.extractor == 'vgg11' or args.extractor == 'resnet18' or args.extractor == 'resnet50':
         model = builder.BuildAutoEncoder(args)
-        utils.load_dict(args.weights, model)
+        builder.load_dict(args.weights, model)
         model.model_name = args.extractor
         model.num_features = args.num_features
     
@@ -95,10 +95,12 @@ if __name__ == "__main__":
     names = retriever.retrieve(Image.open(args.path).convert('RGB'), args.extractor, args.nrt_neigh)
     dir = args.results_dir
     names_only = []
+    class_name = []
     for n in names:
+        class_name.append(utils.get_class(n))
         names_only.append(n[n.rfind('/')+1:])
         img = Image.open(n)
         img.save(os.path.join(dir,n[n.rfind('/')+1:]))
         
-    print("The names of the nearest images are: "+str(names_only))
+    print("The names of the nearest images are: "+str(class_name))
     

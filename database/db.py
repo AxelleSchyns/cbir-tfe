@@ -1,4 +1,5 @@
 import faiss
+from matplotlib import pyplot as plt
 import models
 import struct
 import torch
@@ -15,9 +16,9 @@ import argparse
 import builder
 import pickle 
 import utils
-
 class Database:
     def __init__(self, filename, model, load=False, transformer=False, device='cpu'):
+        print(type(model.model))
         self.name = filename # = name of the database 
         self.num_features = model.num_features
         self.model = model
@@ -142,6 +143,38 @@ class Database:
                 out = utils.encode(self.model, images)
                 out = out.reshape([out.shape[0],self.model.num_features])
                 t_model = t_model + (time.time() - t)
+            elif extractor == 'VAE':
+                t = time.time()
+                mu, logvar = self.model.encode(images.view(-1, 784))
+                out = self.model.reparameterize(mu, logvar)
+                dec = self.model.decode(out).cpu()
+                out = out.view(-1, self.model.num_features)
+                #print(out.shape)
+                # For visualisation of the reconstruction
+                """dec = dec.view(128, 3, 224, 224)
+                print(out.shape)
+                
+                plt.imshow(  images[0].cpu().permute(1, 2, 0)  )
+                plt.show()
+                plt.imshow(  dec[0].permute(1, 2, 0)  )
+                plt.show()"""
+                out = out.cpu()
+                t_model = t_model + (time.time() - t)
+            elif extractor == 'auto':
+                t = time.time()
+                out1, out2, out3 = self.model.model(images.view(-1, 3, 224, 224))
+                out = out3.cpu()
+                
+                t_model = t_model + (time.time() - t)
+                # display image and its reconstruction
+                """dec = out1.cpu()
+                dec = dec.view(128, 3, 224, 224)
+                print(dec.shape)
+                print(images[0].shape)
+                plt.imshow(  images[0].cpu().permute(1, 2, 0)  )
+                plt.show()
+                plt.imshow(  dec[0].permute(1, 2, 0)  )
+                plt.show()"""
             else:
                 # Encode the images using the given model 
                 t = time.time()
@@ -178,6 +211,25 @@ class Database:
         if extractor == 'vgg11' or extractor == 'resnet18' or extractor == "vgg16" or extractor == "resnet50":
             out = utils.encode(self.model, image.to(device=next(self.model.parameters()).device).view(-1, 3, 224, 224))
             out = out.reshape([out.shape[0],self.model.num_features])
+            t_model = time.time() - t_model
+        elif extractor == 'VAE':
+            mu, logvar = self.model.encode(image.to(device = next(self.model.parameters()).device).view(-1, 784))
+            out = self.model.reparameterize(mu, logvar)
+            out = out.view(-1, self.model.num_features)
+            out = out.cpu()
+            t_model = time.time() - t_model
+        elif extractor == 'auto':
+            out1, out2, out3 = self.model.model(image.to(device=next(self.model.parameters()).device).view(-1, 3, 224, 224))
+            out = out3.cpu()
+            # display image and its reconstruction
+            """dec = out1.cpu()
+            dec = dec.view(1, 3, 224, 224)
+            print(dec.shape)
+            print(image.shape)
+            plt.imshow(  image.cpu().permute(1, 2, 0)  )
+            plt.show()
+            plt.imshow(  dec[0].permute(1, 2, 0)  )
+            plt.show()"""
             t_model = time.time() - t_model
         else:
             # Retrieves the result from the model

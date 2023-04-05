@@ -17,6 +17,87 @@ import os
 import matplotlib.pyplot as plt
 from pytorch_metric_learning import losses
 
+
+# From 
+class AutoEncoder(nn.Module):
+    def __init__(self):
+        super(AutoEncoder, self).__init__()
+        self.flatten_layer = nn.Flatten()
+        self.dense1 = nn.Linear(224*224*3, 64)
+        self.dense2 = nn.Linear(64, 32)
+        self.bottleneck = nn.Linear(32, 16)
+        self.dense4 = nn.Linear(16, 32)
+        self.dense5 = nn.Linear(32, 64)
+        self.dense_final = nn.Linear(64, 224*224*3)
+
+    def forward(self, inp):
+        x_reshaped = self.flatten_layer(inp)
+        x = nn.functional.relu(self.dense1(x_reshaped))
+        x = nn.functional.relu(self.dense2(x))
+        x = nn.functional.relu(self.bottleneck(x))
+        x_hid = x
+        x = nn.functional.relu(self.dense4(x))
+        x = nn.functional.relu(self.dense5(x))
+        x = self.dense_final(x)
+        return x, x_reshaped, x_hid
+
+def loss_auto(x, x_bar, h, model):
+    reconstruction_loss = nn.functional.mse_loss(x, x_bar, reduction='mean') * 224 * 224 * 3
+    W = model.module.bottleneck.weight
+    dh = h * (1 - h) # N_batch x N_hidden
+    #W = W.transpose(0, 1)
+    contractive = 100 * torch.sum(torch.matmul(dh**2, torch.square(W)), axis=1)
+    total_loss = reconstruction_loss + contractive.mean()
+    return total_loss
+
+def grad_auto(model, inputs):
+    reconstruction, inputs_reshaped, hidden = model(inputs)
+    loss_value = loss_auto(inputs_reshaped, reconstruction, hidden, model)
+    loss_value.backward()
+    return loss_value, inputs_reshaped, reconstruction
+
+# Pytorch example - VAE
+class VAE(nn.Module):
+    def __init__(self):
+        super(VAE, self).__init__()
+
+        self.fc1 = nn.Linear(784, 400)
+        self.fc21 = nn.Linear(400, 20)
+        self.fc22 = nn.Linear(400, 20)
+        self.fc3 = nn.Linear(20, 400)
+        self.fc4 = nn.Linear(400, 784)
+
+    def encode(self, x):
+        h1 = F.relu(self.fc1(x))
+        return self.fc21(h1), self.fc22(h1)
+
+    def reparameterize(self, mu, logvar):
+        std = torch.exp(0.5*logvar)
+        eps = torch.randn_like(std)
+        return mu + eps*std
+
+    def decode(self, z):
+        h3 = F.relu(self.fc3(z))
+        return torch.sigmoid(self.fc4(h3))
+
+    def forward(self, x):
+        mu, logvar = self.encode(x.view(-1, 784))
+        z = self.reparameterize(mu, logvar)
+        return self.decode(z), mu, logvar
+
+# Pytorch exampe VAE
+# Reconstruction + KL divergence losses summed over all elements and batch
+def loss_function(recon_x, x, mu, logvar):
+    BCE = F.binary_cross_entropy(recon_x, x.view(-1, 784), reduction='sum')
+
+    # see Appendix B from VAE paper:
+    # Kingma and Welling. Auto-Encoding Variational Bayes. ICLR, 2014
+    # https://arxiv.org/abs/1312.6114
+    # 0.5 * sum(1 + log(sigma^2) - mu^2 - sigma^2)
+    KLD = -0.5 * torch.sum(1 + logvar - mu.pow(2) - logvar.exp())
+
+    return BCE + KLD
+
 class fully_connected(nn.Module):
 	"""docstring for BottleNeck"""
 	def __init__(self, model, num_ftrs, num_classes):
@@ -119,6 +200,13 @@ class Model(nn.Module):
         elif model == 'deit':
             self.forward_function = self.forward_model
             self.model = DeiTForImageClassification.from_pretrained('facebook/deit-base-distilled-patch16-224').to(device=device)
+        elif model == 'VAE':
+            self.model = VAE().to(device)
+            self.encode = self.model.encode
+            self.reparameterize = self.model.reparameterize
+            self.decode = self.model.decode
+        elif model == "auto":
+            self.model = AutoEncoder().to(device)
         else:
             print("model entered is not supported")
             exit(-1)
@@ -197,7 +285,67 @@ class Model(nn.Module):
 
     def forward(self, input):
         return self.forward_function(input)
+    # Inspired by pytorch example - VAE
+    def train_vae(self, model, dir, epochs, sched, lr, decay, beta_lr, gamma, lr_proxies):
+        data = dataset.TrainingDataset(dir, model, 2, 0, None, self.transformer)
+        print('Size of dataset', data.__len__())
 
+        to_optim = [{'params':self.parameters(),'lr':lr,'weight_decay':decay}]
+        optimizer = torch.optim.Adam(to_optim)
+
+        if sched == 'exponential':
+            scheduler = torch.optim.lr_scheduler.ExponentialLR(optimizer, gamma=gamma)
+        elif sched == 'step':
+            scheduler = torch.optim.lr_scheduler.MultiStepLR(optimizer, milestones=[epochs//2, epochs],
+                                                            gamma=gamma)
+
+        loader = torch.utils.data.DataLoader(data, batch_size=self.batch_size,
+                                             shuffle=True, num_workers=16,
+                                             pin_memory=True)
+        loss_list = []
+        loss_means = []
+        try:
+            for epoch in range(epochs):
+                start_time = time.time()
+                loss_list = []
+                for i, (labels, images) in enumerate(loader):
+                    if i%1000 == 0:
+                        print(i)
+
+                    images_gpu = images.to(device=self.device)
+                    labels = labels.to(device=self.device)
+
+                    if self.model_name == "auto":
+                        loss, inputs_reshaped, reconstruction = grad_auto(self.model, images_gpu.view(-1, 3, 224, 224)) 
+                        optimizer.zero_grad(set_to_none=True)
+                        
+                    else:
+                        recon_batch, mu, logvar = self.model(images_gpu)
+                        loss = loss_function(recon_batch, images_gpu.view(-1, 3, 224, 224), mu, logvar)
+                    
+                        optimizer.zero_grad(set_to_none=True)
+                        loss.backward()
+                    optimizer.step()
+
+                    loss_list.append(loss.item())
+
+                print("epoch {}, loss = {}, time {}".format(epoch, np.mean(loss_list),
+                                                            time.time() - start_time))
+                #print(len(loss_list)) 1 loss par batch 
+                print("\n----------------------------------------------------------------\n")
+                loss_means.append(np.mean(loss_list))
+                if sched != None:
+                    scheduler.step()
+                try:
+                    self.model = self.model.module
+                except AttributeError:
+                    self.model = self.model
+                torch.save(self.state_dict(), self.name)
+                self.model = nn.DataParallel(self.model)
+            plt.plot(range(epochs),loss_means)
+            plt.show()
+        except KeyboardInterrupt:
+            print("Interrupted")
     def train_epochs(self, model, dir, epochs, sched, loss, generalise, load, lr, decay, beta_lr, gamma, lr_proxies):
         data = dataset.TrainingDataset(dir, model, 2, generalise, load, self.transformer)
         print('Size of dataset', data.__len__())
@@ -367,7 +515,7 @@ class Model(nn.Module):
                 except AttributeError:
                     self.model = self.model
                 torch.save(self.state_dict(), self.name)
-
+                self.model = nn.DataParallel(self.model)
                 if (epoch + 1) % 4:
                     lr /= 2
                     for param in optimizer.param_groups:
@@ -522,7 +670,8 @@ if __name__ == "__main__":
     siamese_losses = ['triplet', 'contrastive', 'BCE', 'cosine']
     if args.loss in siamese_losses:
         m.train_dr(args.training_data, args.num_epochs, args.lr, loss_name = args.loss, augmented=args.augmented, contrastive = not args.non_contrastive)
-    
+    elif args.model == 'VAE' or args.model == 'auto':
+        m.train_vae(args.model, args.training_data, args.num_epochs, args.scheduler, args.lr, args.decay, args.beta_lr, args.gamma, args.lr_proxies)
     else:
         m.train_epochs(args.model, args.training_data, args.num_epochs, args.scheduler, args.loss, args.generalise, args.load,
                        args.lr, args.decay, args.beta_lr, args.gamma, args.lr_proxies)

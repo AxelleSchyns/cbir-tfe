@@ -300,6 +300,9 @@ class SimpleBCELoss(torch.nn.Module): # Exist other implementations where the 2 
     def forward(self,output1,output2,label):
         edist = torch.nn.PairwiseDistance(p=2,keepdim=True)(output1,output2)
         edist = torch.sigmoid(edist)
+        edist = edist.squeeze(1)
+        # change dtype of label to float
+        label = label.type(torch.FloatTensor)
         loss_bce = self.bce_loss(edist,label)
         return loss_bce
 # https://pchanda.github.io/Siamese_plots_torch/ and https://github.com/pytorch/examples/blob/main/siamese_network/main.py

@@ -148,7 +148,8 @@ class Database:
                 mu, logvar = self.model.encode(images.view(-1, 784))
                 out = self.model.reparameterize(mu, logvar)
                 dec = self.model.decode(out).cpu()
-                out = out.view(-1, self.model.num_features)
+                out = out.view(-1, self.model.num_features) # By miracle, the number of features is such that the output of the VAE can be reshaped to (batch size, num_features) despite being resized abritrarly in input
+                print(out.shape) # not a miracle, num of features selecetd by mysellf in order to make it so...
                 #print(out.shape)
                 # For visualisation of the reconstruction
                 """dec = dec.view(128, 3, 224, 224)
@@ -162,9 +163,10 @@ class Database:
                 t_model = t_model + (time.time() - t)
             elif extractor == 'auto':
                 t = time.time()
-                out1, out2, out3 = self.model.model(images.view(-1, 3, 224, 224))
+                out1, out2, out3 = self.model.model(images.view(-1, 784))
                 out = out3.cpu()
-                
+                print(out.shape)
+                out = out.view(-1, self.model.num_features)
                 t_model = t_model + (time.time() - t)
                 # display image and its reconstruction
                 """dec = out1.cpu()
@@ -215,21 +217,25 @@ class Database:
         elif extractor == 'VAE':
             mu, logvar = self.model.encode(image.to(device = next(self.model.parameters()).device).view(-1, 784))
             out = self.model.reparameterize(mu, logvar)
+            print(out.shape)
             out = out.view(-1, self.model.num_features)
             out = out.cpu()
+            print(out.shape)
             t_model = time.time() - t_model
         elif extractor == 'auto':
-            out1, out2, out3 = self.model.model(image.to(device=next(self.model.parameters()).device).view(-1, 3, 224, 224))
+            out1, out2, out3 = self.model.model(image.to(device=next(self.model.parameters()).device).view(-1, 784))
             out = out3.cpu()
-            # display image and its reconstruction
-            """dec = out1.cpu()
-            dec = dec.view(1, 3, 224, 224)
-            print(dec.shape)
+            out = out.view(-1, self.model.num_features)
+            out1 = out1.cpu() 
+            print(out1.reshape((224,224,3)))
+            print(image.permute(1, 2, 0))
             print(image.shape)
+            plt.subplot(1,2,1)
+            # display image and its reconstruction
             plt.imshow(  image.cpu().permute(1, 2, 0)  )
+            plt.subplot(1,2,2)
+            plt.imshow(out1.numpy().reshape((224,224,3)))
             plt.show()
-            plt.imshow(  dec[0].permute(1, 2, 0)  )
-            plt.show()"""
             t_model = time.time() - t_model
         else:
             # Retrieves the result from the model
@@ -240,7 +246,6 @@ class Database:
         if retrieve_class == 'true':
             # Récupère l'index des nrt_neigh images les plus proches de x
             distance, labels = self.index_labeled.search(out.cpu().numpy(), nrt_neigh) 
-
             labels = [l for l in list(labels[0]) if l != -1]
             
             # retrieves the names of the images based on their index

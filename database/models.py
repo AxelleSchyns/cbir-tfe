@@ -23,15 +23,15 @@ class AutoEncoder(nn.Module):
     def __init__(self):
         super(AutoEncoder, self).__init__()
         self.flatten_layer = nn.Flatten()
-        self.dense1 = nn.Linear(224*224*3, 64)
+        self.dense1 = nn.Linear(784, 64)
         self.dense2 = nn.Linear(64, 32)
         self.bottleneck = nn.Linear(32, 16)
         self.dense4 = nn.Linear(16, 32)
         self.dense5 = nn.Linear(32, 64)
-        self.dense_final = nn.Linear(64, 224*224*3)
+        self.dense_final = nn.Linear(64, 784)
 
     def forward(self, inp):
-        x_reshaped = self.flatten_layer(inp)
+        x_reshaped = inp #self.flatten_layer(inp)
         x = nn.functional.relu(self.dense1(x_reshaped))
         x = nn.functional.relu(self.dense2(x))
         x = nn.functional.relu(self.bottleneck(x))
@@ -42,7 +42,7 @@ class AutoEncoder(nn.Module):
         return x, x_reshaped, x_hid
 
 def loss_auto(x, x_bar, h, model):
-    reconstruction_loss = nn.functional.mse_loss(x, x_bar, reduction='mean') * 224 * 224 * 3
+    reconstruction_loss = nn.functional.mse_loss(x, x_bar, reduction='mean') * 784
     W = model.module.bottleneck.weight
     dh = h * (1 - h) # N_batch x N_hidden
     #W = W.transpose(0, 1)
@@ -51,9 +51,9 @@ def loss_auto(x, x_bar, h, model):
     return total_loss
 
 def grad_auto(model, inputs):
-    reconstruction, inputs_reshaped, hidden = model(inputs)
+    reconstruction, inputs_reshaped, hidden = model(inputs.view(-1, 784))
     loss_value = loss_auto(inputs_reshaped, reconstruction, hidden, model)
-    loss_value.backward()
+    #loss_value.backward()
     return loss_value, inputs_reshaped, reconstruction
 
 # Pytorch example - VAE
@@ -81,6 +81,7 @@ class VAE(nn.Module):
         return torch.sigmoid(self.fc4(h3))
 
     def forward(self, x):
+        
         mu, logvar = self.encode(x.view(-1, 784))
         z = self.reparameterize(mu, logvar)
         return self.decode(z), mu, logvar
@@ -251,6 +252,7 @@ class Model(nn.Module):
                 module.train = lambda _: None
         
         if eval == True:
+            #self.model = nn.DataParallel(self.model)
             self.load_state_dict(torch.load(name))
             self.eval()
             self.eval = True
@@ -318,6 +320,7 @@ class Model(nn.Module):
                     if self.model_name == "auto":
                         loss, inputs_reshaped, reconstruction = grad_auto(self.model, images_gpu.view(-1, 3, 224, 224)) 
                         optimizer.zero_grad(set_to_none=True)
+                        loss.backward()
                         
                     else:
                         recon_batch, mu, logvar = self.model(images_gpu)

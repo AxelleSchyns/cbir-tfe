@@ -153,10 +153,9 @@ class Database:
                 #print(out.shape)
                 # For visualisation of the reconstruction
                 """dec = dec.view(128, 3, 224, 224)
-                print(out.shape)
-                
+                plt.subplot(1, 2, 1)
                 plt.imshow(  images[0].cpu().permute(1, 2, 0)  )
-                plt.show()
+                plt.subplot(1, 2, 2)
                 plt.imshow(  dec[0].permute(1, 2, 0)  )
                 plt.show()"""
                 out = out.cpu()
@@ -171,10 +170,9 @@ class Database:
                 # display image and its reconstruction
                 """dec = out1.cpu()
                 dec = dec.view(128, 3, 224, 224)
-                print(dec.shape)
-                print(images[0].shape)
+                plt.subplot(1, 2, 1)
                 plt.imshow(  images[0].cpu().permute(1, 2, 0)  )
-                plt.show()
+                plt.subplot(1, 2, 2)
                 plt.imshow(  dec[0].permute(1, 2, 0)  )
                 plt.show()"""
             else:
@@ -227,14 +225,12 @@ class Database:
             out = out3.cpu()
             out = out.view(-1, self.model.num_features)
             out1 = out1.cpu() 
-            print(out1.reshape((224,224,3)))
-            print(image.permute(1, 2, 0))
-            print(image.shape)
+            out1 = out1.view(-1, 3, 224, 224)
             plt.subplot(1,2,1)
             # display image and its reconstruction
             plt.imshow(  image.cpu().permute(1, 2, 0)  )
             plt.subplot(1,2,2)
-            plt.imshow(out1.numpy().reshape((224,224,3)))
+            plt.imshow( out1[0].permute(1, 2, 0))
             plt.show()
             t_model = time.time() - t_model
         else:

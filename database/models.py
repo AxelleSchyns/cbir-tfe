@@ -23,21 +23,25 @@ class AutoEncoder(nn.Module):
     def __init__(self):
         super(AutoEncoder, self).__init__()
         self.flatten_layer = nn.Flatten()
-        self.dense1 = nn.Linear(784, 64)
-        self.dense2 = nn.Linear(64, 32)
-        self.bottleneck = nn.Linear(32, 16)
-        self.dense4 = nn.Linear(16, 32)
-        self.dense5 = nn.Linear(32, 64)
-        self.dense_final = nn.Linear(64, 784)
+        self.dense1 = nn.Linear(784, 500)
+        self.dense2 = nn.Linear(500, 300)
+        self.dense3 = nn.Linear(300, 100)
+        self.bottleneck = nn.Linear(100, 16)
+        self.dense4 = nn.Linear(16,100)
+        self.dense5 = nn.Linear(100, 300)
+        self.dense6 = nn.Linear(300, 500)
+        self.dense_final = nn.Linear(500, 784)
 
     def forward(self, inp):
         x_reshaped = inp #self.flatten_layer(inp)
         x = nn.functional.relu(self.dense1(x_reshaped))
         x = nn.functional.relu(self.dense2(x))
+        x = nn.functional.relu(self.dense3(x))
         x = nn.functional.relu(self.bottleneck(x))
         x_hid = x
         x = nn.functional.relu(self.dense4(x))
         x = nn.functional.relu(self.dense5(x))
+        x = nn.functional.relu(self.dense6(x))
         x = self.dense_final(x)
         return x, x_reshaped, x_hid
 
@@ -431,6 +435,7 @@ class Model(nn.Module):
                 except AttributeError:
                     self.model = self.model
                 torch.save(self.state_dict(), self.name)
+                self.model = nn.DataParallel(self.model)
             plt.plot(range(epochs),loss_means)
             plt.show()
         except KeyboardInterrupt:

@@ -215,23 +215,21 @@ class Database:
         elif extractor == 'VAE':
             mu, logvar = self.model.encode(image.to(device = next(self.model.parameters()).device).view(-1, 784))
             out = self.model.reparameterize(mu, logvar)
-            print(out.shape)
             out = out.view(-1, self.model.num_features)
             out = out.cpu()
-            print(out.shape)
             t_model = time.time() - t_model
         elif extractor == 'auto':
             out1, out2, out3 = self.model.model(image.to(device=next(self.model.parameters()).device).view(-1, 784))
             out = out3.cpu()
             out = out.view(-1, self.model.num_features)
-            out1 = out1.cpu() 
+            """out1 = out1.cpu() 
             out1 = out1.view(-1, 3, 224, 224)
             plt.subplot(1,2,1)
             # display image and its reconstruction
             plt.imshow(  image.cpu().permute(1, 2, 0)  )
             plt.subplot(1,2,2)
             plt.imshow( out1[0].permute(1, 2, 0))
-            plt.show()
+            plt.show()"""
             t_model = time.time() - t_model
         else:
             # Retrieves the result from the model

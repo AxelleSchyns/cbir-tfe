@@ -306,7 +306,7 @@ class Model(nn.Module):
                                                             gamma=gamma)
 
         loader = torch.utils.data.DataLoader(data, batch_size=self.batch_size,
-                                             shuffle=True, num_workers=16,
+                                             shuffle=True, num_workers=2,
                                              pin_memory=True)
         loss_list = []
         loss_means = []

@@ -164,7 +164,6 @@ class Database:
                 t = time.time()
                 out1, out2, out3 = self.model.model(images.view(-1, 784))
                 out = out3.cpu()
-                print(out.shape)
                 out = out.view(-1, self.model.num_features)
                 t_model = t_model + (time.time() - t)
                 # display image and its reconstruction

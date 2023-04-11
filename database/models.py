@@ -306,10 +306,11 @@ class Model(nn.Module):
                                                             gamma=gamma)
 
         loader = torch.utils.data.DataLoader(data, batch_size=self.batch_size,
-                                             shuffle=True, num_workers=2,
+                                             shuffle=True, num_workers=12,
                                              pin_memory=True)
         loss_list = []
         loss_means = []
+        print("I am here!")
         try:
             for epoch in range(epochs):
                 start_time = time.time()

@@ -21,35 +21,19 @@ def get_configs(arch='resnet50'):
 class ResNetAutoEncoder(nn.Module):
 
     def __init__(self, configs, bottleneck):
+
         super(ResNetAutoEncoder, self).__init__()
 
         self.encoder = ResNetEncoder(configs=configs,       bottleneck=bottleneck)
         self.decoder = ResNetDecoder(configs=configs[::-1], bottleneck=bottleneck)
-        self.avpool = nn.AdaptiveAvgPool2d((1,1))
-        
-        self.inv_avpool = nn.AdaptiveAvgPool2d((7,7))
-    	
-
-        if bottleneck:
-            self.fc = nn.Linear(in_features=2048, out_features=1000)
-            self.inv_fc = nn.Linear(1000, 2048)
-        else:
-            self.fc = nn.Linear(in_features=512, out_features=1000)
+    
     def forward(self, x):
+
         x = self.encoder(x)
-        
-        x = self.avpool(x)
-
-        x = torch.flatten(x, 1)
-
-        x_lat = self.fc(x)
-        #print(x.shape, flush=True)
-        x = self.inv_fc(x_lat)
-        x = nn.Unflatten(1, (2048, 1, 1))(x)
-        x = self.inv_avpool(x)
         x = self.decoder(x)
 
-        return x, x_lat
+        return x
+
 class ResNet(nn.Module):
 
     def __init__(self, configs, bottleneck=False, num_classes=1000):

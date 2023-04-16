@@ -140,10 +140,10 @@ class Database:
             images = images.view(-1, 3, 224, 224).to(device=next(self.model.parameters()).device)
             if extractor == 'vgg11' or extractor == 'resnet18' or extractor == 'vgg16' or extractor == 'resnet50':
                 t = time.time()
-                _, out = self.model(images)
-                out = out.cpu()
-                #out = utils.encode(self.model, images)
-                #out = out.reshape([out.shape[0],self.model.num_features])
+                #_, out = self.model(images)
+                #out = out.cpu()
+                out = utils.encode(self.model, images)
+                out = out.reshape([out.shape[0],self.model.num_features])
                 t_model = t_model + (time.time() - t)
                 print(out.shape)
             elif extractor == 'VAE':
@@ -212,10 +212,19 @@ class Database:
         
         t_model = time.time()
         if extractor == 'vgg11' or extractor == 'resnet18' or extractor == "vgg16" or extractor == "resnet50":
-            #out = utils.encode(self.model, image.to(device=next(self.model.parameters()).device).view(-1, 3, 224, 224))
-            #out = out.reshape([out.shape[0],self.model.num_features])
-            _, out = self.model(image.to(device=next(self.model.parameters()).device).view(-1, 3, 224, 224))
+            out = utils.encode(self.model, image.to(device=next(self.model.parameters()).device).view(-1, 3, 224, 224))
+            out = out.reshape([out.shape[0],self.model.num_features])
+            """out1, out = self.model(image.to(device=next(self.model.parameters()).device).view(-1, 3, 224, 224))
             out = out.cpu()
+
+            out1 = out1.cpu() 
+            out1 = out1.view(-1, 3, 224, 224)
+            plt.subplot(1,2,1)
+            # display image and its reconstruction
+            plt.imshow(  image.cpu().permute(1, 2, 0)  )
+            plt.subplot(1,2,2)
+            plt.imshow( out1[0].permute(1, 2, 0))
+            plt.show()"""
             t_model = time.time() - t_model
         elif extractor == 'VAE':
             mu, logvar = self.model.encode(image.to(device = next(self.model.parameters()).device).view(-1, 784))

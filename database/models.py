@@ -23,17 +23,18 @@ class AutoEncoder(nn.Module):
     def __init__(self):
         super(AutoEncoder, self).__init__()
         self.flatten_layer = nn.Flatten()
-        self.dense1 = nn.Linear(224*224*3, 512)
-        self.dense2 = nn.Linear(512, 256)
+        self.dense1 = nn.Linear(784, 400)
+        self.dense2 = nn.Linear(400, 200)
         #self.dense3 = nn.Linear(300, 100)
-        self.bottleneck = nn.Linear(256, 128)
-        self.dense4 = nn.Linear(128,256)
-        self.dense5 = nn.Linear(256, 512)
+        self.bottleneck = nn.Linear(200, 50)
+        self.dense4 = nn.Linear(50,200)
+        self.dense5 = nn.Linear(200, 400)
         #self.dense6 = nn.Linear(300, 500)
-        self.dense_final = nn.Linear(512, 224*224*3)
+        self.dense_final = nn.Linear(400, 784)
 
     def forward(self, inp):
-        x_reshaped = inp #self.flatten_layer(inp)
+        #x_reshaped = inp #
+        x_reshaped = self.flatten_layer(inp)
         x = nn.functional.relu(self.dense1(x_reshaped))
         x = nn.functional.relu(self.dense2(x))
         #x = nn.functional.relu(self.dense3(x))
@@ -46,7 +47,7 @@ class AutoEncoder(nn.Module):
         return x, x_reshaped, x_hid
 
 def loss_auto(x, x_bar, h, model):
-    reconstruction_loss = nn.functional.mse_loss(x, x_bar, reduction='mean') * 224*224*3
+    reconstruction_loss = nn.functional.mse_loss(x, x_bar, reduction='mean') * 784
     W = model.module.bottleneck.weight
     dh = h * (1 - h) # N_batch x N_hidden
     #W = W.transpose(0, 1)
@@ -55,7 +56,7 @@ def loss_auto(x, x_bar, h, model):
     return total_loss
 
 def grad_auto(model, inputs):
-    reconstruction, inputs_reshaped, hidden = model(inputs.view(-1, 224*224*3))
+    reconstruction, inputs_reshaped, hidden = model(inputs.view(-1, 784))
     loss_value = loss_auto(inputs_reshaped, reconstruction, hidden, model)
     #loss_value.backward()
     return loss_value, inputs_reshaped, reconstruction
@@ -306,7 +307,7 @@ class Model(nn.Module):
                                                             gamma=gamma)
 
         loader = torch.utils.data.DataLoader(data, batch_size=self.batch_size,
-                                             shuffle=True, num_workers=12,
+                                             shuffle=True, num_workers=16,
                                              pin_memory=True)
         loss_list = []
         loss_means = []

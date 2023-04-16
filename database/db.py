@@ -18,7 +18,7 @@ import pickle
 import utils
 class Database:
     def __init__(self, filename, model, load=False, transformer=False, device='cpu'):
-        print(type(model.model))
+        #print(type(model.model))
         self.name = filename # = name of the database 
         self.num_features = model.num_features
         self.model = model
@@ -138,16 +138,19 @@ class Database:
         t_indexing = 0
         for i, (images, filenames) in enumerate(loader):
             images = images.view(-1, 3, 224, 224).to(device=next(self.model.parameters()).device)
-            if extractor == 'vgg11' or extractor == 'resnet18' or extractor == 'vgg16':
+            if extractor == 'vgg11' or extractor == 'resnet18' or extractor == 'vgg16' or extractor == 'resnet50':
                 t = time.time()
-                out = utils.encode(self.model, images)
-                out = out.reshape([out.shape[0],self.model.num_features])
+                _, out = self.model(images)
+                out = out.cpu()
+                #out = utils.encode(self.model, images)
+                #out = out.reshape([out.shape[0],self.model.num_features])
                 t_model = t_model + (time.time() - t)
+                print(out.shape)
             elif extractor == 'VAE':
                 t = time.time()
                 mu, logvar = self.model.encode(images.view(-1, 784))
                 out = self.model.reparameterize(mu, logvar)
-                dec = self.model.decode(out).cpu()
+                dec = self.model.decode(out)
                 out = out.view(-1, self.model.num_features) # By miracle, the number of features is such that the output of the VAE can be reshaped to (batch size, num_features) despite being resized abritrarly in input
                 print(out.shape) # not a miracle, num of features selecetd by mysellf in order to make it so...
                 #print(out.shape)
@@ -162,6 +165,7 @@ class Database:
                 t_model = t_model + (time.time() - t)
             elif extractor == 'auto':
                 t = time.time()
+                #out1, out2, out3 = self.model.model(images.view(-1, 784))
                 out1, out2, out3 = self.model.model(images.view(-1, 784))
                 out = out3.cpu()
                 out = out.view(-1, self.model.num_features)
@@ -208,8 +212,10 @@ class Database:
         
         t_model = time.time()
         if extractor == 'vgg11' or extractor == 'resnet18' or extractor == "vgg16" or extractor == "resnet50":
-            out = utils.encode(self.model, image.to(device=next(self.model.parameters()).device).view(-1, 3, 224, 224))
-            out = out.reshape([out.shape[0],self.model.num_features])
+            #out = utils.encode(self.model, image.to(device=next(self.model.parameters()).device).view(-1, 3, 224, 224))
+            #out = out.reshape([out.shape[0],self.model.num_features])
+            _, out = self.model(image.to(device=next(self.model.parameters()).device).view(-1, 3, 224, 224))
+            out = out.cpu()
             t_model = time.time() - t_model
         elif extractor == 'VAE':
             mu, logvar = self.model.encode(image.to(device = next(self.model.parameters()).device).view(-1, 784))
@@ -218,6 +224,7 @@ class Database:
             out = out.cpu()
             t_model = time.time() - t_model
         elif extractor == 'auto':
+            #out1, out2, out3 = self.model.model(image.to(device=next(self.model.parameters()).device).view(-1, 784))
             out1, out2, out3 = self.model.model(image.to(device=next(self.model.parameters()).device).view(-1, 784))
             out = out3.cpu()
             out = out.view(-1, self.model.num_features)

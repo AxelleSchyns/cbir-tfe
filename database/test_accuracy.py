@@ -512,7 +512,7 @@ if __name__ == "__main__":
     if args.class_name is not None and args.class_name not in os.listdir(args.path):
         print("Class name does not exist")
         exit(-1)
-    if args.extractor == 'vgg16' or args.extractor == 'vgg11' or args.extractor == 'resnet18' or args.extractor == "vgg16":
+    if args.extractor == 'vgg16' or args.extractor == 'vgg11' or args.extractor == 'resnet18' or args.extractor == "resnet50":
             model = builder.BuildAutoEncoder(args) 
             builder.load_dict(args.weights, model)
             model.model_name = args.extractor

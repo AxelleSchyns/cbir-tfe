@@ -16,6 +16,36 @@ from argparse import ArgumentParser, ArgumentTypeError
 import os
 import matplotlib.pyplot as plt
 from pytorch_metric_learning import losses
+from fastai.vision.all import *
+
+def reverse_layers(model):
+    reversed_layers = []
+    for layer in reversed(model):
+        if isinstance(layer, nn.Sequential):
+            reversed_layers.append(reverse_layers(layer))
+        else:
+            reversed_layers.append(layer)
+    return nn.Sequential(*reversed_layers)
+class Unet_auto(nn.Module):
+    def __init__(self, encoder_arch):
+        super(Unet_auto, self).__init__()
+        self.encoder = create_body(encoder_arch)
+        #dec_layers = list(reversed(self.encoder))
+        #dec_layers.append(nn.Conv2d(self.encoder[-1][-1].out_channels, self.encoder[-2][-1].out_channels, 1, padding=1))
+        self.decoder = reverse_layers(self.encoder)
+
+        print(self.encoder)
+        print("HEYYYYY2")
+        print(self.decoder)
+    
+    def forward(self, x):
+        features = self.encoder(x)
+        print("HEYYYYY")
+        print(features.shape)
+        print(self.decoder)
+        x = self.decoder(features)
+        return x, features
+
 
 
 # From 
@@ -116,6 +146,7 @@ class fully_connected(nn.Module):
 		x = torch.flatten(x, 1)
 		out_3 = self.fc_4(x)
 		return  out_3
+
 class Model(nn.Module):
     def __init__(self, model='densenet', eval=True, batch_size=32, num_features=128,
                  name='weights', use_dr=True, device='cuda:0', freeze=False, classification = False, parallel = True):
@@ -213,6 +244,8 @@ class Model(nn.Module):
             self.decode = self.model.decode
         elif model == "auto":
             self.model = AutoEncoder().to(device)
+        elif model == "unet":
+            self.model = Unet_auto(resnet34(pretrained=True)).to(device)
         else:
             print("model entered is not supported")
             exit(-1)
@@ -292,6 +325,7 @@ class Model(nn.Module):
 
     def forward(self, input):
         return self.forward_function(input)
+    
     # Inspired by pytorch example - VAE
     def train_vae(self, model, dir, epochs, sched, lr, decay, beta_lr, gamma, lr_proxies):
         data = dataset.TrainingDataset(dir, model, 2, 0, None, self.transformer)
@@ -327,7 +361,13 @@ class Model(nn.Module):
                         loss, inputs_reshaped, reconstruction = grad_auto(self.model, images_gpu.view(-1, 3, 224, 224)) 
                         optimizer.zero_grad(set_to_none=True)
                         loss.backward()
-                        
+                    elif self.model_name == "unet":
+                        print(images_gpu.shape)
+                        rec, feat = self.model(images_gpu.view(-1, 3, 224, 224))
+                        loss_function = nn.MSELoss()
+                        loss = loss_function(rec, images_gpu.view(-1, 3, 224, 224))
+                        optimizer.zero_grad(set_to_none=True)
+                        loss.backward()
                     else:
                         recon_batch, mu, logvar = self.model(images_gpu)
                         loss = loss_function(recon_batch, images_gpu.view(-1, 3, 224, 224), mu, logvar)
@@ -680,7 +720,7 @@ if __name__ == "__main__":
     siamese_losses = ['triplet', 'contrastive', 'BCE', 'cosine']
     if args.loss in siamese_losses:
         m.train_dr(args.training_data, args.num_epochs, args.lr, loss_name = args.loss, augmented=args.augmented, contrastive = not args.non_contrastive)
-    elif args.model == 'VAE' or args.model == 'auto':
+    elif args.model == 'VAE' or args.model == 'auto' or args.model == "unet":
         m.train_vae(args.model, args.training_data, args.num_epochs, args.scheduler, args.lr, args.decay, args.beta_lr, args.gamma, args.lr_proxies)
     else:
         m.train_epochs(args.model, args.training_data, args.num_epochs, args.scheduler, args.loss, args.generalise, args.load,

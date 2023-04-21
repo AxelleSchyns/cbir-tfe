@@ -29,19 +29,27 @@ def get_class(path):
 def get_proj(path):
     end_c = path.rfind("/")
     begin_c = path.rfind("/", 0, end_c) + 1
-
     end_proj = path[begin_c:end_c].rfind("_")
-    return path[begin_c:begin_c+end_proj]
+    proj_name = path[begin_c:begin_c+end_proj]
+    if proj_name.rfind("_") != -1:
+        rest = proj_name[proj_name.rfind("_")+1: len(proj_name)]
+        if rest.isdigit():
+                proj_name = proj_name[0:proj_name.rfind("_")]
+    return proj_name
 
-def rename_classes(path):
-    classes = os.listdir(path)
+def rename_classes(class_list):
+    classes = os.listdir(class_list)
     classes.sort()
     cpt_c = 0
     old_name = ""
     new_classes = []
     for c in classes:
-        c_project = get_proj(c)
-
+        idx = c.rfind("_")
+        c_project = c[0:idx]
+        if c_project.rfind("_") != -1:
+            rest = c_project[c_project.rfind("_")+1: len(c_project)]
+            if rest.isdigit():
+                c_project = c_project[0:c_project.rfind("_")]
         if c_project == old_name:
             cpt_c += 1
         else: 

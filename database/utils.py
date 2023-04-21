@@ -1,6 +1,8 @@
 import numpy as np
 from PIL import Image
 import torch 
+import os
+
 def load_image(image_path):
     with Image.open(image_path) as image:
         image = image.convert('RGB')
@@ -30,3 +32,21 @@ def get_proj(path):
 
     end_proj = path[begin_c:end_c].rfind("_")
     return path[begin_c:begin_c+end_proj]
+
+def rename_classes(path):
+    classes = os.listdir(path)
+    classes.sort()
+    cpt_c = 0
+    old_name = ""
+    new_classes = []
+    for c in classes:
+        c_project = get_proj(c)
+
+        if c_project == old_name:
+            cpt_c += 1
+        else: 
+            cpt_c = 0
+
+        new_classes.append(c_project + "_" + str(cpt_c))
+        old_name = c_project
+    return new_classes

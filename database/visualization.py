@@ -6,6 +6,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 from PIL import Image
 from torchvision import transforms
+import utils
 
 
 def summary_image(path):
@@ -84,13 +85,17 @@ def bar_plot(train, test, val):
         i += 1
         set_name = s.split("/")[-1]
         nb_per_class = []
-        for c in os.listdir(s):
-            if c != "camelyon16_0" and c != "janowczyk6_0":
-                nb_per_class.append(count_im_class(s, c))
         classes = os.listdir(s)
         classes.sort()
+        tot = 0
+        for c in classes:
+            tot += count_im_class(s, c)
+            if c != "camelyon16_0" and c != "janowczyk6_0":
+                nb_per_class.append(count_im_class(s, c))
+        classes = utils.rename_classes(s)
         classes.remove("camelyon16_0")
         classes.remove("janowczyk6_0")
+
         # bar plot in subplots
         plt.subplot(3, 1, i)
         #plt.bar(classes, nb_per_class)
@@ -101,8 +106,13 @@ def bar_plot(train, test, val):
         for j in range(len(classes)):
             if classes[j] != "camelyon16_0" or classes[j] != "janowczyk6_0":
                 # Computation of the value up to 4 decimals
-                val = round(nb_per_class[j]/sum(nb_per_class), 4)*100
-                val = "{:.2f}".format(val)
+                val = nb_per_class[j]/tot*100
+                if val > 1:
+                    val = round(val, 2)
+                    val = "{:.2f}".format(val)
+                else:
+                    val = round(val, 3)
+                    val = "{:.3f}".format(val)
 
                 # Y position of text
                 if i == 1:
@@ -119,7 +129,7 @@ def bar_plot(train, test, val):
                     else:
                         y = nb_per_class[j] + 250
                         x = j - 0.15
-                plt.text(x = x, y = y, s = str(val)+"%", size = 6, rotation = 90)
+                plt.text(x = x, y = y, s = str(val)+"%", size = 7, rotation = 90)
 
         if i != 3:
             plt.xticks([])

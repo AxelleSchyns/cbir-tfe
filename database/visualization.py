@@ -149,6 +149,105 @@ def bar_plot(train, test, val):
         plt.subplots_adjust(bottom=0.2)
     plt.show()
 
+def width_height(train, test, val):
+    sets = [train, test, val]
+    widths = np.zeros((67, 1))
+    heights = np.zeros((67, 1))
+    nb = np.zeros((67, 1))
+    for s in range(len(sets)):
+        classes = os.listdir(sets[s])
+        classes.sort()
+        for c in range(len(classes)):
+            images = os.listdir(os.path.join(sets[s], classes[c]))
+            for im in images:
+                im = Image.open(os.path.join(sets[s], classes[c], im))
+                widths[c] += im.size[0]
+                heights[c] += im.size[1]
+                nb[c] += 1
+            print(c)
+    widths = widths/nb
+    heights = heights/nb
+    print(classes)
+    print(widths)
+    print(heights)
+    print(np.mean(widths))
+    print(np.mean(heights))
+
+
+def vis_transf(path):
+    # Visualize the transformation
+    # Load the image
+    img = Image.open(path)
+    # Transform the image
+    transform1 = transforms.Compose([
+    transforms.RandomHorizontalFlip(p=0.5),
+    transforms.RandomVerticalFlip(p=0.5),
+    transforms.ToTensor(),])
+
+    transform2 = transforms.Compose([
+        transforms.ColorJitter(brightness=0, contrast=0, saturation=0.2, hue=0.1),
+        transforms.ToTensor(),])
+    
+    transform3 = transforms.Compose([
+        transforms.ToTensor(),
+        transforms.Normalize(mean=[0.485, 0.456, 0.406],
+                            std=[0.229, 0.224, 0.225]),
+        ])
+    
+    transform = transforms.Compose([
+        transforms.RandomHorizontalFlip(p=0.5),
+        transforms.RandomVerticalFlip(p=0.5),
+        transforms.ColorJitter(brightness=0, contrast=0, saturation=0.2, hue=0.1),
+        transforms.ToTensor(),
+        transforms.Normalize(mean=[0.485, 0.456, 0.406],
+                            std=[0.229, 0.224, 0.225])
+    ])
+    plt.figure(figsize=(15, 9))
+    plt.subplot(1, 5, 1)
+    plt.imshow(img)
+    transform_list = [transform1, transform2, transform3, transform]
+    for t in transform_list:
+        plt.subplot(1, 5, transform_list.index(t)+2)
+        im = t(img)
+        im = np.array(im.permute(1, 2, 0))
+        plt.imshow(im)
+
+    plt.show()
+
+def resized_vis(paths):
+    transformRes = transforms.Compose([
+        transforms.RandomResizedCrop(224, scale=(0.8,1)),
+        transforms.ToTensor(),])
+    fig, ax = plt.subplots(nrows=2, ncols=3, figsize=(15, 7), dpi=100, sharex=True, sharey=True)
+    for p in paths:
+        img = Image.open(p)
+
+        #plt.subplot(2, 3, paths.index(p)+4)
+        im = transformRes(img)
+        im = np.array(im.permute(1, 2, 0))
+        #plt.imshow(im)
+        ax[1, paths.index(p)].imshow(im)
+        
+        ax[0, paths.index(p)].imshow(img)
+    # Remove vertical space on the bottom and top for the whole plot
+    plt.subplots_adjust(top=0.95)
+    plt.subplots_adjust(bottom=0)
+
+    plt.show()
+
+    fig, ax = plt.subplots(nrows=2, ncols=1, figsize=(4,7), dpi=100, sharex=True, sharey=True)
+    
+    img = Image.open(paths[1])
+    ax[0].imshow(img)
+    im = transformRes(img)
+    im = np.array(im.permute(1, 2, 0))
+    ax[1].imshow(im)
+    plt.show()
+
+
+
+
+
 
 
 if __name__ == "__main__":
@@ -158,8 +257,16 @@ if __name__ == "__main__":
 
     #summary_image(train)
 
-    count_maj(train, test, val)
+    #count_maj(train, test, val)
 
-    bar_plot(train, test, val)
+    #bar_plot(train, test, val)
     
-          
+    #width_height(train, test, val)
+
+    p = '/home/labarvr4090/Documents/Axelle/cytomine/Data/train/janowczyk5_1/01_117238845_1502_393_250_250_2.png'
+    p2 = '/home/labarvr4090/Documents/Axelle/cytomine/Data/train/janowczyk6_0/8863_idx5_x651_y1551_class0.png'
+    p3 = '/home/labarvr4090/Documents/Axelle/cytomine/Data/train/iciar18_micro_113351562/17_118316818_512_0_512_512.png'
+    paths = [p, p2, p3]
+    #vis_transf(p)
+
+    resized_vis(paths)

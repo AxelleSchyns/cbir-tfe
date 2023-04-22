@@ -58,3 +58,4 @@ def rename_classes(class_list):
         new_classes.append(c_project + "_" + str(cpt_c))
         old_name = c_project
     return new_classes
+

@@ -218,7 +218,7 @@ def resized_vis(paths):
     transformRes = transforms.Compose([
         transforms.RandomResizedCrop(224, scale=(0.8,1)),
         transforms.ToTensor(),])
-    fig, ax = plt.subplots(nrows=2, ncols=3, figsize=(15, 7), dpi=100, sharex=True, sharey=True)
+    fig, ax = plt.subplots(nrows=2, ncols=3, figsize=(15, 8), dpi=100, sharex=True, sharey=True)
     for p in paths:
         img = Image.open(p)
 
@@ -231,7 +231,7 @@ def resized_vis(paths):
         ax[0, paths.index(p)].imshow(img)
     # Remove vertical space on the bottom and top for the whole plot
     plt.subplots_adjust(top=0.95)
-    plt.subplots_adjust(bottom=0)
+    plt.subplots_adjust(bottom=0.05)
 
     plt.show()
 

@@ -190,10 +190,11 @@ def vis_transf(path):
     
     transform3 = transforms.Compose([
         transforms.ToTensor(),
-        transforms.Normalize(mean=[0.485, 0.456, 0.406],
-                            std=[0.229, 0.224, 0.225]),
+        transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),
         ])
-    
+    # transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),
+    # transforms.Normalize(mean=[200.69/255, 161.54/255, 189.47/255],
+    #                        std=[30.69/255, 39.72/255, 29.7/255]),
     transform = transforms.Compose([
         transforms.RandomHorizontalFlip(p=0.5),
         transforms.RandomVerticalFlip(p=0.5),
@@ -213,6 +214,34 @@ def vis_transf(path):
         plt.imshow(im)
 
     plt.show()
+
+def means_pixel(sets):
+    # Compute the mean and std of the pixel values of the images
+    # of the training set
+    means = np.zeros((3,1))
+    stds = np.zeros((3,1))
+    tot = 0
+
+    for s in sets:
+        classes = os.listdir(s)
+        classes.sort()
+        for c in classes:
+            print(c)
+            images = os.listdir(os.path.join(s, c))
+            for im in images:
+                tot += 1
+                # Open in RGB
+                im = Image.open(os.path.join(s, c, im)).convert('RGB')
+
+                im = np.array(im)
+                means[0] += np.mean(im[:,:,0]/255)
+                means[1] += np.mean(im[:,:,1]/255)
+                means[2] += np.mean(im[:,:,2]/255)
+                stds[0] += np.std(im[:,:,0]/255)
+                stds[1] += np.std(im[:,:,1]/255)
+                stds[2] += np.std(im[:,:,2]/255)
+    print("Mean of the pixel values: ", means/tot)
+    print("Std of the pixel values: ", stds/tot)
 
 def resized_vis(paths):
     transformRes = transforms.Compose([
@@ -246,6 +275,59 @@ def resized_vis(paths):
 
 
 
+def diversity():
+    im1_cam = '/home/labarvr4090/Documents/Axelle/cytomine/Data/test/camelyon16_0/27664454_1536_188928_768_768.png'
+    im2_cam = '/home/labarvr4090/Documents/Axelle/cytomine/Data/test/camelyon16_0/27664454_33792_118272_768_768.png'
+    im3_cam = '/home/labarvr4090/Documents/Axelle/cytomine/Data/test/camelyon16_0/27671570_26880_79872_768_768.png'
+    im4_cam = '/home/labarvr4090/Documents/Axelle/cytomine/Data/test/camelyon16_0/27698189_67584_69120_768_768.png'
+    l1 = [im1_cam, im2_cam, im3_cam, im4_cam]
+    # 27707281_128256_24576_768_768.png
+    # 27707762_65280_26112_768_768.png
+
+    im1_jan = '/home/labarvr4090/Documents/Axelle/cytomine/Data/test/janowczyk6_0/8918_idx5_x151_y751_class0.png'
+    im2_jan = '/home/labarvr4090/Documents/Axelle/cytomine/Data/test/janowczyk6_0/8918_idx5_x251_y1401_class0.png'
+    im3_jan = '/home/labarvr4090/Documents/Axelle/cytomine/Data/test/janowczyk6_0/9181_idx5_x251_y1901_class0.png'
+    im4_jan = '/home/labarvr4090/Documents/Axelle/cytomine/Data/test/janowczyk6_0/14191_idx5_x2551_y601_class0.png'
+    l2 = [im1_jan, im2_jan, im3_jan, im4_jan]
+    # 9254_idx5_x1801_y1451_class0.png
+    # 15515_idx5_x2501_y1701_class0.png
+
+    im1_ici = '/home/labarvr4090/Documents/Axelle/cytomine/Data/test/iciar18_micro_113351608/108_118327654_512_512_512_512.png'
+    im2_ici = '/home/labarvr4090/Documents/Axelle/cytomine/Data/test/iciar18_micro_113351608/111_118327082_0_512_512_512.png'
+    im3_ici = '/home/labarvr4090/Documents/Axelle/cytomine/Data/test/iciar18_micro_113351608/112_118327012_1536_512_512_512.png'
+    im4_ici = '/home/labarvr4090/Documents/Axelle/cytomine/Data/test/iciar18_micro_113351608/128_118325650_1536_1024_512_512.png'
+    l3 = [im1_ici, im2_ici, im3_ici, im4_ici]
+
+    im1_ulb_ana = '/home/labarvr4090/Documents/Axelle/cytomine/Data/test/ulb_anapath_lba_4720/377614_799253.png'
+    im2_ulb_ana = '/home/labarvr4090/Documents/Axelle/cytomine/Data/test/ulb_anapath_lba_4720/2352_7986752.png'
+    im3_ulb_ana = '/home/labarvr4090/Documents/Axelle/cytomine/Data/test/ulb_anapath_lba_4720/2248_7982522.png'
+    im4_ulb_ana = '/home/labarvr4090/Documents/Axelle/cytomine/Data/test/ulb_anapath_lba_4720/377626_796526.png'
+    l4 = [im1_ulb_ana, im2_ulb_ana, im3_ulb_ana, im4_ulb_ana]
+
+    im1_jano7 = '/home/labarvr4090/Documents/Axelle/cytomine/Data/test/janowczyk7_113347673/114368428_384_384_384_384.png'
+    im2_jano7 = '/home/labarvr4090/Documents/Axelle/cytomine/Data/test/janowczyk7_113347673/114370161_768_0_384_384.png'
+    im3_jano7 = '/home/labarvr4090/Documents/Axelle/cytomine/Data/test/janowczyk7_113347673/114370869_384_384_384_384.png'
+    im4_jano7 = '/home/labarvr4090/Documents/Axelle/cytomine/Data/test/janowczyk7_113347673/114372826_384_384_384_384.png'
+    l5 = [im1_jano7, im2_jano7, im3_jano7, im4_jano7]
+
+    im1_umcm = '/home/labarvr4090/Documents/Axelle/cytomine/Data/test/umcm_colorectal_04_LYMPHO/02_001_1093E_Row_1_Col_1.tif'
+    im2_umcm = '/home/labarvr4090/Documents/Axelle/cytomine/Data/test/umcm_colorectal_04_LYMPHO/02_002b_5B23_Row_301_Col_1.tif'
+    im3_umcm = '/home/labarvr4090/Documents/Axelle/cytomine/Data/test/umcm_colorectal_04_LYMPHO/03_032_5971_Row_151_Col_1.tif'
+    im4_umcm = '/home/labarvr4090/Documents/Axelle/cytomine/Data/test/umcm_colorectal_04_LYMPHO/10_c_5945_Row_1_Col_151.tif'
+    l6 = [im1_umcm, im2_umcm, im3_umcm, im4_umcm]
+
+    l = [l1, l2, l3, l4, l5, l6]
+
+    for i in l:
+        plt.figure(figsize=(5, 2))
+        for j in range(4):
+            plt.subplot(1, 4, j+1)
+            plt.imshow(Image.open(i[j]))
+            # change font size ticks
+            plt.xticks(fontsize=6)
+            plt.yticks(fontsize=6)
+        plt.show()
+
 
 
 
@@ -269,4 +351,8 @@ if __name__ == "__main__":
     paths = [p, p2, p3]
     #vis_transf(p)
 
-    resized_vis(paths)
+    #resized_vis(paths)
+
+    #means_pixel([train, test, val])
+
+    diversity()

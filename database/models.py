@@ -18,52 +18,30 @@ import matplotlib.pyplot as plt
 from pytorch_metric_learning import losses
 from fastai.vision.all import *
 
-def reverse_layers(model):
-    reversed_layers = []
-    for layer in reversed(model):
-        if isinstance(layer, nn.Sequential):
-            reversed_layers.append(reverse_layers(layer))
-        else:
-            reversed_layers.append(layer)
-    return nn.Sequential(*reversed_layers)
-class Unet_auto(nn.Module):
-    def __init__(self, encoder_arch):
-        super(Unet_auto, self).__init__()
-        self.encoder = create_body(encoder_arch)
-        #dec_layers = list(reversed(self.encoder))
-        #dec_layers.append(nn.Conv2d(self.encoder[-1][-1].out_channels, self.encoder[-2][-1].out_channels, 1, padding=1))
-        self.decoder = reverse_layers(self.encoder)
 
-        print(self.encoder)
-        print("HEYYYYY2")
-        print(self.decoder)
-    
-    def forward(self, x):
-        features = self.encoder(x)
-        print("HEYYYYY")
-        print(features.shape)
-        print(self.decoder)
-        x = self.decoder(features)
-        return x, features
-
-
-
-# From 
+# From Geek For geek - https://www.geeksforgeeks.org/contractive-autoencoder-cae/?ref=rp
 class AutoEncoder(nn.Module):
     def __init__(self):
         super(AutoEncoder, self).__init__()
+        # 784 ->> 64 ->> 32 -> 16
+        # 784 -> 400 -> 200 -> 50 -> 200 -> 400 -> 784
+        # 784 -> 400 -> 200 -> 16 -> 200 -> 400 -> 784
+        # 784 -> 400 -> 500 -> 300 -> 100 -> 16 
+        # 224*224*3 -> 64 -> 32 -> 16 
+        # 224*224*3 -> 512 -> 256 -> 128
+        # 224*224*3 -> 3000 -> 1500 -> 750
         self.flatten_layer = nn.Flatten()
         self.dense1 = nn.Linear(784, 400)
         self.dense2 = nn.Linear(400, 200)
         #self.dense3 = nn.Linear(300, 100)
-        self.bottleneck = nn.Linear(200, 50)
-        self.dense4 = nn.Linear(50,200)
+        self.bottleneck = nn.Linear(200, 16)
+        self.dense4 = nn.Linear(16,200)
         self.dense5 = nn.Linear(200, 400)
         #self.dense6 = nn.Linear(300, 500)
         self.dense_final = nn.Linear(400, 784)
 
     def forward(self, inp):
-        #x_reshaped = inp #
+        """#x_reshaped = inp #
         x_reshaped = self.flatten_layer(inp)
         x = nn.functional.relu(self.dense1(x_reshaped))
         x = nn.functional.relu(self.dense2(x))
@@ -73,37 +51,131 @@ class AutoEncoder(nn.Module):
         x = nn.functional.relu(self.dense4(x))
         x = nn.functional.relu(self.dense5(x))
         #x = nn.functional.relu(self.dense6(x))
-        x = self.dense_final(x)
-        return x, x_reshaped, x_hid
+        x = self.dense_final(x)"""
+        #x_reshaped = inp #
+        x_reshaped = self.flatten_layer(inp)
+        h1 = torch.sigmoid(self.dense1(x_reshaped))
+        h2 = torch.sigmoid(self.dense2(h1))
+        #x = nn.functional.relu(self.dense3(x))
+        h3 = torch.sigmoid(self.bottleneck(h2))
+        h4 = torch.sigmoid(self.dense4(h3))
+        h5 = torch.sigmoid(self.dense5(h4))
+        #x = nn.functional.relu(self.dense6(x))
+        x = self.dense_final(h5)
+
+        """
+        W = torch.matmul(torch.diag_embed(h1 * (1 - h1)),self.dense1.weight)
+        W = torch.matmul(self.dense2.weight, W)
+        W = torch.matmul(torch.diag_embed(h2 * (1 - h2)), W)
+        W = torch.matmul(self.module.bottleneck.weight, W)
+        W = torch.matmul(torch.diag_embed(h3 * (1 - h3))  , W)"""
+
+        return x, x_reshaped, h1, h2, h3
+def loss_auto_bis(x, x_bar, h1, h2, h3, model):
+    t = time.time()
+    reconstruction_loss = nn.functional.mse_loss(x, x_bar, reduction='mean')
+    """W1 = model.module.dense1.weight # n_hidden x n_dense2 (64 x 784)
+    W2 = model.module.dense2.weight # n_hidden x n_dense2 (32 x 64)
+    W3 = model.module.bottleneck.weight # n_hidden x n_dense2 (16 x 32)
+    diag3 = torch.diag_embed(h3 * (1 - h3))         
+    diag2 = torch.diag_embed(h2 * (1 - h2))
+    diag1 = torch.diag_embed(h1 * (1 - h1))"""
+    W = torch.matmul(torch.diag_embed(h1 * (1 - h1)), model.module.dense1.weight)
+    W = torch.matmul(model.module.dense2.weight, W)
+    W = torch.matmul(torch.diag_embed(h2 * (1 - h2)), W)
+    W = torch.matmul( model.module.bottleneck.weight, W)
+    W = torch.matmul(torch.diag_embed(h3 * (1 - h3))  , W)
+    #tot_W = torch.matmul(diag3, torch.matmul(W3, torch.matmul(diag2, torch.matmul(W2, torch.matmul(diag1, W1)))))
+    contractive = torch.sum(W**2, axis=(1,2))
+    total_loss = reconstruction_loss + 1000 * contractive.mean()
+    """print(total_loss)
+    print(reconstruction_loss)
+    print(time.time() - t)"""
+    return total_loss 
+
+def grad_auto_bis(model, inputs):
+    reconstruction, inputs_reshaped, h1, h2, h3 = model(inputs.view(-1, 784))
+    loss_value = loss_auto_bis(inputs_reshaped, reconstruction, h1, h2, h3, model)
+    #loss_value.backward()
+    return loss_value, inputs_reshaped, reconstruction
 
 def loss_auto(x, x_bar, h, model):
+    t = time.time()
     reconstruction_loss = nn.functional.mse_loss(x, x_bar, reduction='mean') * 784
-    W = model.module.bottleneck.weight
+    W = model.module.bottleneck.weight # n_hidden x n_dense2 (16 x 32)
     dh = h * (1 - h) # N_batch x N_hidden
-    #W = W.transpose(0, 1)
     contractive = 100 * torch.sum(torch.matmul(dh**2, torch.square(W)), axis=1)
     total_loss = reconstruction_loss + contractive.mean()
+    """print(total_loss)
+    print(reconstruction_loss)
+    print(contractive.mean()   ) 
+    print(time.time() - t)"""
     return total_loss
 
 def grad_auto(model, inputs):
-    reconstruction, inputs_reshaped, hidden = model(inputs.view(-1, 784))
+    reconstruction, inputs_reshaped, _, _, hidden = model(inputs.view(-1, 784))
     loss_value = loss_auto(inputs_reshaped, reconstruction, hidden, model)
     #loss_value.backward()
     return loss_value, inputs_reshaped, reconstruction
 
-# Pytorch example - VAE
+# Pytorch example - VAE - https://github.com/pytorch/examples/blob/main/vae/main.py
 class VAE(nn.Module):
     def __init__(self):
         super(VAE, self).__init__()
+        # Encoder layers
+        """self.conv1 = nn.Conv2d(3, 32, kernel_size=3, stride=1, padding=1)
+        self.conv2 = nn.Conv2d(32, 64, kernel_size=3, stride=2, padding=1)
+        self.conv3 = nn.Conv2d(64, 128, kernel_size=3, stride=2, padding=1)
+        self.fc1 = nn.Linear(128 * 56 * 56, 1000)
+        self.fc21 = nn.Linear(1000, 128)
+        self.fc22 = nn.Linear(1000, 128)
 
-        self.fc1 = nn.Linear(784, 400)
-        self.fc21 = nn.Linear(400, 20)
-        self.fc22 = nn.Linear(400, 20)
-        self.fc3 = nn.Linear(20, 400)
-        self.fc4 = nn.Linear(400, 784)
+        # Decoder layers
+        self.fc3 = nn.Linear(128, 1000)
+        self.fc4 = nn.Linear(1000, 128*56*56)
+        self.conv4 = nn.ConvTranspose2d(128, 64, kernel_size=3, stride=2, padding=1, output_padding=1)
+        self.conv5 = nn.ConvTranspose2d(64, 32, kernel_size=3, stride=2, padding=1, output_padding=1)
+        self.conv6 = nn.ConvTranspose2d(32, 3, kernel_size=3, stride=1, padding=1)
 
     def encode(self, x):
-        h1 = F.relu(self.fc1(x))
+        x = F.relu(self.conv1(x))
+        x = F.relu(self.conv2(x))
+        x = F.relu(self.conv3(x))
+        if len(x.shape) > 3:
+            x = x.view(x.size(0), -1)
+        else:
+            x = x.view(1, -1)
+        x = F.relu(self.fc1(x))
+        return self.fc21(x), self.fc22(x)
+
+    def decode(self, z):
+        z = F.relu(self.fc3(z))
+        z = F.relu(self.fc4(z))
+        z = z.view(z.size(0), 128, 56, 56)
+        z = F.relu(self.conv4(z))
+        z = F.relu(self.conv5(z))
+        return torch.sigmoid(self.conv6(z))
+
+    def reparameterize(self, mu, logvar):
+        std = torch.exp(0.5 * logvar)
+        eps = torch.randn_like(std)
+        return mu + eps * std
+
+    def forward(self, x):
+        mu, logvar = self.encode(x)
+        z = self.reparameterize(mu, logvar)
+        return self.decode(z), mu, logvar"""
+        # 784 -> 400 -> 200 -> 200 -> 400 -> 784
+        self.fc0 = nn.Linear(224*224*3,1500)
+        self.fc1 = nn.Linear(1500, 750)
+        self.fc21 = nn.Linear(750, 128)
+        self.fc22 = nn.Linear(750, 128)
+        self.fc3 = nn.Linear(128, 750)
+        self.fc4 = nn.Linear(750, 1500)
+        self.fc5 = nn.Linear(1500, 224*224*3)
+    def encode(self, x):
+        h0 = F.relu(self.fc0(x))
+        h1 = F.relu(self.fc1(h0))
         return self.fc21(h1), self.fc22(h1)
 
     def reparameterize(self, mu, logvar):
@@ -113,19 +185,21 @@ class VAE(nn.Module):
 
     def decode(self, z):
         h3 = F.relu(self.fc3(z))
-        return torch.sigmoid(self.fc4(h3))
+        h4 = F.relu(self.fc4(h3))
+        return torch.sigmoid(self.fc5(h4))
 
     def forward(self, x):
-        
-        mu, logvar = self.encode(x.view(-1, 784))
+        #mu, logvar = self.encode(x.view(-1, 784))
+        mu, logvar = self.encode(x.view(-1, 224*224*3))
         z = self.reparameterize(mu, logvar)
         return self.decode(z), mu, logvar
 
 # Pytorch exampe VAE
 # Reconstruction + KL divergence losses summed over all elements and batch
 def loss_function(recon_x, x, mu, logvar):
-    BCE = F.binary_cross_entropy(recon_x, x.view(-1, 784), reduction='sum')
-
+    #BCE = F.binary_cross_entropy(recon_x, x.view(-1, 784), reduction='sum')
+    BCE = F.binary_cross_entropy(recon_x.view(x.shape[0], 3, 224, 224), x, reduction='sum')#
+    #BCE = F.binary_cross_entropy(recon_x, x, reduction='sum')
     # see Appendix B from VAE paper:
     # Kingma and Welling. Auto-Encoding Variational Bayes. ICLR, 2014
     # https://arxiv.org/abs/1312.6114
@@ -244,8 +318,6 @@ class Model(nn.Module):
             self.decode = self.model.decode
         elif model == "auto":
             self.model = AutoEncoder().to(device)
-        elif model == "unet":
-            self.model = Unet_auto(resnet34(pretrained=True)).to(device)
         else:
             print("model entered is not supported")
             exit(-1)
@@ -261,7 +333,7 @@ class Model(nn.Module):
         #----------------------------------------------------------------------------------------------------------------
         #                                   Modification of the model's last layer
         #----------------------------------------------------------------------------------------------------------------
-        # in features parameters the nb of features from the models last layer
+        # in features parameters = the nb of features from the models last layer
         # Given the model, this layer has a different name: classifier densenet, .fc resnet, ._fc effnet,... 
         # Localisation can be found by displaying the model: print(self.model) and taking the last layer name
         if classification is True:
@@ -285,9 +357,10 @@ class Model(nn.Module):
             self.model.heads.head = nn.Linear(self.model.heads.head.in_features, out_features).to(device=device)
         elif model == 'deit' or model == 'conv' or model == 'cvt':
             self.model.classifier = torch.nn.Linear(self.model.classifier.in_features, num_features).to(device=device)
-            for module in filter(lambda m: type(m) == nn.LayerNorm, self.model.modules()):
-                module.eval()
-                module.train = lambda _: None
+            if freeze: 
+                for module in filter(lambda m: type(m) == nn.LayerNorm, self.model.modules()):
+                    module.eval()
+                    module.train = lambda _: None
         
         if eval == True:
             #self.model = nn.DataParallel(self.model)
@@ -358,14 +431,7 @@ class Model(nn.Module):
                     labels = labels.to(device=self.device)
 
                     if self.model_name == "auto":
-                        loss, inputs_reshaped, reconstruction = grad_auto(self.model, images_gpu.view(-1, 3, 224, 224)) 
-                        optimizer.zero_grad(set_to_none=True)
-                        loss.backward()
-                    elif self.model_name == "unet":
-                        print(images_gpu.shape)
-                        rec, feat = self.model(images_gpu.view(-1, 3, 224, 224))
-                        loss_function = nn.MSELoss()
-                        loss = loss_function(rec, images_gpu.view(-1, 3, 224, 224))
+                        loss, inputs_reshaped, reconstruction = grad_auto_bis(self.model, images_gpu.view(-1, 3, 224, 224)) 
                         optimizer.zero_grad(set_to_none=True)
                         loss.backward()
                     else:

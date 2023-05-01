@@ -96,11 +96,14 @@ if __name__ == "__main__":
     dir = args.results_dir
     names_only = []
     class_name = []
+    classement = 0 
     for n in names:
+        classement += 1
         class_name.append(utils.get_class(n))
         names_only.append(n[n.rfind('/')+1:])
         img = Image.open(n)
-        img.save(os.path.join(dir,n[n.rfind('/')+1:]))
+        img.save(os.path.join(dir,str(classement) + "_" + utils.get_class(n)+'_'+n[n.rfind('/')+1:] ))
+        #img.save(os.path.join(dir,n[n.rfind('/')+1:]))
         
     print("The names of the nearest images are: "+str(class_name))
     

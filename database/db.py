@@ -148,11 +148,12 @@ class Database:
                 print(out.shape)
             elif extractor == 'VAE':
                 t = time.time()
+                #mu, logvar = self.model.encode(images.view(-1, 224*224*3))
                 mu, logvar = self.model.encode(images.view(-1, 784))
+                #mu, logvar = self.model.encode(images)
                 out = self.model.reparameterize(mu, logvar)
                 dec = self.model.decode(out)
-                out = out.view(-1, self.model.num_features) # By miracle, the number of features is such that the output of the VAE can be reshaped to (batch size, num_features) despite being resized abritrarly in input
-                print(out.shape) # not a miracle, num of features selecetd by mysellf in order to make it so...
+                out = out.view(-1, self.model.num_features) #print(out.shape)
                 #print(out.shape)
                 # For visualisation of the reconstruction
                 """dec = dec.view(128, 3, 224, 224)
@@ -166,7 +167,7 @@ class Database:
             elif extractor == 'auto':
                 t = time.time()
                 #out1, out2, out3 = self.model.model(images.view(-1, 784))
-                out1, out2, out3 = self.model.model(images.view(-1, 784))
+                out1, out2, _, _, out3 = self.model.model(images.view(-1, 784))
                 out = out3.cpu()
                 out = out.view(-1, self.model.num_features)
                 t_model = t_model + (time.time() - t)
@@ -227,6 +228,8 @@ class Database:
             plt.show()"""
             t_model = time.time() - t_model
         elif extractor == 'VAE':
+            #mu, logvar = self.model.encode(image.to(device = next(self.model.parameters()).device).view(-1, 224*224*3))
+            #mu, logvar = self.model.encode(image.to(device = next(self.model.parameters()).device))
             mu, logvar = self.model.encode(image.to(device = next(self.model.parameters()).device).view(-1, 784))
             out = self.model.reparameterize(mu, logvar)
             out = out.view(-1, self.model.num_features)
@@ -234,7 +237,7 @@ class Database:
             t_model = time.time() - t_model
         elif extractor == 'auto':
             #out1, out2, out3 = self.model.model(image.to(device=next(self.model.parameters()).device).view(-1, 784))
-            out1, out2, out3 = self.model.model(image.to(device=next(self.model.parameters()).device).view(-1, 784))
+            out1, out2, _, _, out3 = self.model.model(image.to(device=next(self.model.parameters()).device).view(-1, 784))
             out = out3.cpu()
             out = out.view(-1, self.model.num_features)
             """out1 = out1.cpu() 

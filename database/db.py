@@ -45,8 +45,8 @@ class Database:
             self.r.set('last_id_labeled', 0) # Set a value in redis with key = last_id_labeled
             self.r.set('last_id_unlabeled', 0)
 
-            open(filename + '_labeledvectors', 'wb').close()
-            open(filename + '_unlabeledvectors', 'wb').close()
+            """open(filename + '_labeledvectors', 'wb').close()
+            open(filename + '_unlabeledvectors', 'wb').close()"""
 
         if device == 'gpu':
             self.index_labeled = faiss.index_cpu_to_gpu(res_labeled, 0, self.index_labeled)
@@ -149,8 +149,8 @@ class Database:
             elif extractor == 'VAE':
                 t = time.time()
                 #mu, logvar = self.model.encode(images.view(-1, 224*224*3))
-                mu, logvar = self.model.encode(images.view(-1, 784))
-                #mu, logvar = self.model.encode(images)
+                #mu, logvar = self.model.encode(images.view(-1, 784))
+                mu, logvar = self.model.encode(images)
                 out = self.model.reparameterize(mu, logvar)
                 dec = self.model.decode(out)
                 out = out.view(-1, self.model.num_features) #print(out.shape)
@@ -229,8 +229,8 @@ class Database:
             t_model = time.time() - t_model
         elif extractor == 'VAE':
             #mu, logvar = self.model.encode(image.to(device = next(self.model.parameters()).device).view(-1, 224*224*3))
-            #mu, logvar = self.model.encode(image.to(device = next(self.model.parameters()).device))
-            mu, logvar = self.model.encode(image.to(device = next(self.model.parameters()).device).view(-1, 784))
+            mu, logvar = self.model.encode(image.to(device = next(self.model.parameters()).device))
+            #mu, logvar = self.model.encode(image.to(device = next(self.model.parameters()).device).view(-1, 784))
             out = self.model.reparameterize(mu, logvar)
             out = out.view(-1, self.model.num_features)
             out = out.cpu()
@@ -278,7 +278,7 @@ class Database:
                     values.append(v)
             t_search = time.time() - t_search
 
-            return values, distance.tolist(), t_model, t_search
+            return values, distance[0], t_model, t_search
         elif retrieve_class == 'false':
             distance, labels = self.index_unlabeled.search(out.cpu().numpy(), nrt_neigh)
             labels = [l for l in list(labels[0]) if l != -1]
@@ -308,7 +308,7 @@ class Database:
             labels_l = [l for l in list(labels_l[0]) if l != -1]
             labels_u = [l for l in list(labels_u[0]) if l != -1]
 
-            # from the results of both, find hte best nrt_neigh (out of the 2* nrt_neigh)
+            # from the results of both, find the best nrt_neigh (out of the 2* nrt_neigh)
             index = faiss.IndexFlatL2(1)
             index.add(np.array(distance_l, dtype=np.float32).reshape(-1, 1))
             index.add(np.array(distance_u, dtype=np.float32).reshape(-1, 1))
@@ -357,7 +357,8 @@ class Database:
 
     def remove(self, name):
         key = self.r.get(name).decode('utf-8')
-
+        
+        # Remove the supplementary inscription behind the index
         labeled = key.find('unlabeled') == -1
         if labeled:
             idx = key.find('labeled')
@@ -392,7 +393,7 @@ class Database:
                 res_labeled = faiss.StandardGpuResources()
                 self.index_unlabeled = faiss.index_cpu_to_gpu(res_labeled, 0, self.index_unlabeled)
 
-        os.remove(name) # ? 
+        #os.remove(name) # dangereux si on veut juste retirer le fichier de la db mais pas le supprimer
 
     def train_labeled(self, generalise):
         batch_size = 128
@@ -401,9 +402,9 @@ class Database:
         all_keys = self.r.keys("*")
         for k in all_keys:
             k = k.decode("utf-8")
-            # Only keep the indexes as keys, not tthe names nor last_id 
+            # Only keep the indexes as keys, not the names nor last_id 
             if k.find('/') == -1 and k.find('_')==-1:
-                end_ind = k.find('l')
+                end_ind = k.find('l') # Remove the unecessary part of the indeex
                 index = k[:end_ind]
                 keys.append(index)
                 index = int(index)

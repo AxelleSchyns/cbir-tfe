@@ -39,7 +39,7 @@ class DRDataset(Dataset):
                 [transforms.RandomVerticalFlip(.5),
                 transforms.RandomHorizontalFlip(.5),
                 transforms.ColorJitter(brightness=.4, contrast=.4, saturation=.4, hue=.4),
-                transforms.RandomResizedCrop(224),
+                transforms.RandomResizedCrop(224, scale = (.8,1)),
                 transforms.RandomApply([transforms.GaussianBlur(23)]),
                 transforms.RandomRotation(random.randint(0,360)),
                 transforms.RandomGrayscale(0.05),
@@ -100,6 +100,8 @@ class DRDataset(Dataset):
         numbers = list(range(self.num_classes))
         class3 = np.random.choice(numbers)
         im3 = np.random.choice(self.image_dict[self.rev_dict[class3]])
+        while im3 == im:
+            im3 = np.random.choice(self.image_dict[self.rev_dict[class3]])
         p1 = os.path.join(self.root, self.rev_dict[im_class], im)
         p3 = os.path.join(self.root, self.rev_dict[class3], im3)
         if not self.pair:
@@ -133,10 +135,22 @@ class TrainingDataset(Dataset):
     def __init__(self, root, name, samples_per_class, generalise, load, transformer=False):
         self.classes = os.listdir(root)
         self.classes.sort()
-        
+        print(self.classes)
         # Keep only half the classes
         if generalise == 1:
-            self.classes = self.classes[:len(self.classes) // 2 + 1]
+            # Implementation:
+            #self.classes = self.classes[:len(self.classes) // 2 + 1]
+            # Report:
+            list_classes = ['janowczyk2_0','janowczyk2_1', 'lbpstroma_113349434', 'lbpstroma_113349448', 'mitos2014_0', 'mitos2014_1', 'mitos2014_2', 
+                            'patterns_no_aug_0', 'patterns_no_aug_1', 'tupac_mitosis_0', 'tupac_mitosis_1', 'ulg_lbtd_lba_406558', 'ulg_lbtd_lba_4762', 
+                            'ulg_lbtd_lba_4763', 'ulg_lbtd_lba_4764', 'ulg_lbtd_lba_4765', 'ulg_lbtd_lba_4766', 'ulg_lbtd_lba_4767', 'ulg_lbtd_lba_4768', 
+                            'umcm_colorectal_01_TUMOR', 'umcm_colorectal_02_STROMA', 'umcm_colorectal_03_COMPLEX', 'umcm_colorectal_04_LYMPHO', 
+                            'umcm_colorectal_05_DEBRIS', 'umcm_colorectal_06_MUCOSA', 'umcm_colorectal_07_ADIPOSE', 'umcm_colorectal_08_EMPTY', 
+                            'warwick_crc_0', 'camelyon16_0', 'camelyon16_1', 'iciar18_micro_113351562', 'iciar18_micro_113351588', 
+                            'iciar18_micro_113351608', 'iciar18_micro_113351628']
+            self.classes = list_classes
+            self.classes.sort()
+                    
         # Keep haf the images by sleectioning (arbittrarly) the classes to keep
         elif generalise == 2: 
             new_classes = []
@@ -145,6 +159,8 @@ class TrainingDataset(Dataset):
             for i in range(26):
                 new_classes.append(self.classes[21 + i])
             self.classes = new_classes
+            print(self.classes)
+            print(len(self.classes))
         # Create new classes from the data through kmeans
         elif generalise == 3:
             # Create list of image paths 
@@ -153,7 +169,7 @@ class TrainingDataset(Dataset):
             self.kmeans, self.labels, self.classes = kmeans.execute_kmeans(load, list_img)
         
 
-        self.conversion = {x: i for i, x in enumerate(self.classes)} # Number given the clss
+        self.conversion = {x: i for i, x in enumerate(self.classes)} # Number given the class
         self.conv_inv = {i: x for i, x in enumerate(self.classes)} # class given the number
         self.image_dict = {}
         self.image_list = defaultdict(list)
@@ -177,6 +193,7 @@ class TrainingDataset(Dataset):
                         self.image_dict[i] = (img, self.conversion[cls])
                         self.image_list[self.conversion[cls]].append(img)
                         i += 1
+
 
         if name == 'deit' or name == 'cvt' or name == 'conv':
             self.transform = transforms.Compose(

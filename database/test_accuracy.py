@@ -275,7 +275,17 @@ class TestDataset(Dataset):
             self.classes.remove('janowczyk6_0')
 
         if generalise == 1:
-            self.classes = self.classes[len(self.classes) // 2:]
+            list_classes = ['janowczyk2_0','janowczyk2_1', 'lbpstroma_113349434', 'lbpstroma_113349448', 'mitos2014_0', 'mitos2014_1', 'mitos2014_2', 
+                            'patterns_no_aug_0', 'patterns_no_aug_1', 'tupac_mitosis_0', 'tupac_mitosis_1', 'ulg_lbtd_lba_406558', 'ulg_lbtd_lba_4762', 
+                            'ulg_lbtd_lba_4763', 'ulg_lbtd_lba_4764', 'ulg_lbtd_lba_4765', 'ulg_lbtd_lba_4766', 'ulg_lbtd_lba_4767', 'ulg_lbtd_lba_4768', 
+                            'umcm_colorectal_01_TUMOR', 'umcm_colorectal_02_STROMA', 'umcm_colorectal_03_COMPLEX', 'umcm_colorectal_04_LYMPHO', 
+                            'umcm_colorectal_05_DEBRIS', 'umcm_colorectal_06_MUCOSA', 'umcm_colorectal_07_ADIPOSE', 'umcm_colorectal_08_EMPTY', 
+                            'warwick_crc_0', 'camelyon16_0', 'camelyon16_1', 'iciar18_micro_113351562', 'iciar18_micro_113351588', 
+                            'iciar18_micro_113351608', 'iciar18_micro_113351628']
+            for c in self.classes:
+                if c in list_classes:
+                    self.classes.remove(c)
+            #self.classes = self.classes[len(self.classes) // 2:]
 
         
         if measure != 'random':
@@ -304,6 +314,8 @@ class TestDataset(Dataset):
                 to_delete.clear()
                 if len(self.img_list) > 1000 or len(self.dic_img) == 0:
                     break
+
+            print(len(self.img_list))
 
     def __len__(self):
         return len(self.img_list)

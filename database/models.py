@@ -62,16 +62,21 @@ class AutoEncoder(nn.Module):
         h5 = torch.sigmoid(self.dense5(h4))
         #x = nn.functional.relu(self.dense6(x))
         x = self.dense_final(h5)
+        ws = None
+        for i in range(int(x.shape[0]/192)):
+            W = torch.matmul(torch.diag_embed(h1[i:i+192, :] * (1 - h1[i:i+192, :])), self.dense1.weight)
+            W = torch.matmul(self.dense2.weight, W)
+            W = torch.matmul(torch.diag_embed(h2[i:i+192, :] * (1 - h2[i:i+192, :])), W)
+            W = torch.matmul(self.bottleneck.weight, W)
+            W = torch.matmul(torch.diag_embed(h3[i:i+192, :] * (1 - h3[i:i+192, :]))  , W)
 
-        """
-        W = torch.matmul(torch.diag_embed(h1 * (1 - h1)),self.dense1.weight)
-        W = torch.matmul(self.dense2.weight, W)
-        W = torch.matmul(torch.diag_embed(h2 * (1 - h2)), W)
-        W = torch.matmul(self.module.bottleneck.weight, W)
-        W = torch.matmul(torch.diag_embed(h3 * (1 - h3))  , W)"""
+            if ws is None:
+                ws = W
+            else:
+                ws = torch.cat((ws, W), axis=0)
 
-        return x, x_reshaped, h1, h2, h3
-def loss_auto_bis(x, x_bar, h1, h2, h3, model):
+        return x, x_reshaped, h3, ws
+def loss_auto_bis(x, x_bar, W):
     t = time.time()
     reconstruction_loss = nn.functional.mse_loss(x, x_bar, reduction='mean')
     """W1 = model.module.dense1.weight # n_hidden x n_dense2 (64 x 784)
@@ -79,12 +84,12 @@ def loss_auto_bis(x, x_bar, h1, h2, h3, model):
     W3 = model.module.bottleneck.weight # n_hidden x n_dense2 (16 x 32)
     diag3 = torch.diag_embed(h3 * (1 - h3))         
     diag2 = torch.diag_embed(h2 * (1 - h2))
-    diag1 = torch.diag_embed(h1 * (1 - h1))"""
+    diag1 = torch.diag_embed(h1 * (1 - h1))
     W = torch.matmul(torch.diag_embed(h1 * (1 - h1)), model.module.dense1.weight)
     W = torch.matmul(model.module.dense2.weight, W)
     W = torch.matmul(torch.diag_embed(h2 * (1 - h2)), W)
     W = torch.matmul( model.module.bottleneck.weight, W)
-    W = torch.matmul(torch.diag_embed(h3 * (1 - h3))  , W)
+    W = torch.matmul(torch.diag_embed(h3 * (1 - h3))  , W)"""
     #tot_W = torch.matmul(diag3, torch.matmul(W3, torch.matmul(diag2, torch.matmul(W2, torch.matmul(diag1, W1)))))
     contractive = torch.sum(W**2, axis=(1,2))
     total_loss = reconstruction_loss + 1000 * contractive.mean()
@@ -94,8 +99,8 @@ def loss_auto_bis(x, x_bar, h1, h2, h3, model):
     return total_loss 
 
 def grad_auto_bis(model, inputs):
-    reconstruction, inputs_reshaped, h1, h2, h3 = model(inputs.view(-1, 784))
-    loss_value = loss_auto_bis(inputs_reshaped, reconstruction, h1, h2, h3, model)
+    reconstruction, inputs_reshaped, h3, W = model(inputs.view(-1, 784))
+    loss_value = loss_auto_bis(inputs_reshaped, reconstruction, W)
     #loss_value.backward()
     return loss_value, inputs_reshaped, reconstruction
 
@@ -113,7 +118,7 @@ def loss_auto(x, x_bar, h, model):
     return total_loss
 
 def grad_auto(model, inputs):
-    reconstruction, inputs_reshaped, _, _, hidden = model(inputs.view(-1, 784))
+    reconstruction, inputs_reshaped, hidden, _ = model(inputs.view(-1, 784))
     loss_value = loss_auto(inputs_reshaped, reconstruction, hidden, model)
     #loss_value.backward()
     return loss_value, inputs_reshaped, reconstruction
@@ -123,7 +128,7 @@ class VAE(nn.Module):
     def __init__(self):
         super(VAE, self).__init__()
         # Encoder layers
-        """self.conv1 = nn.Conv2d(3, 32, kernel_size=3, stride=1, padding=1)
+        self.conv1 = nn.Conv2d(3, 32, kernel_size=3, stride=1, padding=1)
         self.conv2 = nn.Conv2d(32, 64, kernel_size=3, stride=2, padding=1)
         self.conv3 = nn.Conv2d(64, 128, kernel_size=3, stride=2, padding=1)
         self.fc1 = nn.Linear(128 * 56 * 56, 1000)
@@ -164,9 +169,9 @@ class VAE(nn.Module):
     def forward(self, x):
         mu, logvar = self.encode(x)
         z = self.reparameterize(mu, logvar)
-        return self.decode(z), mu, logvar"""
+        return self.decode(z), mu, logvar
         # 784 -> 400 -> 200 -> 200 -> 400 -> 784
-        self.fc0 = nn.Linear(224*224*3,1500)
+        """self.fc0 = nn.Linear(224*224*3,1500)
         self.fc1 = nn.Linear(1500, 750)
         self.fc21 = nn.Linear(750, 128)
         self.fc22 = nn.Linear(750, 128)
@@ -192,7 +197,7 @@ class VAE(nn.Module):
         #mu, logvar = self.encode(x.view(-1, 784))
         mu, logvar = self.encode(x.view(-1, 224*224*3))
         z = self.reparameterize(mu, logvar)
-        return self.decode(z), mu, logvar
+        return self.decode(z), mu, logvar"""
 
 # Pytorch exampe VAE
 # Reconstruction + KL divergence losses summed over all elements and batch
@@ -400,8 +405,8 @@ class Model(nn.Module):
         return self.forward_function(input)
     
     # Inspired by pytorch example - VAE
-    def train_vae(self, model, dir, epochs, sched, lr, decay, beta_lr, gamma, lr_proxies):
-        data = dataset.TrainingDataset(dir, model, 2, 0, None, self.transformer)
+    def train_vae(self, model, dir, epochs, generalise, sched, lr, decay, beta_lr, gamma, lr_proxies):
+        data = dataset.TrainingDataset( root = dir, name = model, samples_per_class= 2,  generalise = generalise, load = None, transformer= self.transformer)
         print('Size of dataset', data.__len__())
 
         to_optim = [{'params':self.parameters(),'lr':lr,'weight_decay':decay}]
@@ -461,6 +466,7 @@ class Model(nn.Module):
             plt.show()
         except KeyboardInterrupt:
             print("Interrupted")
+
     def train_epochs(self, model, dir, epochs, sched, loss, generalise, load, lr, decay, beta_lr, gamma, lr_proxies):
         data = dataset.TrainingDataset(dir, model, 2, generalise, load, self.transformer)
         print('Size of dataset', data.__len__())
@@ -787,7 +793,7 @@ if __name__ == "__main__":
     if args.loss in siamese_losses:
         m.train_dr(args.training_data, args.num_epochs, args.lr, loss_name = args.loss, augmented=args.augmented, contrastive = not args.non_contrastive)
     elif args.model == 'VAE' or args.model == 'auto' or args.model == "unet":
-        m.train_vae(args.model, args.training_data, args.num_epochs, args.scheduler, args.lr, args.decay, args.beta_lr, args.gamma, args.lr_proxies)
+        m.train_vae(args.model, args.training_data, args.num_epochs, args.generalise, args.scheduler, args.lr, args.decay, args.beta_lr, args.gamma, args.lr_proxies)
     else:
         m.train_epochs(args.model, args.training_data, args.num_epochs, args.scheduler, args.loss, args.generalise, args.load,
                        args.lr, args.decay, args.beta_lr, args.gamma, args.lr_proxies)

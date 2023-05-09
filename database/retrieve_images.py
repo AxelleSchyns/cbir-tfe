@@ -5,13 +5,14 @@ from PIL import Image
 import os
 import builder
 import utils
+import matplotlib.pyplot as plt
 
 class ImageRetriever:
     def __init__(self, db_name, model):
         self.db = Database(db_name, model, True)
 
     def retrieve(self, image, extractor, nrt_neigh=10):
-        return self.db.search(image,extractor, nrt_neigh)[0]
+        return self.db.search(image,extractor, nrt_neigh)
 
 if __name__ == "__main__":
     parser = ArgumentParser()
@@ -92,18 +93,38 @@ if __name__ == "__main__":
 
     retriever = ImageRetriever(args.db_name, model)
 
-    names = retriever.retrieve(Image.open(args.path).convert('RGB'), args.extractor, args.nrt_neigh)
+    ret_values = retriever.retrieve(Image.open(args.path).convert('RGB'), args.extractor, args.nrt_neigh)
     dir = args.results_dir
+    names = ret_values[0]
+    dist = ret_values[1]
     names_only = []
-    class_name = []
+    class_names = []
     classement = 0 
     for n in names:
         classement += 1
-        class_name.append(utils.get_class(n))
+        class_names.append(utils.get_class(n))
         names_only.append(n[n.rfind('/')+1:])
         img = Image.open(n)
         img.save(os.path.join(dir,str(classement) + "_" + utils.get_class(n)+'_'+n[n.rfind('/')+1:] ))
         #img.save(os.path.join(dir,n[n.rfind('/')+1:]))
+    
+    # Subplot of the image and the nearest images
+    plt.figure(figsize=(7,3))
+    plt.subplot(2,6,1)
+    plt.imshow(Image.open(args.path).convert('RGB'))
+    plt.title("Query image", fontsize=8)
+    plt.axis('off')
+    for i in range(2,11):
+        class_name = utils.get_new_name(class_names[i-2])
+        plt.subplot(2,6,i)
+        plt.imshow(Image.open(names[i-2]).convert('RGB'))
+        # Write the distance and rank right below each of the image
+        plt.text(20, 450, str(dist[i-2])+ str(i-1), fontsize=8)
+        # Change title font size
+        plt.title(class_name,fontsize=8)
+
+        plt.axis('off')
+    plt.show()
         
     print("The names of the nearest images are: "+str(class_name))
     

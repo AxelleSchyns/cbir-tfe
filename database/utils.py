@@ -21,9 +21,12 @@ def encode(model, img):
         code = model.module.encoder(img).cpu()
     return code
 
+# ! Only works when the path is in the form: /home/.../project/class/image_name
 def get_class(path):
     end_c = path.rfind("/")
     begin_c = path.rfind("/", 0, end_c) + 1
+    if end_c == -1 or begin_c == -1:
+        return -1
     return path[begin_c:end_c]
 
 def get_proj(path):
@@ -37,6 +40,7 @@ def get_proj(path):
                 proj_name = proj_name[0:proj_name.rfind("_")]
     return proj_name
 
+# Change class names to have all class number starting from 0
 def rename_classes(class_list):
     classes = os.listdir(class_list)
     classes.sort()
@@ -59,3 +63,20 @@ def rename_classes(class_list):
         old_name = c_project
     return new_classes
 
+# Get new class name of a class
+def get_new_name(class_name, path=None):
+    if path == None:
+        classes = os.listdir("/home/labarvr4090/Documents/Axelle/cytomine/Data/validation")
+    else:
+        classes = os.listdir(path)
+    classes.sort()
+    proj = get_proj(class_name)
+    cpt_c = 0
+    for c in classes:
+        if c == class_name:
+            return proj + "_" + str(cpt_c)
+        elif proj in c:
+            cpt_c += 1
+    
+    return -1 
+    

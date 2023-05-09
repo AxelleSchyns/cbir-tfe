@@ -114,7 +114,7 @@ if __name__ == "__main__":
     plt.imshow(Image.open(args.path).convert('RGB'))
     plt.title("Query image", fontsize=8)
     plt.axis('off')
-    for i in range(2,11):
+    for i in range(2,12):
         class_name = utils.get_new_name(class_names[i-2])
         plt.subplot(2,6,i)
         plt.imshow(Image.open(names[i-2]).convert('RGB'))

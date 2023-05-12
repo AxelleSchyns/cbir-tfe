@@ -69,13 +69,14 @@ def compute_results_kmeans(labels, image, top_1_k, top_5_k, maj_k, predictions_k
 
 
 
-def compute_results(names, data, predictions, class_im, proj_im, top_1_acc, top_5_acc, maj_acc, predictions_maj):
+def compute_results(names, data, predictions, class_im, proj_im, top_1_acc, top_5_acc, maj_acc, predictions_maj, weights):
     similar = names[:5]
     temp = []
     already_found_5 = 0
     already_found_5_proj = 0
     already_found_5_sim = 0
-    
+
+    idx_class = data.conversion[class_im]
     for j in range(len(similar)):
         class_retr = utils.get_class(similar[j])
         temp.append(class_retr)
@@ -92,18 +93,18 @@ def compute_results(names, data, predictions, class_im, proj_im, top_1_acc, top_
         # Class retrieved is same as query
         if class_retr == class_im: 
             if already_found_5 == 0:
-                top_5_acc[0] += 1
+                top_5_acc[0] += weights[idx_class]
                 if already_found_5_proj == 0:
-                    top_5_acc[1] += 1
+                    top_5_acc[1] += weights[idx_class]
                 if already_found_5_sim == 0:
-                    top_5_acc[2] += 1
+                    top_5_acc[2] += weights[idx_class]
         
                 if j == 0:
-                    top_1_acc[0] += 1
+                    top_1_acc[0] += weights[idx_class]
                     if already_found_5_proj == 0:
-                        top_1_acc[1] += 1
+                        top_1_acc[1] += weights[idx_class]  
                     if already_found_5_sim == 0:
-                        top_1_acc[2] += 1
+                        top_1_acc[2] += weights[idx_class]
             already_found_5 += 1 # One of the 5best results matches the label of the query ->> no need to check further
             already_found_5_proj += 1
             already_found_5_sim +=1
@@ -111,13 +112,13 @@ def compute_results(names, data, predictions, class_im, proj_im, top_1_acc, top_
         # Class retrieved is in the same project as query
         elif proj_retr == proj_im:
             if already_found_5_proj == 0:
-                top_5_acc[1] += 1
+                top_5_acc[1] += weights[idx_class]
                 if already_found_5_sim == 0:
-                    top_5_acc[2] += 1
+                    top_5_acc[2] += weights[idx_class]
                 if j == 0:
                     if already_found_5_sim == 0:
-                        top_1_acc[2] += 1
-                    top_1_acc[1] += 1
+                        top_1_acc[2] += weights[idx_class]
+                    top_1_acc[1] += weights[idx_class]
             already_found_5_sim += 1
             already_found_5_proj += 1
         
@@ -127,40 +128,40 @@ def compute_results(names, data, predictions, class_im, proj_im, top_1_acc, top_
             # 'janowczyk'
             if proj_im[0:len(proj_im)-2] == proj_retr[0:len(proj_retr)-2]:
                 if already_found_5_sim == 0: 
-                    top_5_acc[2] += 1
+                    top_5_acc[2] += weights[idx_class]
                     if j == 0:
-                        top_1_acc[2] += 1
+                        top_1_acc[2] += weights[idx_class]
                 already_found_5_sim += 1
             elif proj_im == "cells_no_aug" and proj_retr == "patterns_no_aug":
                 if already_found_5_sim == 0: 
-                    top_5_acc[2] += 1
+                    top_5_acc[2] += weights[idx_class]
                     if j == 0:
-                        top_1_acc[2] += 1
+                        top_1_acc[2] += weights[idx_class]
                 already_found_5_sim += 1
             elif proj_retr == "cells_no_aug" and proj_im == "patterns_no_aug":
                 if already_found_5_sim == 0: 
-                    top_5_acc[2] += 1
+                    top_5_acc[2] += weights[idx_class]
                     if j == 0:
-                        top_1_acc[2] += 1
+                        top_1_acc[2] += weights[idx_class]
                 already_found_5_sim += 1
             elif proj_retr == "mitos2014" and proj_im == "tupac_mitosis":
                 if already_found_5_sim == 0: 
-                    top_5_acc[2] += 1
+                    top_5_acc[2] += weights[idx_class]
                     if j == 0:
-                        top_1_acc[2] += 1
+                        top_1_acc[2] += weights[idx_class]
                 already_found_5_sim += 1
             elif proj_im == "mitos2014" and proj_retr == "tupac_mitosis":
                 if already_found_5_sim == 0: 
-                    top_5_acc[2] += 1
+                    top_5_acc[2] += weights[idx_class]
                     if j == 0:
-                        top_1_acc[2] += 1
+                        top_1_acc[2] += weights[idx_class]
                 already_found_5_sim += 1
     if already_found_5 > 2:
-        maj_acc[0] += 1
+        maj_acc[0] += weights[idx_class]
     if already_found_5_proj > 2:
-        maj_acc[1] += 1
+        maj_acc[1] += weights[idx_class]
     if already_found_5_sim > 2:
-        maj_acc[2] += 1
+        maj_acc[2] += weights[idx_class]
     predictions_maj.append(data.conversion[max(set(temp), key = temp.count)])
 
     return predictions, predictions_maj, top_1_acc, top_5_acc, maj_acc
@@ -287,11 +288,19 @@ class TestDataset(Dataset):
                     self.classes.remove(c)
             #self.classes = self.classes[len(self.classes) // 2:]
 
-        
         if measure != 'random':
-            for i in self.classes:
-                for img in os.listdir(os.path.join(root, str(i))):
-                    self.img_list.append(os.path.join(root, str(i), img))
+            if measure == "weighted":
+                weights = np.zeros(len(self.classes))
+                for i in self.classes:
+                    weights[self.conversion[i]] = 1 / len(os.listdir(os.path.join(root, str(i))))
+                    for img in os.listdir(os.path.join(root, str(i))):
+                        self.img_list.append(os.path.join(root, str(i), img))
+                self.weights = weights
+            else:
+                for i in self.classes:
+                    for img in os.listdir(os.path.join(root, str(i))):
+                        self.img_list.append(os.path.join(root, str(i), img))
+        
         else:
             for i in self.classes:
                 for img in os.listdir(os.path.join(root, str(i))):
@@ -315,7 +324,6 @@ class TestDataset(Dataset):
                 if len(self.img_list) > 1000 or len(self.dic_img) == 0:
                     break
 
-            print(len(self.img_list))
 
     def __len__(self):
         return len(self.img_list)
@@ -323,11 +331,14 @@ class TestDataset(Dataset):
     def __getitem__(self, idx):
         return self.img_list[idx]
 
-def test(model, dataset, db_name, extractor, measure, generalise, project_name, class_name, see_cms, label):
+def test(model, dataset, db_name, extractor, measure, generalise, project_name, class_name, see_cms, label, stat = False):
     database = db.Database(db_name, model, True, extractor=='transformer')
 
     data = TestDataset(dataset, measure, generalise, project_name, class_name)
-
+    if measure == 'weighted':
+        weights = data.weights
+    else:
+        weights = np.ones(len(data.classes))
     loader = torch.utils.data.DataLoader(data, batch_size=1, shuffle=False,
                                          num_workers=4, pin_memory=True)
 
@@ -347,15 +358,17 @@ def test(model, dataset, db_name, extractor, measure, generalise, project_name, 
         top_1_k = 0
         top_5_k = 0
         maj_k = 0
-        wrong_old = np.zeros((67,1))
-        wrong_new = np.zeros((67,1))
-        div = np.zeros((67,1))
+        wrong_old = np.zeros((len(data.classes),1))
+        wrong_new = np.zeros((len(data.classes),1))
+        div = np.zeros((len(data.classes),1))
 
     t_search = 0
     t_model = 0
     t_tot = 0
 
     for i, image in enumerate(loader):
+        if Image.open(image[0]).convert('RGB').shape[0] == 1:
+            print(image)
         t = time.time()
         names, _, t_model_tmp, t_search_tmp = database.search(Image.open(image[0]).convert('RGB'), extractor, retrieve_class=label, generalise=generalise)
         t_tot += time.time() - t
@@ -376,35 +389,40 @@ def test(model, dataset, db_name, extractor, measure, generalise, project_name, 
             wrong_new, wrong_old, div = compute_old_new(labs[0], names[0], class_im, image, wrong_old, wrong_new, data, div)
 
         # Compute accuracy 
-        predictions, predictions_maj, top_1_acc, top_5_acc, maj_acc = compute_results(names, data, predictions, class_im, proj_im, top_1_acc,top_5_acc,maj_acc,predictions_maj)
+        predictions, predictions_maj, top_1_acc, top_5_acc, maj_acc = compute_results(names, data, predictions, class_im, proj_im, top_1_acc,top_5_acc,maj_acc,predictions_maj, weights)
 
+    if measure == 'weighted':
+        s = len(data.classes)
+    else:
+        s = data.__len__()
+    
+    if not stat:
+        print("top-1 accuracy : ", top_1_acc[0] / s)
+        print("top-5 accuracy : ", top_5_acc[0] / s)
+        print("top-1 accuracy proj : ", top_1_acc[1] / s)
+        print("top-5 accuracy proj : ", top_5_acc[1] / s)
+        print("top-1 accuracy sim : ", top_1_acc[2]/ s)
+        print("top-5 accuracy sim : ", top_5_acc[2] / s)
+        print("maj accuracy class : ", maj_acc[0] / s)
+        print("maj accuracy proj : ", maj_acc[1] / s)
+        print("maj accuracy sim : ", maj_acc[2] / s)
 
-    print("top-1 accuracy : ", top_1_acc[0] / data.__len__())
-    print("top-5 accuracy : ", top_5_acc[0] / data.__len__())
-    print("top-1 accuracy proj : ", top_1_acc[1] / data.__len__())
-    print("top-5 accuracy proj : ", top_5_acc[1] / data.__len__())
-    print("top-1 accuracy sim : ", top_1_acc[2]/ data.__len__())
-    print("top-5 accuracy sim : ", top_5_acc[2] / data.__len__())
-    print("maj accuracy class : ", maj_acc[0] / data.__len__())
-    print("maj accuracy proj : ", maj_acc[1] / data.__len__())
-    print("maj accuracy sim : ", maj_acc[2] / data.__len__())
-    print(generalise)
-    if generalise == 3:
-        print("Top 1 accuracy on new labels: ", top_1_k / data.__len__())
-        print("Top 5 accuracy on new labels: ", top_5_k / data.__len__())
-        print("Maj accuracy on new labels: ", maj_k / data.__len__())
-        if class_name is None:
-            for j in range(67):
-                if nbr_per_class[list(data.conversion.keys())[j]] != 0:
-                    wrong_new[j] = wrong_new[j] / nbr_per_class[list(data.conversion.keys())[j]]
-                    wrong_old[j] = wrong_old[j] / nbr_per_class[list(data.conversion.keys())[j]]
-                    div[j] = div[j] / nbr_per_class[list(data.conversion.keys())[j]]
-        print("Percentage of wrong old labels, correct new labels per class: ", wrong_old)
-        print("Percentage of correct old labels, wrong new labels per class: ", wrong_new)
-        print("Percentage of divergence per class: ", div)
-    print('t_tot:', t_tot)
-    print('t_model:', t_model)
-    print('t_search:', t_search)
+        if generalise == 3:
+            print("Top 1 accuracy on new labels: ", top_1_k / s)
+            print("Top 5 accuracy on new labels: ", top_5_k / s)
+            print("Maj accuracy on new labels: ", maj_k / s)
+            if class_name is None:
+                for j in range(67):
+                    if nbr_per_class[list(data.conversion.keys())[j]] != 0:
+                        wrong_new[j] = wrong_new[j] / nbr_per_class[list(data.conversion.keys())[j]]
+                        wrong_old[j] = wrong_old[j] / nbr_per_class[list(data.conversion.keys())[j]]
+                        div[j] = div[j] / nbr_per_class[list(data.conversion.keys())[j]]
+            print("Percentage of wrong old labels, correct new labels per class: ", wrong_old)
+            print("Percentage of correct old labels, wrong new labels per class: ", wrong_new)
+            print("Percentage of divergence per class: ", div)
+        print('t_tot:', t_tot)
+        print('t_model:', t_model)
+        print('t_search:', t_search)
     
     if see_cms:
         display_cm(ground_truth, data, predictions, predictions_maj)
@@ -413,13 +431,38 @@ def test(model, dataset, db_name, extractor, measure, generalise, project_name, 
         
     if generalise == 3:
         if class_name is None:
-            return [top_1_acc[0]/ data.__len__(), top_5_acc[0]/ data.__len__(), top_1_acc[1]/ data.__len__(), top_5_acc[1]/ data.__len__(), top_1_acc[2]/ data.__len__(), top_5_acc[2]/ data.__len__(), maj_acc[0]/ data.__len__(), maj_acc[1]/ data.__len__(), maj_acc[2]/ data.__len__(), t_tot, t_model, t_search, top_1_k, top_5_k, maj_k]
+            return [top_1_acc[0]/ s, top_5_acc[0]/ s, top_1_acc[1]/ s, top_5_acc[1]/ s, top_1_acc[2]/ s, top_5_acc[2]/ s, maj_acc[0]/ s, maj_acc[1]/ s, maj_acc[2]/ s, t_tot, t_model, t_search, top_1_k, top_5_k, maj_k]
         else:
-            return [top_1_acc[0]/ data.__len__(), top_5_acc[0]/ data.__len__(), top_1_acc[1]/ data.__len__(), top_5_acc[1]/ data.__len__(), top_1_acc[2]/ data.__len__(), top_5_acc[2]/ data.__len__(), maj_acc[0]/ data.__len__(), maj_acc[1]/ data.__len__(), maj_acc[2]/ data.__len__(), t_tot, t_model, t_search, top_1_k, top_5_k, maj_k, wrong_new[class_name], wrong_old[class_name], div[class_name]]
+            return [top_1_acc[0]/ s, top_5_acc[0]/ s, top_1_acc[1]/ s, top_5_acc[1]/ s, top_1_acc[2]/ s, top_5_acc[2]/ s, maj_acc[0]/ s, maj_acc[1]/ s, maj_acc[2]/ s, t_tot, t_model, t_search, top_1_k, top_5_k, maj_k, wrong_new[class_name], wrong_old[class_name], div[class_name]]
         
     else:
-        return [top_1_acc[0]/ data.__len__(), top_5_acc[0]/ data.__len__(), top_1_acc[1]/ data.__len__(), top_5_acc[1]/ data.__len__(), top_1_acc[2]/ data.__len__(), top_5_acc[2]/ data.__len__(), maj_acc[0]/ data.__len__(), maj_acc[1]/ data.__len__(), maj_acc[2]/ data.__len__(), t_tot, t_model, t_search]
+        return [top_1_acc[0]/ s, top_5_acc[0]/ s, top_1_acc[1]/ s, top_5_acc[1]/ s, top_1_acc[2]/ s, top_5_acc[2]/ s, maj_acc[0]/ s, maj_acc[1]/ s, maj_acc[2]/ s, t_tot, t_model, t_search]
     
+def stat(model, dataset, db_name, extractor, generalise, project_name, class_name, label):
+    # Do 10 times the experiment
+    top_1_acc = np.zeros((3,50))
+    top_5_acc = np.zeros((3,50))
+    maj_acc = np.zeros((3,50))
+
+    ts = np.zeros((3,50))
+    for i in range(50):
+        top_1_acc[0][i], top_5_acc[0][i], top_1_acc[1][i], top_5_acc[1][i], top_1_acc[2][i], top_5_acc[2][i], maj_acc[0][i], maj_acc[1][i], maj_acc[2][i], ts[0][i], ts[1][i], ts[2][i] =  test(model, dataset, db_name, extractor, "random", generalise, project_name, class_name, False, label = label, stat = True)
+
+
+    print("Top 1 accuracy: ", np.mean(top_1_acc[0]), " +- ", np.std(top_1_acc[0]))
+    print("Top 5 accuracy: ", np.mean(top_5_acc[0]), " +- ", np.std(top_5_acc[0]))
+    print("Maj accuracy: ", np.mean(maj_acc[0]), " +- ", np.std(maj_acc[0]))
+    print("Top 1 accuracy on project: ", np.mean(top_1_acc[1]), " +- ", np.std(top_1_acc[1]))
+    print("Top 5 accuracy on project: ", np.mean(top_5_acc[1]), " +- ", np.std(top_5_acc[1]))
+    print("Maj accuracy on project: ", np.mean(maj_acc[1]), " +- ", np.std(maj_acc[1]))
+    print("Top 1 accuracy on sim: ", np.mean(top_1_acc[2]), " +- ", np.std(top_1_acc[2]))
+    print("Top 5 accuracy on sim: ", np.mean(top_5_acc[2]), " +- ", np.std(top_5_acc[2]))
+    print("Maj accuracy on sim: ", np.mean(maj_acc[2]), " +- ", np.std(maj_acc[2]))
+    print('t_tot:', np.mean(ts[0]/1020), "+-", np.std(ts[0]/1020))
+    print('t_model:', np.mean(ts[1]/1020), "+-", np.std(ts[1]/1020))
+    print('t_search:', np.mean(ts[2]/1020), "+-", np.std(ts[2]/1020))
+
+    return 0
 
 if __name__ == "__main__":
     parser = ArgumentParser()
@@ -535,4 +578,7 @@ if __name__ == "__main__":
     if args.excel_path is not None:
         test_each_class(model, args.path, args.db_name, args.extractor, args.measure, args.name, args.excel_path, args.retrieve_class)
     else:
-        r = test(model, args.path, args.db_name, args.extractor, args.measure, args.generalise, args.project_name, args.class_name, True, label = args.retrieve_class)
+        if args.measure == "stat":
+            stat(model, args.path, args.db_name, args.extractor, args.generalise, args.project_name, args.class_name, args.retrieve_class)
+        else:
+            r = test(model, args.path, args.db_name, args.extractor, args.measure, args.generalise, args.project_name, args.class_name, False, label = args.retrieve_class)

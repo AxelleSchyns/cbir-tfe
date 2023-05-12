@@ -8,7 +8,7 @@ import dataset
 import numpy as np
 import time
 from loss import MarginLoss, ProxyNCA_prob, NormSoftmax, SimpleBCELoss, ContrastiveLoss
-from efficientnet_pytorch import EfficientNet
+from efficientnet_pytorch import EfficientNet as EffNet
 import torch.nn.functional as F
 from transformers import CvtForImageClassification, ConvNextForImageClassification, AutoImageProcessor, ConvNextFeatureExtractor
 from torchvision import transforms
@@ -230,7 +230,7 @@ class Model(nn.Module):
     def __init__(self, model='densenet', eval=True, batch_size=32, num_features=128,
                  name='weights', use_dr=True, device='cuda:0', freeze=False, classification = False, parallel = True):
         super(Model, self).__init__()
-        print(device)
+        self.parallel = parallel
         self.num_features = num_features
         self.norm = nn.functional.normalize
 	
@@ -285,7 +285,7 @@ class Model(nn.Module):
             self.model = models.inception_v3(weights="Inception_V3_Weights.DEFAULT").to(device=device)
         elif model == "effnet":
             self.forward_function = self.forward_model
-            self.model = EfficientNet.from_pretrained('efficientnet-b0').to(device=device)
+            self.model = EffNet.from_pretrained('efficientnet-b0').to(device=device)
         elif model == "knet":
             model_k = models.densenet121(weights='DenseNet121_Weights.DEFAULT')
             for param in model_k.parameters():
@@ -461,7 +461,8 @@ class Model(nn.Module):
                 except AttributeError:
                     self.model = self.model
                 torch.save(self.state_dict(), self.name)
-                self.model = nn.DataParallel(self.model)
+                if self.parallel:
+                    self.model = nn.DataParallel(self.model)
             plt.plot(range(epochs),loss_means)
             plt.show()
         except KeyboardInterrupt:
@@ -549,14 +550,15 @@ class Model(nn.Module):
                 except AttributeError:
                     self.model = self.model
                 torch.save(self.state_dict(), self.name)
-                self.model = nn.DataParallel(self.model)
+                if self.parallel:
+                    self.model = nn.DataParallel(self.model).to(self.device)
             plt.plot(range(epochs),loss_means)
             plt.show()
         except KeyboardInterrupt:
             print("Interrupted")
         
 
-    def train_dr(self, data, num_epochs, lr, loss_name, augmented, contrastive):
+    def train_dr(self, data, num_epochs, lr, loss_name, augmented, contrastive, sched, gamma):
         if loss_name == 'triplet':
             pair = False
         else:
@@ -581,6 +583,11 @@ class Model(nn.Module):
         else:
             loss_function = torch.nn.CosineEmbeddingLoss()
         optimizer = torch.optim.Adam(self.parameters(), lr=lr)
+        if sched == 'exponential':
+            scheduler = torch.optim.lr_scheduler.ExponentialLR(optimizer, gamma=gamma)
+        elif sched == 'step':
+            scheduler = torch.optim.lr_scheduler.MultiStepLR(optimizer, milestones=[epochs//2, epochs],
+                                                            gamma=gamma)
         loss_list = []
         loss_means = []
         try:
@@ -590,9 +597,9 @@ class Model(nn.Module):
                     for i, (image0, image1, image2) in enumerate(loader):
                         if i%1000 == 0:
                             print("at batch:"+str(i)+" on "+str(int(data.__len__()/self.batch_size)))
-                        image0 = image0.to(device='cuda:0')
-                        image1 = image1.to(device='cuda:0')
-                        image2 = image2.to(device='cuda:0')
+                        image0 = image0.to(device=self.device)
+                        image1 = image1.to(device=self.device)
+                        image2 = image2.to(device=self.device)
 
                         out0 = self.forward(image0).cpu()
                         out1 = self.forward(image1).cpu()
@@ -609,8 +616,8 @@ class Model(nn.Module):
                     for i, (image0, image1, label) in enumerate(loader):
                         if i%1000 == 0:
                             print("at batch "+str(i)+" on "+str(int(data.__len__()/ self.batch_size)))
-                        image0 = image0.to(device='cuda:0')
-                        image1 = image1.to(device='cuda:0')
+                        image0 = image0.to(device=self.device)
+                        image1 = image1.to(device=self.device)
 
                         out0 = self.forward(image0).cpu()
                         out1 = self.forward(image1).cpu()
@@ -630,6 +637,10 @@ class Model(nn.Module):
                 print("epoch {}, batch {}, loss = {}".format(epoch, i,
                                                              np.mean(loss_list)))
                 loss_means.append(np.mean(loss_list))
+
+                if sched != None:
+                    scheduler.step()
+
                 loss_list.clear()
                 print("time for epoch {}".format(time.time()- start_time))
                 try:
@@ -637,11 +648,12 @@ class Model(nn.Module):
                 except AttributeError:
                     self.model = self.model
                 torch.save(self.state_dict(), self.name)
-                self.model = nn.DataParallel(self.model)
-                if (epoch + 1) % 4:
+                if self.parallel:
+                    self.model = nn.DataParallel(self.model).to(self.device)
+                """if (epoch + 1) % 4:
                     lr /= 2
                     for param in optimizer.param_groups:
-                        param['lr'] = lr
+                        param['lr'] = lr"""
             plt.plot(range(num_epochs),loss_means)
             plt.show()
         except KeyboardInterrupt:
@@ -791,7 +803,7 @@ if __name__ == "__main__":
 
     siamese_losses = ['triplet', 'contrastive', 'BCE', 'cosine']
     if args.loss in siamese_losses:
-        m.train_dr(args.training_data, args.num_epochs, args.lr, loss_name = args.loss, augmented=args.augmented, contrastive = not args.non_contrastive)
+        m.train_dr(args.training_data, args.num_epochs, args.lr, loss_name = args.loss, augmented=args.augmented, contrastive = not args.non_contrastive, sched= args.scheduler, gamma= args.gamma)
     elif args.model == 'VAE' or args.model == 'auto' or args.model == "unet":
         m.train_vae(args.model, args.training_data, args.num_epochs, args.generalise, args.scheduler, args.lr, args.decay, args.beta_lr, args.gamma, args.lr_proxies)
     else:

@@ -44,7 +44,7 @@ def distanceweightedsampling(batch, labels, lower_cutoff=0.5, upper_cutoff=1.4, 
                 q_d_inv = inverse_sphere_distances(batch, distances[i], labels, labels[i])
                 #Sample positives randomly
                 pos[i] = 0
-                p = np.random.choice(2, p=[1,0])
+                p = np.random.choice(2, p=[0.99,0.01])
                 if p==1:
                     negatives.append(np.random.choice(np.where(pos)[0]))
                     #Sample negatives by distance

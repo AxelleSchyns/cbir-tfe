@@ -9,7 +9,6 @@ import numpy as np
 import time
 from loss import MarginLoss, ProxyNCA_prob, NormSoftmax, SimpleBCELoss, ContrastiveLoss
 from efficientnet_pytorch import EfficientNet as EffNet
-import torch.nn.functional as F
 from transformers import CvtForImageClassification, ConvNextForImageClassification, AutoImageProcessor, ConvNextFeatureExtractor
 from torchvision import transforms
 from argparse import ArgumentParser, ArgumentTypeError
@@ -17,7 +16,7 @@ import os
 import matplotlib.pyplot as plt
 from pytorch_metric_learning import losses
 from fastai.vision.all import *
-
+import autoencoders as ae
 
 # From Geek For geek - https://www.geeksforgeeks.org/contractive-autoencoder-cae/?ref=rp
 class AutoEncoder(nn.Module):
@@ -123,95 +122,7 @@ def grad_auto(model, inputs):
     #loss_value.backward()
     return loss_value, inputs_reshaped, reconstruction
 
-# Pytorch example - VAE - https://github.com/pytorch/examples/blob/main/vae/main.py
-class VAE(nn.Module):
-    def __init__(self):
-        super(VAE, self).__init__()
-        # Encoder layers
-        self.conv1 = nn.Conv2d(3, 32, kernel_size=3, stride=1, padding=1)
-        self.conv2 = nn.Conv2d(32, 64, kernel_size=3, stride=2, padding=1)
-        self.conv3 = nn.Conv2d(64, 128, kernel_size=3, stride=2, padding=1)
-        self.fc1 = nn.Linear(128 * 56 * 56, 1000)
-        self.fc21 = nn.Linear(1000, 128)
-        self.fc22 = nn.Linear(1000, 128)
 
-        # Decoder layers
-        self.fc3 = nn.Linear(128, 1000)
-        self.fc4 = nn.Linear(1000, 128*56*56)
-        self.conv4 = nn.ConvTranspose2d(128, 64, kernel_size=3, stride=2, padding=1, output_padding=1)
-        self.conv5 = nn.ConvTranspose2d(64, 32, kernel_size=3, stride=2, padding=1, output_padding=1)
-        self.conv6 = nn.ConvTranspose2d(32, 3, kernel_size=3, stride=1, padding=1)
-
-    def encode(self, x):
-        x = F.relu(self.conv1(x))
-        x = F.relu(self.conv2(x))
-        x = F.relu(self.conv3(x))
-        if len(x.shape) > 3:
-            x = x.view(x.size(0), -1)
-        else:
-            x = x.view(1, -1)
-        x = F.relu(self.fc1(x))
-        return self.fc21(x), self.fc22(x)
-
-    def decode(self, z):
-        z = F.relu(self.fc3(z))
-        z = F.relu(self.fc4(z))
-        z = z.view(z.size(0), 128, 56, 56)
-        z = F.relu(self.conv4(z))
-        z = F.relu(self.conv5(z))
-        return torch.sigmoid(self.conv6(z))
-
-    def reparameterize(self, mu, logvar):
-        std = torch.exp(0.5 * logvar)
-        eps = torch.randn_like(std)
-        return mu + eps * std
-
-    def forward(self, x):
-        mu, logvar = self.encode(x)
-        z = self.reparameterize(mu, logvar)
-        return self.decode(z), mu, logvar
-        # 784 -> 400 -> 200 -> 200 -> 400 -> 784
-        """self.fc0 = nn.Linear(224*224*3,1500)
-        self.fc1 = nn.Linear(1500, 750)
-        self.fc21 = nn.Linear(750, 128)
-        self.fc22 = nn.Linear(750, 128)
-        self.fc3 = nn.Linear(128, 750)
-        self.fc4 = nn.Linear(750, 1500)
-        self.fc5 = nn.Linear(1500, 224*224*3)
-    def encode(self, x):
-        h0 = F.relu(self.fc0(x))
-        h1 = F.relu(self.fc1(h0))
-        return self.fc21(h1), self.fc22(h1)
-
-    def reparameterize(self, mu, logvar):
-        std = torch.exp(0.5*logvar)
-        eps = torch.randn_like(std)
-        return mu + eps*std
-
-    def decode(self, z):
-        h3 = F.relu(self.fc3(z))
-        h4 = F.relu(self.fc4(h3))
-        return torch.sigmoid(self.fc5(h4))
-
-    def forward(self, x):
-        #mu, logvar = self.encode(x.view(-1, 784))
-        mu, logvar = self.encode(x.view(-1, 224*224*3))
-        z = self.reparameterize(mu, logvar)
-        return self.decode(z), mu, logvar"""
-
-# Pytorch exampe VAE
-# Reconstruction + KL divergence losses summed over all elements and batch
-def loss_function(recon_x, x, mu, logvar):
-    #BCE = F.binary_cross_entropy(recon_x, x.view(-1, 784), reduction='sum')
-    BCE = F.binary_cross_entropy(recon_x.view(x.shape[0], 3, 224, 224), x, reduction='sum')#
-    #BCE = F.binary_cross_entropy(recon_x, x, reduction='sum')
-    # see Appendix B from VAE paper:
-    # Kingma and Welling. Auto-Encoding Variational Bayes. ICLR, 2014
-    # https://arxiv.org/abs/1312.6114
-    # 0.5 * sum(1 + log(sigma^2) - mu^2 - sigma^2)
-    KLD = -0.5 * torch.sum(1 + logvar - mu.pow(2) - logvar.exp())
-
-    return BCE + KLD
 
 class fully_connected(nn.Module):
 	"""docstring for BottleNeck"""
@@ -228,7 +139,7 @@ class fully_connected(nn.Module):
 
 class Model(nn.Module):
     def __init__(self, model='densenet', eval=True, batch_size=32, num_features=128,
-                 name='weights', use_dr=True, device='cuda:0', freeze=False, classification = False, parallel = True):
+                 name='weights', use_dr=True, device='cuda:0', freeze=False, classification = False, parallel = True, scratch = False):
         super(Model, self).__init__()
         self.parallel = parallel
         self.num_features = num_features
@@ -275,7 +186,10 @@ class Model(nn.Module):
             #self.model = models.densenet121(weights=None).to(device=device)
         elif model == 'resnet':
             self.forward_function = self.forward_model
-            self.model = models.resnet50(weights='ResNet50_Weights.DEFAULT').to(device=device)
+            if scratch:
+                self.model = models.resnet50(weights=None).to(device=device)
+            else:
+                self.model = models.resnet50(weights='ResNet50_Weights.DEFAULT').to(device=device)
             #self.model = nn.DataParallel(self.model)
         elif model == "vgg":
             self.forward_function = self.forward_model
@@ -317,12 +231,14 @@ class Model(nn.Module):
             self.forward_function = self.forward_model
             self.model = DeiTForImageClassification.from_pretrained('facebook/deit-base-distilled-patch16-224').to(device=device)
         elif model == 'VAE':
-            self.model = VAE().to(device)
+            self.model = ae.VAE().to(device)
             self.encode = self.model.encode
             self.reparameterize = self.model.reparameterize
             self.decode = self.model.decode
         elif model == "auto":
             self.model = AutoEncoder().to(device)
+        elif model in ['vgg16', 'vgg11', 'resnet18', 'resnet50']:
+            self.model = ae.BuildAutoEncoder(model).to(device)
         else:
             print("model entered is not supported")
             exit(-1)
@@ -528,7 +444,9 @@ class Model(nn.Module):
                     labels = labels.to(device=self.device)
 
                     if not self.transformer:
+                        #print("am I here?")
                         out = self.forward(images_gpu)
+                        #print("Did I pass?")
                     else:
                         out = self.forward(images_gpu.view(-1, 3, 224, 224))
                     loss = loss_function(out, labels)
@@ -553,7 +471,8 @@ class Model(nn.Module):
                 if self.parallel:
                     self.model = nn.DataParallel(self.model).to(self.device)
             plt.plot(range(epochs),loss_means)
-            plt.show()
+            #plt.show()
+            plt.savefig(str(self.name[len(self.name)-9:])+"loss.png")
         except KeyboardInterrupt:
             print("Interrupted")
         
@@ -772,6 +691,11 @@ if __name__ == "__main__":
     )
 
     parser.add_argument(
+        '--scratch',
+        action = 'store_true'
+    )
+
+    parser.add_argument(
         '--load',
         default = None,
         type = str
@@ -799,7 +723,7 @@ if __name__ == "__main__":
         exit(-1)
     m = Model(model=args.model, eval=False, batch_size=args.batch_size,
               num_features=args.num_features, name=args.weights,
-              use_dr=args.dr_model, device=device, freeze=args.freeze, classification = args.classification, parallel=args.parallel)
+              use_dr=args.dr_model, device=device, freeze=args.freeze, classification = args.classification, parallel=args.parallel, scratch=args.scratch)
 
     siamese_losses = ['triplet', 'contrastive', 'BCE', 'cosine']
     if args.loss in siamese_losses:

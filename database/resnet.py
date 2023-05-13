@@ -1,3 +1,5 @@
+# Taken from https://github.com/Horizon2333/imagenet-autoencoder/blob/main/models/resnet.py
+
 import torch
 import torch.nn as nn
 
@@ -7,68 +9,42 @@ def get_configs(arch='resnet50'):
 
     if arch == 'resnet18':
         return [2, 2, 2, 2], False
-    elif arch == 'resnet34':
-        return [3, 4, 6, 3], False
     elif arch == 'resnet50':
         return [3, 4, 6, 3], True
-    elif arch == 'resnet101':
-        return [3, 4, 23, 3], True
-    elif arch == 'resnet152':
-        return [3, 8, 36, 3], True
     else:
         raise ValueError("Undefined model")
 
 class ResNetAutoEncoder(nn.Module):
 
-    def __init__(self, configs, bottleneck):
+    def __init__(self, configs, bottleneck, exp=0):
 
         super(ResNetAutoEncoder, self).__init__()
-
+        self.exp = exp
         self.encoder = ResNetEncoder(configs=configs,       bottleneck=bottleneck)
         self.decoder = ResNetDecoder(configs=configs[::-1], bottleneck=bottleneck)
-    
+
+        if exp == 7:
+            self.avpool = nn.AdaptiveAvgPool2d((1,1))
+            self.inv_avpool = nn.AdaptiveAvgPool2d((7,7))
+
+            self.fc = nn.Linear(in_features=2048, out_features=1000)
+            self.inv_fc = nn.Linear(1000, 2048)
+
     def forward(self, x):
+        if self.exp == 7:
+            x = self.encoder(x)
+            x = self.avpool(x)
+            x = torch.flatten(x, 1)
+            x = self.fc(x)
 
-        x = self.encoder(x)
-        x = self.decoder(x)
-
-        return x
-
-class ResNet(nn.Module):
-
-    def __init__(self, configs, bottleneck=False, num_classes=1000):
-        super(ResNet, self).__init__()
-
-        self.encoder = ResNetEncoder(configs, bottleneck)
-
-        self.avpool = nn.AdaptiveAvgPool2d((1,1))
-
-        if bottleneck:
-            self.fc = nn.Linear(in_features=2048, out_features=num_classes)
+            x = self.inv_fc(x)
+            x = nn.Unflatten(1, (2048, 1, 1))(x)
+            x = self.inv_avpool(x)
+            x = self.decoder(x)
         else:
-            self.fc = nn.Linear(in_features=512, out_features=num_classes)
+            x = self.encoder(x)
+            x = self.decoder(x)
 
-        for m in self.modules():
-            if isinstance(m, nn.Conv2d):
-                nn.init.kaiming_normal_(m.weight, mode="fan_in", nonlinearity="relu")
-                if m.bias is not None:
-                    nn.init.constant_(m.bias, 0)
-            elif isinstance(m, nn.BatchNorm2d):
-                nn.init.constant_(m.weight, 1)
-                nn.init.constant_(m.bias, 0)
-            elif isinstance(m, nn.Linear):
-                nn.init.kaiming_normal_(m.weight, mode="fan_in", nonlinearity="relu")
-                nn.init.constant_(m.bias, 0)
-    
-    def forward(self, x):
-
-        x = self.encoder(x)
-
-        x = self.avpool(x)
-
-        x = torch.flatten(x, 1)
-
-        x = self.fc(x)
 
         return x
 

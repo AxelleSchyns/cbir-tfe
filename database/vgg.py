@@ -1,3 +1,5 @@
+# Taken from: https://github.com/Horizon2333/imagenet-autoencoder/blob/main/models/vgg.py
+
 import torch
 import torch.nn as nn
 
@@ -5,12 +7,8 @@ def get_configs(arch='vgg16'):
 
     if arch == 'vgg11':
         configs = [1, 1, 2, 2, 2]
-    elif arch == 'vgg13':
-        configs = [2, 2, 2, 2, 2]
     elif arch == 'vgg16':
         configs = [2, 2, 3, 3, 3]
-    elif arch == 'vgg19':
-        configs = [2, 2, 4, 4, 4]
     else:
         raise ValueError("Undefined model")
     
@@ -18,13 +16,13 @@ def get_configs(arch='vgg16'):
 
 class VGGAutoEncoder(nn.Module):
 
-    def __init__(self, configs):
+    def __init__(self, configs, exp=0):
 
         super(VGGAutoEncoder, self).__init__()
 
         # VGG without Bn as AutoEncoder is hard to train
-        self.encoder = VGGEncoder(configs=configs,       enable_bn=True)
-        self.decoder = VGGDecoder(configs=configs[::-1], enable_bn=True)
+        self.encoder = VGGEncoder(configs=configs,       enable_bn=True, exp=exp)
+        self.decoder = VGGDecoder(configs=configs[::-1], enable_bn=True, exp=exp)
         
     
     def forward(self, x):
@@ -33,124 +31,72 @@ class VGGAutoEncoder(nn.Module):
 
         return x
 
-class VGG(nn.Module):
-
-    def __init__(self, configs, num_classes=1000, img_size=224, enable_bn=False):
-        super(VGG, self).__init__()
-
-        self.encoder = VGGEncoder(configs=configs, enable_bn=enable_bn)
-
-        self.img_size = img_size / 32
-
-        self.fc = nn.Sequential(
-            nn.Linear(in_features=int(self.img_size*self.img_size*128), out_features=4096),
-            nn.Dropout(p=0.5),
-            nn.ReLU(inplace=True),
-            nn.Linear(in_features=4096, out_features=4096),
-            nn.Dropout(p=0.5),
-            nn.ReLU(inplace=True),
-            nn.Linear(in_features=4096, out_features=num_classes)
-        )
-        
-        for m in self.modules():
-            if isinstance(m, nn.Conv2d):
-                nn.init.normal_(m.weight, mean=0, std=0.01)
-                if m.bias is not None:
-                    nn.init.constant_(m.bias, 0)
-            if isinstance(m, nn.Linear):
-                nn.init.normal_(m.weight, mean=0, std=0.01)
-                nn.init.constant_(m.bias, 0)
-    
-    def forward(self, x):
-        x = self.encoder(x)
-
-        x = torch.flatten(x, 1)
-
-        x = self.fc(x)
-
-        return x
-
 class VGGEncoder(nn.Module):
 
-    def __init__(self, configs, enable_bn=False):
+    def __init__(self, configs, enable_bn=False, exp=0):
 
         super(VGGEncoder, self).__init__()
 
         if len(configs) != 5:
 
             raise ValueError("There should be 5 stage in VGG")
-
-        """self.conv1 = EncoderBlock(input_dim=3,   output_dim=16,  hidden_dim=16,  layers=configs[0], ker_size=2,enable_bn=enable_bn)
-        self.conv2 = EncoderBlock(input_dim=16,  output_dim=32, hidden_dim=32, layers=configs[1],ker_size=2, enable_bn=enable_bn)
-        self.conv3 = EncoderBlock(input_dim=32, output_dim=64, hidden_dim=64, layers=configs[2], ker_size=2,enable_bn=enable_bn)
-        self.conv4 = EncoderBlock(input_dim=64, output_dim=128, hidden_dim=128, layers=configs[3],ker_size=2, enable_bn=enable_bn)
-        self.conv5 = EncoderBlock(input_dim=128, output_dim=128, hidden_dim=128, layers=configs[4], ker_size=2,enable_bn=enable_bn)"""
-        self.conv1 = EncoderBlock(input_dim=3,   output_dim=64,  hidden_dim=64,  layers=configs[0], ker_size=2, enable_bn=enable_bn)
-        self.conv2 = EncoderBlock(input_dim=64,  output_dim=128, hidden_dim=128, layers=configs[1], ker_size=2, enable_bn=enable_bn)
-        self.conv3 = EncoderBlock(input_dim=128, output_dim=256, hidden_dim=256, layers=configs[2], ker_size=2, enable_bn=enable_bn)
-        self.conv4 = EncoderBlock(input_dim=256, output_dim=512, hidden_dim=512, layers=configs[3], ker_size=2, enable_bn=enable_bn)
-        self.conv5 = EncoderBlock(input_dim=512, output_dim=512, hidden_dim=512, layers=configs[4], ker_size=2, enable_bn=enable_bn)
-    
+        if exp == 1:
+            self.conv1 = EncoderBlock(input_dim=3,   output_dim=16,  hidden_dim=16,  layers=configs[0], ker_size=2,enable_bn=enable_bn)
+            self.conv2 = EncoderBlock(input_dim=16,  output_dim=32, hidden_dim=32, layers=configs[1],ker_size=2, enable_bn=enable_bn)
+            self.conv3 = EncoderBlock(input_dim=32, output_dim=64, hidden_dim=64, layers=configs[2], ker_size=2,enable_bn=enable_bn)
+            self.conv4 = EncoderBlock(input_dim=64, output_dim=128, hidden_dim=128, layers=configs[3],ker_size=7, enable_bn=enable_bn)
+            self.conv5 = EncoderBlock(input_dim=128, output_dim=128, hidden_dim=128, layers=configs[4], ker_size=10,enable_bn=enable_bn)
+        else:
+            self.conv1 = EncoderBlock(input_dim=3,   output_dim=64,  hidden_dim=64,  layers=configs[0], enable_bn=enable_bn)
+            self.conv2 = EncoderBlock(input_dim=64,  output_dim=128, hidden_dim=128, layers=configs[1], enable_bn=enable_bn)
+            self.conv3 = EncoderBlock(input_dim=128, output_dim=256, hidden_dim=256, layers=configs[2], enable_bn=enable_bn)
+            self.conv4 = EncoderBlock(input_dim=256, output_dim=512, hidden_dim=512, layers=configs[3], enable_bn=enable_bn)
+            self.conv5 = EncoderBlock(input_dim=512, output_dim=512, hidden_dim=512, layers=configs[4], enable_bn=enable_bn)
+        
     def forward(self, x):
-        #print("start encoder")
-        #print(x.shape)
         x = self.conv1(x)
-        #print(x.shape)
         x = self.conv2(x)
-        #print(x.shape)
         x = self.conv3(x)
-        #print(x.shape)
         x = self.conv4(x)
-        #print(x.shape)
         x = self.conv5(x)
-        #print(x.shape)
-        #print("end encoder")
 
         return x
 
 class VGGDecoder(nn.Module):
 
-    def __init__(self, configs, enable_bn=False):
+    def __init__(self, configs, enable_bn=False, exp=0):
 
         super(VGGDecoder, self).__init__()
 
         if len(configs) != 5:
 
             raise ValueError("There should be 5 stage in VGG")
-
-        """self.conv1 = DecoderBlock(input_dim=128, output_dim=128, hidden_dim=128, layers=configs[0], ker_size=2, enable_bn=enable_bn)
-        self.conv2 = DecoderBlock(input_dim=128, output_dim=64, hidden_dim=128, layers=configs[1], ker_size=2, enable_bn=enable_bn)
-        self.conv3 = DecoderBlock(input_dim=64, output_dim=32, hidden_dim=64, layers=configs[2], ker_size=2, enable_bn=enable_bn)
-        self.conv4 = DecoderBlock(input_dim=32, output_dim=16,  hidden_dim=32, layers=configs[3], ker_size=2, enable_bn=enable_bn)
-        self.conv5 = DecoderBlock(input_dim=16,  output_dim=3,   hidden_dim=16,  layers=configs[4], ker_size=2,enable_bn=enable_bn)"""
-        self.conv1 = DecoderBlock(input_dim=512, output_dim=512, hidden_dim=512, layers=configs[0], ker_size=2, enable_bn=enable_bn)
-        self.conv2 = DecoderBlock(input_dim=512, output_dim=256, hidden_dim=512, layers=configs[1], ker_size=2, enable_bn=enable_bn)
-        self.conv3 = DecoderBlock(input_dim=256, output_dim=128, hidden_dim=256, layers=configs[2], ker_size=2, enable_bn=enable_bn)
-        self.conv4 = DecoderBlock(input_dim=128, output_dim=64,  hidden_dim=128, layers=configs[3], ker_size=2, enable_bn=enable_bn)
-        self.conv5 = DecoderBlock(input_dim=64,  output_dim=3,   hidden_dim=64,  layers=configs[4], ker_size=2, enable_bn=enable_bn)
+        if exp == 1:
+            self.conv1 = DecoderBlock(input_dim=128, output_dim=128, hidden_dim=128, layers=configs[0], ker_size=10, enable_bn=enable_bn)
+            self.conv2 = DecoderBlock(input_dim=128, output_dim=64, hidden_dim=128, layers=configs[1], ker_size=7, enable_bn=enable_bn)
+            self.conv3 = DecoderBlock(input_dim=64, output_dim=32, hidden_dim=64, layers=configs[2], ker_size=2, enable_bn=enable_bn)
+            self.conv4 = DecoderBlock(input_dim=32, output_dim=16,  hidden_dim=32, layers=configs[3], ker_size=2, enable_bn=enable_bn)
+            self.conv5 = DecoderBlock(input_dim=16,  output_dim=3,   hidden_dim=16,  layers=configs[4], ker_size=2,enable_bn=enable_bn)
+        else:
+            self.conv1 = DecoderBlock(input_dim=512, output_dim=512, hidden_dim=512, layers=configs[0], enable_bn=enable_bn)
+            self.conv2 = DecoderBlock(input_dim=512, output_dim=256, hidden_dim=512, layers=configs[1], enable_bn=enable_bn)
+            self.conv3 = DecoderBlock(input_dim=256, output_dim=128, hidden_dim=256, layers=configs[2], enable_bn=enable_bn)
+            self.conv4 = DecoderBlock(input_dim=128, output_dim=64,  hidden_dim=128, layers=configs[3], enable_bn=enable_bn)
+            self.conv5 = DecoderBlock(input_dim=64,  output_dim=3,   hidden_dim=64,  layers=configs[4], enable_bn=enable_bn)
         self.gate = nn.Sigmoid()
     
     def forward(self, x):
-        #print("start decoder")
-        #print(x.shape)
         x = self.conv1(x)
-        #print(x.shape)
         x = self.conv2(x)
-        #print(x.shape)
         x = self.conv3(x)
-        #print(x.shape)
         x = self.conv4(x)
-        #print(x.shape)
         x = self.conv5(x)
-        #print(x.shape)
         x = self.gate(x)
-        #print(x.shape)
-        #print("end decoder")
         return x
 
 class EncoderBlock(nn.Module):
 
-    def __init__(self, input_dim, hidden_dim, output_dim, layers, ker_size, enable_bn=False):
+    def __init__(self, input_dim, hidden_dim, output_dim, layers, ker_size=2, enable_bn=False):
 
         super(EncoderBlock, self).__init__()
         if layers == 1:
@@ -185,7 +131,7 @@ class EncoderBlock(nn.Module):
 
 class DecoderBlock(nn.Module):
 
-    def __init__(self, input_dim, hidden_dim, output_dim, layers, ker_size, enable_bn=False):
+    def __init__(self, input_dim, hidden_dim, output_dim, layers, ker_size = 2, enable_bn=False):
 
         super(DecoderBlock, self).__init__()
 

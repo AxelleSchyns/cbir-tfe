@@ -17,8 +17,12 @@ def batch_image_paths(image_paths, batch_size):
         yield image_paths[i:i+batch_size]
 
 def encode(model, img):
-    with torch.no_grad():
-        code = model.module.encoder(img).cpu()
+    exp = 7
+    if exp == 7:
+        code = model.module.encode_7(img).cpu()
+    else:
+        with torch.no_grad():
+            code = model.module.encoder(img).cpu()
     return code
 
 # ! Only works when the path is in the form: /home/.../project/class/image_name

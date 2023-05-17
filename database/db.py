@@ -252,6 +252,7 @@ class Database:
         else:
             # Retrieves the result from the model
             out = self.model(image.to(device=next(self.model.parameters()).device).view(-1, 3, 224, 224))
+            print(out)
             t_model = time.time() - t_model
         t_search = time.time()
 

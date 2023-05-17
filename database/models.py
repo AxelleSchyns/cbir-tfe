@@ -7,7 +7,7 @@ from transformers import DeiTForImageClassification
 import dataset
 import numpy as np
 import time
-from loss import MarginLoss, ProxyNCA_prob, NormSoftmax, SimpleBCELoss, ContrastiveLoss
+from loss import MarginLoss, ProxyNCA_prob, NormSoftmax, SimpleBCELoss, ContrastiveLoss, SoftTriple, InfoNCE
 from efficientnet_pytorch import EfficientNet as EffNet
 from transformers import CvtForImageClassification, ConvNextForImageClassification, AutoImageProcessor, ConvNextFeatureExtractor
 from torchvision import transforms
@@ -17,112 +17,7 @@ import matplotlib.pyplot as plt
 from pytorch_metric_learning import losses
 from fastai.vision.all import *
 import autoencoders as ae
-
-# From Geek For geek - https://www.geeksforgeeks.org/contractive-autoencoder-cae/?ref=rp
-class AutoEncoder(nn.Module):
-    def __init__(self):
-        super(AutoEncoder, self).__init__()
-        # 784 ->> 64 ->> 32 -> 16
-        # 784 -> 400 -> 200 -> 50 -> 200 -> 400 -> 784
-        # 784 -> 400 -> 200 -> 16 -> 200 -> 400 -> 784
-        # 784 -> 400 -> 500 -> 300 -> 100 -> 16 
-        # 224*224*3 -> 64 -> 32 -> 16 
-        # 224*224*3 -> 512 -> 256 -> 128
-        # 224*224*3 -> 3000 -> 1500 -> 750
-        self.flatten_layer = nn.Flatten()
-        self.dense1 = nn.Linear(784, 400)
-        self.dense2 = nn.Linear(400, 200)
-        #self.dense3 = nn.Linear(300, 100)
-        self.bottleneck = nn.Linear(200, 16)
-        self.dense4 = nn.Linear(16,200)
-        self.dense5 = nn.Linear(200, 400)
-        #self.dense6 = nn.Linear(300, 500)
-        self.dense_final = nn.Linear(400, 784)
-
-    def forward(self, inp):
-        """#x_reshaped = inp #
-        x_reshaped = self.flatten_layer(inp)
-        x = nn.functional.relu(self.dense1(x_reshaped))
-        x = nn.functional.relu(self.dense2(x))
-        #x = nn.functional.relu(self.dense3(x))
-        x = nn.functional.relu(self.bottleneck(x))
-        x_hid = x
-        x = nn.functional.relu(self.dense4(x))
-        x = nn.functional.relu(self.dense5(x))
-        #x = nn.functional.relu(self.dense6(x))
-        x = self.dense_final(x)"""
-        #x_reshaped = inp #
-        x_reshaped = self.flatten_layer(inp)
-        h1 = torch.sigmoid(self.dense1(x_reshaped))
-        h2 = torch.sigmoid(self.dense2(h1))
-        #x = nn.functional.relu(self.dense3(x))
-        h3 = torch.sigmoid(self.bottleneck(h2))
-        h4 = torch.sigmoid(self.dense4(h3))
-        h5 = torch.sigmoid(self.dense5(h4))
-        #x = nn.functional.relu(self.dense6(x))
-        x = self.dense_final(h5)
-        ws = None
-        for i in range(int(x.shape[0]/192)):
-            W = torch.matmul(torch.diag_embed(h1[i:i+192, :] * (1 - h1[i:i+192, :])), self.dense1.weight)
-            W = torch.matmul(self.dense2.weight, W)
-            W = torch.matmul(torch.diag_embed(h2[i:i+192, :] * (1 - h2[i:i+192, :])), W)
-            W = torch.matmul(self.bottleneck.weight, W)
-            W = torch.matmul(torch.diag_embed(h3[i:i+192, :] * (1 - h3[i:i+192, :]))  , W)
-
-            if ws is None:
-                ws = W
-            else:
-                ws = torch.cat((ws, W), axis=0)
-
-        return x, x_reshaped, h3, ws
-def loss_auto_bis(x, x_bar, W):
-    t = time.time()
-    reconstruction_loss = nn.functional.mse_loss(x, x_bar, reduction='mean')
-    """W1 = model.module.dense1.weight # n_hidden x n_dense2 (64 x 784)
-    W2 = model.module.dense2.weight # n_hidden x n_dense2 (32 x 64)
-    W3 = model.module.bottleneck.weight # n_hidden x n_dense2 (16 x 32)
-    diag3 = torch.diag_embed(h3 * (1 - h3))         
-    diag2 = torch.diag_embed(h2 * (1 - h2))
-    diag1 = torch.diag_embed(h1 * (1 - h1))
-    W = torch.matmul(torch.diag_embed(h1 * (1 - h1)), model.module.dense1.weight)
-    W = torch.matmul(model.module.dense2.weight, W)
-    W = torch.matmul(torch.diag_embed(h2 * (1 - h2)), W)
-    W = torch.matmul( model.module.bottleneck.weight, W)
-    W = torch.matmul(torch.diag_embed(h3 * (1 - h3))  , W)"""
-    #tot_W = torch.matmul(diag3, torch.matmul(W3, torch.matmul(diag2, torch.matmul(W2, torch.matmul(diag1, W1)))))
-    contractive = torch.sum(W**2, axis=(1,2))
-    total_loss = reconstruction_loss + 1000 * contractive.mean()
-    """print(total_loss)
-    print(reconstruction_loss)
-    print(time.time() - t)"""
-    return total_loss 
-
-def grad_auto_bis(model, inputs):
-    reconstruction, inputs_reshaped, h3, W = model(inputs.view(-1, 784))
-    loss_value = loss_auto_bis(inputs_reshaped, reconstruction, W)
-    #loss_value.backward()
-    return loss_value, inputs_reshaped, reconstruction
-
-def loss_auto(x, x_bar, h, model):
-    t = time.time()
-    reconstruction_loss = nn.functional.mse_loss(x, x_bar, reduction='mean') * 784
-    W = model.module.bottleneck.weight # n_hidden x n_dense2 (16 x 32)
-    dh = h * (1 - h) # N_batch x N_hidden
-    contractive = 100 * torch.sum(torch.matmul(dh**2, torch.square(W)), axis=1)
-    total_loss = reconstruction_loss + contractive.mean()
-    """print(total_loss)
-    print(reconstruction_loss)
-    print(contractive.mean()   ) 
-    print(time.time() - t)"""
-    return total_loss
-
-def grad_auto(model, inputs):
-    reconstruction, inputs_reshaped, hidden, _ = model(inputs.view(-1, 784))
-    loss_value = loss_auto(inputs_reshaped, reconstruction, hidden, model)
-    #loss_value.backward()
-    return loss_value, inputs_reshaped, reconstruction
-
-
+#from info_nce import InfoNCE as InfoNCELoss
 
 class fully_connected(nn.Module):
 	"""docstring for BottleNeck"""
@@ -236,7 +131,7 @@ class Model(nn.Module):
             self.reparameterize = self.model.reparameterize
             self.decode = self.model.decode
         elif model == "auto":
-            self.model = AutoEncoder().to(device)
+            self.model = ae.AutoEncoder().to(device)
         elif model in ['vgg16', 'vgg11', 'resnet18', 'resnet50']:
             self.model = ae.BuildAutoEncoder(model).to(device)
         else:
@@ -321,7 +216,7 @@ class Model(nn.Module):
         return self.forward_function(input)
     
     # Inspired by pytorch example - VAE
-    def train_vae(self, model, dir, epochs, generalise, sched, lr, decay, beta_lr, gamma, lr_proxies):
+    def train_ae(self, model, dir, epochs, generalise, sched, lr, decay, beta_lr, gamma, lr_proxies):
         data = dataset.TrainingDataset( root = dir, name = model, samples_per_class= 2,  generalise = generalise, load = None, transformer= self.transformer)
         print('Size of dataset', data.__len__())
 
@@ -352,12 +247,12 @@ class Model(nn.Module):
                     labels = labels.to(device=self.device)
 
                     if self.model_name == "auto":
-                        loss, inputs_reshaped, reconstruction = grad_auto_bis(self.model, images_gpu.view(-1, 3, 224, 224)) 
+                        loss, inputs_reshaped, reconstruction = ae.grad_auto_bis(self.model, images_gpu.view(-1, 3, 224, 224)) 
                         optimizer.zero_grad(set_to_none=True)
                         loss.backward()
                     else:
                         recon_batch, mu, logvar = self.model(images_gpu)
-                        loss = loss_function(recon_batch, images_gpu.view(-1, 3, 224, 224), mu, logvar)
+                        loss = ae.loss_function(recon_batch, images_gpu.view(-1, 3, 224, 224), mu, logvar)
                     
                         optimizer.zero_grad(set_to_none=True)
                         loss.backward()
@@ -380,7 +275,7 @@ class Model(nn.Module):
                 if self.parallel:
                     self.model = nn.DataParallel(self.model)
             plt.plot(range(epochs),loss_means)
-            plt.show()
+            plt.savefig("/cms/"+str(self.name[len(self.name)-9:])+"_loss.png")
         except KeyboardInterrupt:
             print("Interrupted")
 
@@ -417,6 +312,21 @@ class Model(nn.Module):
             ]
 
             optimizer = torch.optim.Adam(to_optim)
+        elif loss == 'softtriple':
+            # Official - paper implementation
+            loss_function = SoftTriple(self.device)
+
+            # Direct from pytorch metric learning
+            # loss_function = losses.SoftTripleLoss(num_classes=len(data.classes), embedding_size=self.num_features)
+
+
+            to_optim = [{"params": self.parameters(), "lr": 0.0001},
+                                  {"params": loss_function.parameters(), "lr": 0.01}]
+            optimizer = torch.optim.Adam(to_optim, eps=0.01, weight_decay=0.0001)
+        else:
+            print('Unknown loss function')
+            return
+
 
         if sched == 'exponential':
             scheduler = torch.optim.lr_scheduler.ExponentialLR(optimizer, gamma=gamma)
@@ -472,13 +382,13 @@ class Model(nn.Module):
                     self.model = nn.DataParallel(self.model).to(self.device)
             plt.plot(range(epochs),loss_means)
             #plt.show()
-            plt.savefig(str(self.name[len(self.name)-9:])+"loss.png")
+            plt.savefig("/cms/"+str(self.name[len(self.name)-9:])+"_loss.png")
         except KeyboardInterrupt:
             print("Interrupted")
         
 
     def train_dr(self, data, num_epochs, lr, loss_name, augmented, contrastive, sched, gamma):
-        if loss_name == 'triplet':
+        if loss_name == 'triplet' or (loss_name == 'infonce' and contrastive):
             pair = False
         else:
             pair = True
@@ -499,13 +409,19 @@ class Model(nn.Module):
         elif loss_name == 'contrastive':
             loss_function = ContrastiveLoss()
             #loss_function = losses.ContrastiveLoss() 
-        else:
+        elif loss_name == 'cosine':
             loss_function = torch.nn.CosineEmbeddingLoss()
+        elif loss_name == 'infonce':
+            #loss_function = InfoNCELoss()
+            loss_function = InfoNCE(contrastive)
+        else:
+            print('Unknown loss function')
+            return
         optimizer = torch.optim.Adam(self.parameters(), lr=lr)
         if sched == 'exponential':
             scheduler = torch.optim.lr_scheduler.ExponentialLR(optimizer, gamma=gamma)
         elif sched == 'step':
-            scheduler = torch.optim.lr_scheduler.MultiStepLR(optimizer, milestones=[epochs//2, epochs],
+            scheduler = torch.optim.lr_scheduler.MultiStepLR(optimizer, milestones=[num_epochs//2, num_epochs],
                                                             gamma=gamma)
         loss_list = []
         loss_means = []
@@ -559,14 +475,17 @@ class Model(nn.Module):
 
                 if sched != None:
                     scheduler.step()
-
+                if (epoch + 1) % 4:
+                    lr /= 2
+                    for param in optimizer.param_groups:
+                        param['lr'] = lr
                 loss_list.clear()
                 print("time for epoch {}".format(time.time()- start_time))
                 try:
                     self.model = self.model.module
                 except AttributeError:
                     self.model = self.model
-                torch.save(self.state_dict(), self.name)
+                torch.save(self.state_dict(), self.name+str(epoch))
                 if self.parallel:
                     self.model = nn.DataParallel(self.model).to(self.device)
                 """if (epoch + 1) % 4:
@@ -574,7 +493,7 @@ class Model(nn.Module):
                     for param in optimizer.param_groups:
                         param['lr'] = lr"""
             plt.plot(range(num_epochs),loss_means)
-            plt.show()
+            plt.savefig("/cms/"+str(self.name[len(self.name)-9:])+"_loss.png")
         except KeyboardInterrupt:
             print("Interrupted")
 
@@ -725,11 +644,11 @@ if __name__ == "__main__":
               num_features=args.num_features, name=args.weights,
               use_dr=args.dr_model, device=device, freeze=args.freeze, classification = args.classification, parallel=args.parallel, scratch=args.scratch)
 
-    siamese_losses = ['triplet', 'contrastive', 'BCE', 'cosine']
+    siamese_losses = ['triplet', 'contrastive', 'BCE', 'cosine', 'infonce']
     if args.loss in siamese_losses:
         m.train_dr(args.training_data, args.num_epochs, args.lr, loss_name = args.loss, augmented=args.augmented, contrastive = not args.non_contrastive, sched= args.scheduler, gamma= args.gamma)
     elif args.model == 'VAE' or args.model == 'auto' or args.model == "unet":
-        m.train_vae(args.model, args.training_data, args.num_epochs, args.generalise, args.scheduler, args.lr, args.decay, args.beta_lr, args.gamma, args.lr_proxies)
+        m.train_ae(args.model, args.training_data, args.num_epochs, args.generalise, args.scheduler, args.lr, args.decay, args.beta_lr, args.gamma, args.lr_proxies)
     else:
         m.train_epochs(args.model, args.training_data, args.num_epochs, args.scheduler, args.loss, args.generalise, args.load,
                        args.lr, args.decay, args.beta_lr, args.gamma, args.lr_proxies)

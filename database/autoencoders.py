@@ -3,8 +3,6 @@ import torch.nn as nn
 import torch
 import torch.nn.functional as F
 
-
-
 #---------------------------------------------------------------------------------------------------------
 #                                          Implementation 1 
 #---------------------------------------------------------------------------------------------------------
@@ -40,11 +38,25 @@ class VAE(nn.Module):
         self.exp = "1"
 
         if self.exp == "1":
-            print("1")
+            self.fc1 = nn.Linear(784, 400)
+            self.fc21 = nn.Linear(400, 20)
+            self.fc22 = nn.Linear(400, 20)
+            self.fc3 = nn.Linear(20, 400)
+            self.fc4 = nn.Linear(400, 784)
         elif self.exp == "2a":
-            print("2a")
+            self.fc1 = nn.Linear(224*224*3, 400)
+            self.fc21 = nn.Linear(400, 20)
+            self.fc22 = nn.Linear(400, 20)
+            self.fc3 = nn.Linear(20, 400)
+            self.fc4 = nn.Linear(400, 224*224*3)
         elif self.exp == "2b":
-            print("2b")
+            self.fc0 = nn.Linear(224*224*3, 750)
+            self.fc1 = nn.Linear(750, 400)
+            self.fc21 = nn.Linear(400, 20)
+            self.fc22 = nn.Linear(400, 20)
+            self.fc3 = nn.Linear(20, 400)
+            self.fc4 = nn.Linear(400, 750)
+            self.fc5 = nn.Linear(750, 224*224*3)
         elif self.exp == "2c":
             self.fc0 = nn.Linear(224*224*3,1500)
             self.fc1 = nn.Linear(1500, 750)
@@ -71,12 +83,14 @@ class VAE(nn.Module):
 
     def encode(self, x):
         if self.exp == "1":
-            print("1")
-        elif self.exp == "2a":
-            print("2a")
-        elif self.exp == "2b":
-            print("2b")
-        elif self.exp == "2c":
+            x= x.view(-1, 784)
+        elif self.exp == "2a" or self.exp == "2b" or self.exp == "2c" :
+            x = x.view(-1, 224*224*3)
+        if self.exp == "1" or self.exp == "2a":
+            h1 = F.relu(self.fc1(x))
+            return self.fc21(h1), self.fc22(h1)
+        elif self.exp == "2b" or self.exp == "2c":
+
             h0 = F.relu(self.fc0(x))
             h1 = F.relu(self.fc1(h0))
             return self.fc21(h1), self.fc22(h1)
@@ -92,13 +106,10 @@ class VAE(nn.Module):
             return self.fc21(x), self.fc22(x)
 
     def decode(self, z):
-        if self.exp == "1":
-            print("1")
-        elif self.exp == "2a":
-            print("2a")
-        elif self.exp == "2b":
-            print("2b")
-        elif self.exp == "2c":
+        if self.exp == "1" or self.exp == "2a":
+            h3 = F.relu(self.fc3(z))
+            return torch.sigmoid(self.fc4(h3))
+        elif self.exp == "2b" or self.exp == "2c":
             h3 = F.relu(self.fc3(z))
             h4 = F.relu(self.fc4(h3))
             return torch.sigmoid(self.fc5(h4))
@@ -116,27 +127,11 @@ class VAE(nn.Module):
         return mu + eps * std
 
     def forward(self, x):
-        if self.exp == "1":
-            print("1")
-        elif self.exp == "2a":
-            print("2a")
-        elif self.exp == "2b":
-            print("2b")
-        elif self.exp == "2c":
-            mu, logvar = self.encode(x.view(-1, 224*224*3))
-        elif self.exp == "3":
-            mu, logvar = self.encode(x)
+        mu, logvar = self.encode(x)
         z = self.reparameterize(mu, logvar)
         return self.decode(z), mu, logvar
         # 784 -> 400 -> 200 -> 200 -> 400 -> 784
-        """
-
-
-    def forward(self, x):
-        #mu, logvar = self.encode(x.view(-1, 784))
-        mu, logvar = self.encode(x.view(-1, 224*224*3))
-        z = self.reparameterize(mu, logvar)
-        return self.decode(z), mu, logvar"""
+    
 
 # Pytorch exampe VAE
 # Reconstruction + KL divergence losses summed over all elements and batch
@@ -157,4 +152,124 @@ def loss_function(recon_x, x, mu, logvar):
     KLD = -0.5 * torch.sum(1 + logvar - mu.pow(2) - logvar.exp())
 
     return BCE + KLD
+
+
+#----------------------------------------------------------------------------------------------------
+#                                    Implementation 3
+#----------------------------------------------------------------------------------------------------
+
+# From Geek For geek - https://www.geeksforgeeks.org/contractive-autoencoder-cae/?ref=rp
+class AutoEncoder(nn.Module):
+    def __init__(self):
+        super(AutoEncoder, self).__init__()
+        exp = 1
+        self.flatten_layer = nn.Flatten()
+
+        if exp == 0 or exp == 1:
+            self.dense1 = nn.Linear(784, 64)
+            self.dense2 = nn.Linear(64, 32)
+            self.dense3 = nn.Linear(32, 16)
+            self.dense4 = nn.Linear(16, 32)
+            self.dense5 = nn.Linear(32, 64)
+            self.dense6 = nn.Linear(64, 784)
+        elif exp == 2 or exp == 3:
+            self.dense1 = nn.Linear(784, 400)
+            self.dense2 = nn.Linear(400, 200)
+            if exp == 2:
+                self.dense3 = nn.Linear(200, 16)
+                self.dense4 = nn.Linear(16, 200)
+            elif exp == 3:
+                self.dense3 = nn.Linear(200, 50)
+                self.dense4 = nn.Linear(50, 200)
+            self.dense5 = nn.Linear(200, 400)
+            self.dense6 = nn.Linear(400, 784)
+        elif exp == 4:
+            # 224*224*3 -> 64 -> 32 -> 16 
+            self.dense1 = nn.Linear(224*224*3, 64)
+            self.dense2 = nn.Linear(64, 32)
+            self.dense3 = nn.Linear(32, 16)
+            self.dense4 = nn.Linear(16, 32)
+            self.dense5 = nn.Linear(32, 64)
+            self.dense6 = nn.Linear(64, 224*224*3)
+
+        elif exp == 5:
+            self.dense1 = nn.Linear(224*224*3, 512)
+            self.dense2 = nn.Linear(512, 256)
+            self.dense3 = nn.Linear(256, 128)
+            self.dense4 = nn.Linear(128, 256)
+            self.dense5 = nn.Linear(256, 512)
+            self.dense6 = nn.Linear(512, 224*224*3)
+        elif exp == 6:
+            # 224*224*3 -> 3000 -> 1500 -> 750
+            self.dense1 = nn.Linear(224*224*3, 3000)
+            self.dense2 = nn.Linear(3000, 1500)
+            self.dense3 = nn.Linear(1500, 750)
+            self.dense4 = nn.Linear(750, 1500)
+            self.dense5 = nn.Linear(1500, 3000)
+            self.dense6 = nn.Linear(3000, 224*224*3)
+        self.exp = exp
+
+    def forward(self, inp):
+        x_reshaped = self.flatten_layer(inp)
+        h1 = torch.sigmoid(self.dense1(x_reshaped))
+        h2 = torch.sigmoid(self.dense2(h1))
+        h3 = torch.sigmoid(self.dense3(h2))
+        h4 = torch.sigmoid(self.dense4(h3))
+        h5 = torch.sigmoid(self.dense5(h4))
+        #x = nn.functional.relu(self.dense6(x))
+        x = self.dense6(h5)
+        if self.exp == 0:
+            ws = None
+            for i in range(int(x.shape[0]/192)):
+                W = torch.matmul(torch.diag_embed(h1[i:i+192, :] * (1 - h1[i:i+192, :])), self.dense1.weight)
+                W = torch.matmul(self.dense2.weight, W)
+                W = torch.matmul(torch.diag_embed(h2[i:i+192, :] * (1 - h2[i:i+192, :])), W)
+                W = torch.matmul(self.dense3.weight, W)
+                W = torch.matmul(torch.diag_embed(h3[i:i+192, :] * (1 - h3[i:i+192, :]))  , W)
+
+                if ws is None:
+                    ws = W
+                else:
+                    ws = torch.cat((ws, W), axis=0)
+            return x, x_reshaped, h3, ws
+            """#x_reshaped = inp #
+            x_reshaped = self.flatten_layer(inp)
+            x = nn.functional.relu(self.dense1(x_reshaped))
+            x = nn.functional.relu(self.dense2(x))
+            #x = nn.functional.relu(self.dense3(x))
+            x = nn.functional.relu(self.bottleneck(x))
+            x_hid = x
+            x = nn.functional.relu(self.dense4(x))
+            x = nn.functional.relu(self.dense5(x))
+            #x = nn.functional.relu(self.dense6(x))
+            x = self.dense_final(x)"""
+
+        return x, x_reshaped, h3, self.dense3.weight
+
+def loss_auto(x, x_bar, h, W, model):
+    exp = 0
+    if exp == 0:
+        reconstruction_loss = nn.functional.mse_loss(x, x_bar, reduction='mean')
+        contractive = torch.sum(W**2, axis=(1,2))
+        total_loss = reconstruction_loss + 1000 * contractive.mean()
+    elif exp == 1 or exp == 2 or exp == 3:
+        reconstruction_loss = nn.functional.mse_loss(x, x_bar, reduction='mean') * 784
+        dh = h * (1 - h) # N_batch x N_hidden
+        contractive = 100 * torch.sum(torch.matmul(dh**2, torch.square(W)), axis=1)
+        total_loss = reconstruction_loss + contractive.mean()
+    elif exp == 4 or exp == 5 or exp == 6:
+        reconstruction_loss = nn.functional.mse_loss(x, x_bar, reduction='mean') * 224*224*3
+        dh = h * (1 - h) # N_batch x N_hidden
+        contractive = 100 * torch.sum(torch.matmul(dh**2, torch.square(W)), axis=1)
+        total_loss = reconstruction_loss + contractive.mean()
+    return total_loss
+
+def grad_auto(model, inputs):
+    exp = 0
+    if exp == 0 or exp == 1 or exp == 2 or exp == 3:
+        reconstruction, inputs_reshaped, hidden, _ = model(inputs.view(-1, 784))
+    else:
+        reconstruction, inputs_reshaped, hidden, _ = model(inputs.view(-1, 224*224*3))
+    loss_value = loss_auto(inputs_reshaped, reconstruction, hidden, W, model)
+    return loss_value, inputs_reshaped, reconstruction
 

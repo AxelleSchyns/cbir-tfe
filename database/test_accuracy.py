@@ -371,6 +371,7 @@ def test(model, dataset, db_name, extractor, measure, generalise, project_name, 
             print(image)
         t = time.time()
         names, _, t_model_tmp, t_search_tmp = database.search(Image.open(image[0]).convert('RGB'), extractor, retrieve_class=label, generalise=generalise)
+        print(names)
         t_tot += time.time() - t
         t_model += t_model_tmp
         t_search += t_search_tmp

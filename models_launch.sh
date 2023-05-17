@@ -26,3 +26,16 @@ python database/test_accuracy.py --path /home/labarvr4090/Documents/Axelle/cytom
 
 printf "16 resnet: weighted \n"
 python database/test_accuracy.py --path /home/labarvr4090/Documents/Axelle/cytomine/Data/validation --extractor resnet --weights weights_folder/88_resnet --measure weighted
+
+
+printf "11 resnet \n"
+python database/add_images.py --path /home/labarvr4090/Documents/Axelle/cytomine/Data/test --extractor resnet --weights weights_folder/11_new_resnet --rewrite --dr_model
+
+printf "11 resnet: random \n"
+python database/test_accuracy.py --path /home/labarvr4090/Documents/Axelle/cytomine/Data/validation --extractor resnet --weights weights_folder/11_new_resnet --measure stat --dr_model
+
+printf "11 resnet: all \n"
+python database/test_accuracy.py --path /home/labarvr4090/Documents/Axelle/cytomine/Data/validation --extractor resnet --weights weights_folder/11_new_resnet --measure all --dr_model
+
+printf "11 resnet: weighted \n"
+python database/test_accuracy.py --path /home/labarvr4090/Documents/Axelle/cytomine/Data/validation --extractor resnet --weights weights_folder/11_new_resnet --measure weighted --dr_model

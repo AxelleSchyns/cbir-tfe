@@ -19,6 +19,7 @@ class ResNetAutoEncoder(nn.Module):
     def __init__(self, configs, bottleneck, exp=0):
 
         super(ResNetAutoEncoder, self).__init__()
+        exp = 7
         self.exp = exp
         self.encoder = ResNetEncoder(configs=configs,       bottleneck=bottleneck)
         self.decoder = ResNetDecoder(configs=configs[::-1], bottleneck=bottleneck)
@@ -46,6 +47,12 @@ class ResNetAutoEncoder(nn.Module):
             x = self.decoder(x)
 
 
+        return x
+    def encode_7(self, x):
+        x = self.encoder(x)
+        x = self.avpool(x)
+        x = torch.flatten(x, 1)
+        x = self.fc(x)
         return x
 
 

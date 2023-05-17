@@ -3,6 +3,11 @@ import numpy as np
 import torch.nn.functional as F
 import sklearn
 import sklearn.preprocessing
+from pytorch_metric_learning import losses
+import math
+import torch.nn as nn
+from torch.nn.parameter import Parameter
+from torch.nn import init
 
 # https://github.com/Confusezius/Revisiting_Deep_Metric_Learning_PyTorch/blob/efddbf23ccbe267f055867b4e1c7c6693e2447c9/batchminer/rho_distance.py#L13
 def distanceweightedsampling(batch, labels, lower_cutoff=0.5, upper_cutoff=1.4, contrastive_p=0.2):
@@ -356,3 +361,63 @@ class ContrastiveLoss(torch.nn.Module):
 
         pred = (self.margin < euclidean_distance).type(torch.float)         
         return loss_contrastive
+class InfoNCE(torch.nn.Module):
+    def __init__(self, contrastive, temperature=0.07):
+        super(InfoNCE, self).__init__()
+        self.loss = losses.NTXentLoss(temperature=temperature)
+        self.contrastive = contrastive
+    
+    def forward(self, output1, output2, out3):
+        if self.contrastive:
+            embeds = torch.zeros([3 * output1.shape[0], output1.shape[1]])
+            labels = torch.zeros([3 * output1.shape[0]])
+            for i in range(len(output1)):
+                embeds[3*i] = output1[i]
+                embeds[3*i + 1] = output2[i]
+                embeds[3*i + 2] = out3[i]
+                labels[3*i] = i
+                labels[3*i + 1] = i
+                labels[3*i + 2] = -i
+
+            loss = self.loss(embeds, labels)
+            return loss
+        else:
+            loss = losses.SelfSupervisedLoss(self.loss)(output1, output2)
+            return loss
+
+# Implementation of SoftTriple Loss - https://github.com/idstcv/SoftTriple/tree/master
+
+
+
+class SoftTriple(nn.Module):
+    def __init__(self, device, la=20, gamma=0.1, tau=0.2, margin=0.01, dim=128, cN=67, K=10): # K = number of centers , cN = number of classes 
+        super(SoftTriple, self).__init__()
+        self.la = la
+        self.gamma = 1./gamma
+        self.tau = tau
+        self.margin = margin
+        self.cN = cN
+        self.K = K
+        self.fc = Parameter(torch.Tensor(dim, cN*K)).to(device=device)
+        self.weight = torch.zeros(cN*K, cN*K, dtype=torch.bool).to(device=device)
+        for i in range(0, cN):
+            for j in range(0, K):
+                self.weight[i*K+j, i*K+j+1:(i+1)*K] = 1
+        init.kaiming_uniform_(self.fc, a=math.sqrt(5))
+        return
+
+    def forward(self, input, target):
+        centers = F.normalize(self.fc, p=2, dim=0)
+        simInd = input.matmul(centers)
+        simStruc = simInd.reshape(-1, self.cN, self.K)
+        prob = F.softmax(simStruc*self.gamma, dim=2)
+        simClass = torch.sum(prob*simStruc, dim=2)
+        marginM = torch.zeros(simClass.shape).cuda()
+        marginM[torch.arange(0, marginM.shape[0]), target] = self.margin
+        lossClassify = F.cross_entropy(self.la*(simClass-marginM), target)
+        if self.tau > 0 and self.K > 1:
+            simCenter = centers.t().matmul(centers)
+            reg = torch.sum(torch.sqrt(2.0+1e-5-2.*simCenter[self.weight]))/(self.cN*self.K*(self.K-1.))
+            return lossClassify+self.tau*reg
+        else:
+            return lossClassify

@@ -250,12 +250,15 @@ class Model(nn.Module):
                         loss, inputs_reshaped, reconstruction = ae.grad_auto_bis(self.model, images_gpu.view(-1, 3, 224, 224)) 
                         optimizer.zero_grad(set_to_none=True)
                         loss.backward()
-                    else:
+                    elif self.model_name == "vae":
                         recon_batch, mu, logvar = self.model(images_gpu)
                         loss = ae.loss_function(recon_batch, images_gpu.view(-1, 3, 224, 224), mu, logvar)
                     
                         optimizer.zero_grad(set_to_none=True)
                         loss.backward()
+                    else: 
+                        out = self.model(images_gpu)
+                        loss = nn.functional.mse_loss(images_gpu, out, reduction='mean')
                     optimizer.step()
 
                     loss_list.append(loss.item())
@@ -275,7 +278,7 @@ class Model(nn.Module):
                 if self.parallel:
                     self.model = nn.DataParallel(self.model)
             plt.plot(range(epochs),loss_means)
-            plt.savefig("/cms/"+str(self.name[len(self.name)-9:])+"_loss.png")
+            plt.savefig(str(self.name[len(self.name)-9:])+"_loss.png")
         except KeyboardInterrupt:
             print("Interrupted")
 
@@ -382,7 +385,7 @@ class Model(nn.Module):
                     self.model = nn.DataParallel(self.model).to(self.device)
             plt.plot(range(epochs),loss_means)
             #plt.show()
-            plt.savefig("/cms/"+str(self.name[len(self.name)-9:])+"_loss.png")
+            plt.savefig(str(self.name[len(self.name)-9:])+"_loss.png")
         except KeyboardInterrupt:
             print("Interrupted")
         
@@ -493,7 +496,7 @@ class Model(nn.Module):
                     for param in optimizer.param_groups:
                         param['lr'] = lr"""
             plt.plot(range(num_epochs),loss_means)
-            plt.savefig("/cms/"+str(self.name[len(self.name)-9:])+"_loss.png")
+            plt.savefig(str(self.name[len(self.name)-9:])+"_loss.png")
         except KeyboardInterrupt:
             print("Interrupted")
 

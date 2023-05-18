@@ -132,7 +132,7 @@ class DRDataset(Dataset):
 
 
 class TrainingDataset(Dataset):
-    def __init__(self, root, name, samples_per_class, generalise, load, transformer=False):
+    def __init__(self, root, name, samples_per_class, generalise, load):
         self.classes = os.listdir(root)
         self.classes.sort()
         print(self.classes)
@@ -210,15 +210,18 @@ class TrainingDataset(Dataset):
                                                                           size=224, do_center_crop=False,
                                                                           image_mean=[0.485, 0.456, 0.406],
                                                                           image_std=[0.229, 0.224, 0.225])
+                self.transformer = True
                                                                           
             elif name == 'cvt':
                 self.feature_extractor = ConvNextImageProcessor.from_pretrained("microsoft/cvt-21", size=224, do_center_crop=False,
                                                                           image_mean=[0.485, 0.456, 0.406],
                                                                           image_std=[0.229, 0.224, 0.225])
+                self.transformer = True
             elif name == 'conv':
                 self.feature_extractor = ConvNextImageProcessor.from_pretrained("facebook/convnext-tiny-224", size=224, do_center_crop=False,
                                                                           image_mean=[0.485, 0.456, 0.406],
                                                                           image_std=[0.229, 0.224, 0.225])
+                self.transformer = True
                 
         else:
             self.transform = transforms.Compose(
@@ -235,7 +238,7 @@ class TrainingDataset(Dataset):
                     ]
                 )
 
-        self.transformer = transformer
+            self.transformer = False
 
         self.samples_per_class = samples_per_class
         self.current_class = np.random.choice(self.classes)
@@ -287,10 +290,10 @@ class TrainingDataset(Dataset):
         return class_nbr, self.transform(img)
 
 class AddDataset(Dataset):
-    def __init__(self, root, model_name , transformer=False):
+    def __init__(self, root, model_name):
         self.root = root
         self.list_img = []
-        self.transform = transforms.Compose(
+        """self.transform = transforms.Compose(
                 [
                     transforms.RandomVerticalFlip(.5),
                     transforms.RandomHorizontalFlip(.5),
@@ -302,24 +305,39 @@ class AddDataset(Dataset):
                         std=[0.229, 0.224, 0.225]
                     )
                 ]
-            )
+            )"""
+        self.transform = transforms.Compose(
+            [
+                transforms.Resize((224, 224)),
+                transforms.ToTensor(),
+                transforms.Normalize(
+                    mean=[0.485, 0.456, 0.406],
+                    std=[0.229, 0.224, 0.225]
+                )
+            ]
+        )
 
-        self.transformer = transformer
+        
     
         if model_name == 'deit':
             self.feature_extractor = DeiTFeatureExtractor.from_pretrained('facebook/deit-base-distilled-patch16-224',
                                                                       size=224, do_center_crop=False,
                                                                       image_mean=[0.485, 0.456, 0.406],
                                                                       image_std=[0.229, 0.224, 0.225])
+            self.transformer = True
         elif model_name == 'cvt':
                 self.feature_extractor = ConvNextImageProcessor.from_pretrained("microsoft/cvt-21", size=224, do_center_crop=False,
                                                                           image_mean=[0.485, 0.456, 0.406],
                                                                           image_std=[0.229, 0.224, 0.225])
+                self.transformer = True
                                                                       
         elif model_name == 'conv':
                 self.feature_extractor = ConvNextImageProcessor.from_pretrained("facebook/convnext-tiny-224", size=224, do_center_crop=False,
                                                                           image_mean=[0.485, 0.456, 0.406],
                                                                           image_std=[0.229, 0.224, 0.225])
+                self.transformer = True
+        else:
+            self.transformer = False
 
         self.classes = os.listdir(root)
         # self.classes = self.classes[:len(self.classes) // 2 + 1]
@@ -341,7 +359,7 @@ class AddDataset(Dataset):
         return self.feature_extractor(images=img, return_tensors='pt')['pixel_values'], self.list_img[idx]
 
 class AddDatasetList(Dataset):
-    def __init__(self, id, name_list, model_name, server_name='', transformer=False):
+    def __init__(self, id, name_list, model_name, server_name=''):
         self.list_img = []
         self.transform = transforms.Compose(
             [
@@ -354,21 +372,26 @@ class AddDatasetList(Dataset):
             ]
         )
 
-        self.transformer = transformer
+        
 
         if model_name == 'deit':
             self.feature_extractor = DeiTFeatureExtractor.from_pretrained('facebook/deit-base-distilled-patch16-224',
                                                                       size=224, do_center_crop=False,
                                                                       image_mean=[0.485, 0.456, 0.406],
                                                                       image_std=[0.229, 0.224, 0.225])
+            self.transformer = True
         elif model_name == 'cvt':
             self.feature_extractor = ConvNextImageProcessor.from_pretrained("microsoft/cvt-21", size=224, do_center_crop=False,
                                                                           image_mean=[0.485, 0.456, 0.406],
                                                                           image_std=[0.229, 0.224, 0.225])
+            self.transformer = True
         elif model_name == 'conv':
                 self.feature_extractor = ConvNextImageProcessor.from_pretrained("facebook/convnext-tiny-224", size=224, do_center_crop=False,
                                                                           image_mean=[0.485, 0.456, 0.406],
                                                                           image_std=[0.229, 0.224, 0.225])
+                self.transformer = True
+        else:
+            self.transformer = False
 
         self.server_name = server_name
         self.id = id

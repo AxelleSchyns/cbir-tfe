@@ -17,7 +17,7 @@ import builder
 import pickle 
 import utils
 class Database:
-    def __init__(self, filename, model, load=False, transformer=False, device='cpu'):
+    def __init__(self, filename, model, load=False, device='cuda:0'):
         #print(type(model.model))
         self.name = filename # = name of the database 
         self.num_features = model.num_features
@@ -52,22 +52,26 @@ class Database:
             self.index_labeled = faiss.index_cpu_to_gpu(res_labeled, 0, self.index_labeled)
             self.index_unlabeled = faiss.index_cpu_to_gpu(res_unlabeled, 0, self.index_unlabeled)
 
-        self.transformer = transformer
+        
         if model.model_name == 'deit':
                 self.feat_extract = DeiTFeatureExtractor.from_pretrained('facebook/deit-base-distilled-patch16-224',
 		                                                         size=224, do_center_crop=False,
 		                                                         image_mean=[0.485, 0.456, 0.406],
 		                                                         image_std=[0.229, 0.224, 0.225]) 
+                self.transformer = True
         elif model.model_name == 'cvt':
                 self.feat_extract = ConvNextImageProcessor.from_pretrained("microsoft/cvt-21", size=224, do_center_crop=False,
 		                                                                  image_mean=[0.485, 0.456, 0.406],
 		                                                                  image_std=[0.229, 0.224, 0.225])
+                self.transformer = True
         elif model.model_name == 'conv':
                 self.feat_extract = ConvNextImageProcessor.from_pretrained("facebook/convnext-tiny-224", size=224, do_center_crop=False,
 		                                                                  image_mean=[0.485, 0.456, 0.406],
 		                                                                  image_std=[0.229, 0.224, 0.225])
+                self.transformer = True
         else:
-                self.feat_extract = None                                                                 
+                self.feat_extract = None     
+                self.transformer = False                                                            
     # x = vector of images 
     def add(self, x, names, label, generalise=0, labels=None):
         if label:
@@ -129,13 +133,14 @@ class Database:
     def add_dataset(self, data_root, extractor, generalise=0, name_list=[], label=True):
         # Create a dataset from a directory root
         if name_list == []:
-            data = dataset.AddDataset(data_root, extractor, self.transformer)
+            data = dataset.AddDataset(data_root, extractor)
         # create a dataset from a list of image names
         else:
-            data = dataset.AddDatasetList(data_root, extractor, name_list, self.transformer)
+            data = dataset.AddDatasetList(data_root, extractor, name_list)
         loader = torch.utils.data.DataLoader(data, batch_size=128, num_workers=12, pin_memory=True)
         t_model = 0
         t_indexing = 0
+        t_transfer = 0
         for i, (images, filenames) in enumerate(loader):
             images = images.view(-1, 3, 224, 224).to(device=next(self.model.parameters()).device)
             if extractor == 'vgg11' or extractor == 'resnet18' or extractor == 'vgg16' or extractor == 'resnet50':
@@ -144,12 +149,12 @@ class Database:
                 #out = out.cpu()
                 out = utils.encode(self.model, images)
                 out = out.reshape([out.shape[0],self.model.num_features])
-                t_model = t_model + (time.time() - t)
-                print(out.shape)
+                t_im = time.time() - t
+                t = time.time()
+                out = out.cpu()
+                t_transfer = t_transfer + time.time() - t
             elif extractor == 'VAE':
                 t = time.time()
-                #mu, logvar = self.model.encode(images.view(-1, 224*224*3))
-                #mu, logvar = self.model.encode(images.view(-1, 784))
                 mu, logvar = self.model.encode(images)
                 out = self.model.reparameterize(mu, logvar)
                 dec = self.model.decode(out)
@@ -162,15 +167,19 @@ class Database:
                 plt.subplot(1, 2, 2)
                 plt.imshow(  dec[0].permute(1, 2, 0)  )
                 plt.show()"""
+                t_im = time.time() - t
+                t = time.time()
                 out = out.cpu()
-                t_model = t_model + (time.time() - t)
+                t_transfer = t_transfer + time.time() - t
             elif extractor == 'auto':
                 t = time.time()
-                #out1, out2, out3 = self.model.model(images.view(-1, 784))
-                out1, out2, _, _, out3 = self.model.model(images.view(-1, 784))
-                out = out3.cpu()
+                reconstructed, flattened, latent, weights = self.model.model(images)
+                out = latent
                 out = out.view(-1, self.model.num_features)
-                t_model = t_model + (time.time() - t)
+                t_im = time.time() - t
+                t = time.time()
+                out = out.cpu()
+                t_transfer = t_transfer + time.time() - t
                 # display image and its reconstruction
                 """dec = out1.cpu()
                 dec = dec.view(128, 3, 224, 224)
@@ -182,38 +191,38 @@ class Database:
             else:
                 # Encode the images using the given model 
                 t = time.time()
-                out = self.model(images).cpu()
-                t_model = t_model + (time.time() - t)
+                out = self.model(images)
+                t_im = time.time() - t
+                t = time.time()
+                out = out.cpu()
+                t_transfer = t_transfer + time.time() - t
+                #print(time.time() - t)
             t = time.time()
             if generalise == 3:
-                kmeans = pickle.load(open("kmeans.pkl","rb"))
+                kmeans = pickle.load(open("weights_folder/kmeans.pkl","rb"))
                 batch_data = np.array([utils.load_image(path) for path in filenames])
                 labels = kmeans.predict(batch_data)
                 self.add(out.numpy(), list(filenames), label, generalise, labels)
             else:
                 self.add(out.numpy(), list(filenames), label, generalise)
-            t_indexing = t_indexing + (time.time() - t)
+            t_im_ind = time.time() - t
+            t_indexing = t_indexing + t_im_ind
+            t_model = t_model + t_im
         print("Time of the model: "+str(t_model))
+        print("Time of the transfer: "+str(t_transfer))
         print("Time of the indexing: "+str(t_indexing))
+        
         self.save()
         
 
 
     @torch.no_grad()
     def search(self, x, extractor, generalise=0, nrt_neigh=10, retrieve_class='true'):
-        if not self.feat_extract: # feat_extract is None in case of non transformer model thus True here 
-            image = transforms.Resize((224, 224))(x)
-            image = transforms.ToTensor()(image)
-            image = transforms.Normalize(
-                mean=[0.485, 0.456, 0.406],
-                std=[0.229, 0.224, 0.225]
-            )(image)
-        else:
-            image = self.feat_extract(images=x, return_tensors='pt')['pixel_values'] # Applies the processing for the transformer model
-        
-        t_model = time.time()
+        image = x.view(-1, 3, 224, 224).to(device=next(self.model.parameters()).device)
+        t_model = 0
         if extractor == 'vgg11' or extractor == 'resnet18' or extractor == "vgg16" or extractor == "resnet50":
-            out = utils.encode(self.model, image.to(device=next(self.model.parameters()).device).view(-1, 3, 224, 224))
+            t_model = time.time()
+            out = utils.encode(self.model, image)
             out = out.reshape([out.shape[0],self.model.num_features])
             """out1, out = self.model(image.to(device=next(self.model.parameters()).device).view(-1, 3, 224, 224))
             out = out.cpu()
@@ -228,19 +237,17 @@ class Database:
             plt.show()"""
             t_model = time.time() - t_model
         elif extractor == 'VAE':
-            #mu, logvar = self.model.encode(image.to(device = next(self.model.parameters()).device).view(-1, 224*224*3))
-            mu, logvar = self.model.encode(image.to(device = next(self.model.parameters()).device))
-            #mu, logvar = self.model.encode(image.to(device = next(self.model.parameters()).device).view(-1, 784))
+            t_model = time.time()
+            mu, logvar = self.model.encode(image)
             out = self.model.reparameterize(mu, logvar)
             out = out.view(-1, self.model.num_features)
-            out = out.cpu()
             t_model = time.time() - t_model
         elif extractor == 'auto':
-            #out1, out2, out3 = self.model.model(image.to(device=next(self.model.parameters()).device).view(-1, 784))
-            out1, out2, _, _, out3 = self.model.model(image.to(device=next(self.model.parameters()).device).view(-1, 784))
-            out = out3.cpu()
+            t_model = time.time()
+            reconstructed, flattened, latent, weights = self.model.model(image)
+            out = latent
             out = out.view(-1, self.model.num_features)
-            """out1 = out1.cpu() 
+            """out = original.cpu() 
             out1 = out1.view(-1, 3, 224, 224)
             plt.subplot(1,2,1)
             # display image and its reconstruction
@@ -251,14 +258,17 @@ class Database:
             t_model = time.time() - t_model
         else:
             # Retrieves the result from the model
-            out = self.model(image.to(device=next(self.model.parameters()).device).view(-1, 3, 224, 224))
-            print(out)
+            t_model = time.time()
+            out = self.model(image)
             t_model = time.time() - t_model
+        t_transfer = time.time()
+        out = out.cpu()
+        t_transfer = time.time() - t_transfer
+        
         t_search = time.time()
-
         if retrieve_class == 'true':
             # Récupère l'index des nrt_neigh images les plus proches de x
-            distance, labels = self.index_labeled.search(out.cpu().numpy(), nrt_neigh) 
+            distance, labels = self.index_labeled.search(out.numpy(), nrt_neigh) 
             labels = [l for l in list(labels[0]) if l != -1]
             
             # retrieves the names of the images based on their index
@@ -279,9 +289,9 @@ class Database:
                     values.append(v)
             t_search = time.time() - t_search
 
-            return values, distance[0], t_model, t_search
+            return values, distance[0], t_model, t_search, t_transfer
         elif retrieve_class == 'false':
-            distance, labels = self.index_unlabeled.search(out.cpu().numpy(), nrt_neigh)
+            distance, labels = self.index_unlabeled.search(out.numpy(), nrt_neigh)
             labels = [l for l in list(labels[0]) if l != -1]
             # retrieves the names of the images based on their index
             values = []
@@ -301,11 +311,11 @@ class Database:
                     values.append(v)
             t_search = time.time() - t_search
 
-            return values, distance.tolist(), t_model, t_search
+            return values, distance.tolist(), t_model, t_search, t_transfer
         elif retrieve_class == 'mix':
             # retrieves nrt_neigh best in both cases
-            distance_l, labels_l = self.index_labeled.search(out.cpu().numpy(), nrt_neigh)
-            distance_u, labels_u = self.index_unlabeled.search(out.cpu().numpy(), nrt_neigh)
+            distance_l, labels_l = self.index_labeled.search(out.numpy(), nrt_neigh)
+            distance_u, labels_u = self.index_unlabeled.search(out.numpy(), nrt_neigh)
             labels_l = [l for l in list(labels_l[0]) if l != -1]
             labels_u = [l for l in list(labels_u[0]) if l != -1]
 
@@ -354,7 +364,7 @@ class Database:
                             values.append(v)
             t_search = time.time() - t_search
 
-            return values, np.array(distance).reshape(1, -1).tolist(), t_model, t_search
+            return values, np.array(distance).reshape(1, -1).tolist(), t_model, t_search, t_transfer
 
     def remove(self, name):
         key = self.r.get(name).decode('utf-8')

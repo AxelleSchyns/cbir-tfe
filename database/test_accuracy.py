@@ -18,6 +18,8 @@ from openpyxl import load_workbook
 import builder
 import utils
 import pickle
+from transformers import DeiTFeatureExtractor, AutoImageProcessor, ConvNextImageProcessor
+from torchvision import transforms
 
 def compute_old_new(label, name, class_im, image, wrong_old, wrong_new, data, div):
     kmeans = pickle.load(open("kmeans.pkl","rb"))
@@ -218,18 +220,18 @@ def display_cm(ground_truth, data, predictions, predictions_maj):
 def test_each_class(model, dataset, db_name, extractor, measure, name, excel_path, label, generalise=0):
     classes = sorted(os.listdir(dataset))
     if generalise == 3:
-        res = np.zeros((len(classes), 18))
+        res = np.zeros((len(classes), 19))
     else:
-        res = np.zeros((len(classes), 12))
+        res = np.zeros((len(classes), 13))
     i = 0
     for c in classes:
         r = test(model, dataset, db_name, extractor, measure, False, False, c, False, label=label, generalise=generalise)
         res[i][:] = r
         i += 1
     if generalise == 3:
-        df = pd.DataFrame(res, columns=["top_1_acc", "top_5_acc", "top_1_proj", "top_5_proj", "top_1_sim", "top_5_sim", "maj_acc_class", "maj_acc_proj", "maj_acc_sim", "t_tot", "t_model", "t_search", "top_1_k", "top_5_k","maj_k","wrong_new", "wrong_old", "div"])
+        df = pd.DataFrame(res, columns=["top_1_acc", "top_5_acc", "top_1_proj", "top_5_proj", "top_1_sim", "top_5_sim", "maj_acc_class", "maj_acc_proj", "maj_acc_sim", "t_tot", "t_model", "t_search", "t_transfer", "top_1_k", "top_5_k","maj_k","wrong_new", "wrong_old", "div"])
     else:
-        df = pd.DataFrame(res, columns=["top_1_acc", "top_5_acc", "top_1_proj", "top_5_proj", "top_1_sim", "top_5_sim", "maj_acc_class", "maj_acc_proj", "maj_acc_sim", "t_tot", "t_model", "t_search"])
+        df = pd.DataFrame(res, columns=["top_1_acc", "top_5_acc", "top_1_proj", "top_5_proj", "top_1_sim", "top_5_sim", "maj_acc_class", "maj_acc_proj", "maj_acc_sim", "t_tot", "t_model", "t_search", "t_transfer"])
     df.index = classes
 
     book = load_workbook(excel_path)
@@ -242,8 +244,34 @@ def test_each_class(model, dataset, db_name, extractor, measure, name, excel_pat
 
 
 class TestDataset(Dataset):
-    def __init__(self, root, measure, generalise,name=None, class_name =None):
+    def __init__(self, model, root, measure, generalise,name=None, class_name =None):
+        
         self.root = root
+        if model.model_name == 'deit':
+                self.feat_extract = DeiTFeatureExtractor.from_pretrained('facebook/deit-base-distilled-patch16-224',
+		                                                         size=224, do_center_crop=False,
+		                                                         image_mean=[0.485, 0.456, 0.406],
+		                                                         image_std=[0.229, 0.224, 0.225]) 
+                self.transformer = True
+        elif model.model_name == 'cvt':
+                self.feat_extract = ConvNextImageProcessor.from_pretrained("microsoft/cvt-21", size=224, do_center_crop=False,
+		                                                                  image_mean=[0.485, 0.456, 0.406],
+		                                                                  image_std=[0.229, 0.224, 0.225])
+                self.transformer = True
+        elif model.model_name == 'conv':
+                self.feat_extract = ConvNextImageProcessor.from_pretrained("facebook/convnext-tiny-224", size=224, do_center_crop=False,
+		                                                                  image_mean=[0.485, 0.456, 0.406],
+		                                                                  image_std=[0.229, 0.224, 0.225])
+                self.transformer = True
+        else:
+                self.feat_extract = transforms.Compose([
+                transforms.Resize((224, 224)),
+                transforms.ToTensor(),
+                transforms.Normalize(
+                    mean=[0.485, 0.456, 0.406],
+                    std=[0.229, 0.224, 0.225]
+                )])
+                self.transformer = False
 
         self.dic_img = defaultdict(list)
         self.img_list = []
@@ -329,12 +357,18 @@ class TestDataset(Dataset):
         return len(self.img_list)
 
     def __getitem__(self, idx):
-        return self.img_list[idx]
+        
+        img = Image.open(self.img_list[idx]).convert('RGB')
+
+        if not self.transformer:
+            return self.feat_extract(img), self.img_list[idx]
+
+        return self.feat_extract(images=img, return_tensors='pt')['pixel_values'], self.img_list[idx]
 
 def test(model, dataset, db_name, extractor, measure, generalise, project_name, class_name, see_cms, label, stat = False):
-    database = db.Database(db_name, model, True, extractor=='transformer')
+    database = db.Database(db_name, model, True)
 
-    data = TestDataset(dataset, measure, generalise, project_name, class_name)
+    data = TestDataset(model, dataset, measure, generalise, project_name, class_name)
     if measure == 'weighted':
         weights = data.weights
     else:
@@ -364,16 +398,16 @@ def test(model, dataset, db_name, extractor, measure, generalise, project_name, 
 
     t_search = 0
     t_model = 0
+    t_transfer = 0
     t_tot = 0
 
-    for i, image in enumerate(loader):
-        if Image.open(image[0]).convert('RGB').shape[0] == 1:
-            print(image)
+    for i, (image, filename) in enumerate(loader):
         t = time.time()
-        names, _, t_model_tmp, t_search_tmp = database.search(Image.open(image[0]).convert('RGB'), extractor, retrieve_class=label, generalise=generalise)
-        print(names)
+        names, _, t_model_tmp, t_search_tmp, t_transfer_tmp = database.search(image, extractor, retrieve_class=label, generalise=generalise)
+        image = filename
         t_tot += time.time() - t
         t_model += t_model_tmp
+        t_transfer += t_transfer_tmp
         t_search += t_search_tmp
 
         # Retrieve class of images
@@ -423,7 +457,9 @@ def test(model, dataset, db_name, extractor, measure, generalise, project_name, 
             print("Percentage of divergence per class: ", div)
         print('t_tot:', t_tot)
         print('t_model:', t_model)
+        print('t_transfer:', t_transfer)
         print('t_search:', t_search)
+
     
     if see_cms:
         display_cm(ground_truth, data, predictions, predictions_maj)
@@ -432,12 +468,12 @@ def test(model, dataset, db_name, extractor, measure, generalise, project_name, 
         
     if generalise == 3:
         if class_name is None:
-            return [top_1_acc[0]/ s, top_5_acc[0]/ s, top_1_acc[1]/ s, top_5_acc[1]/ s, top_1_acc[2]/ s, top_5_acc[2]/ s, maj_acc[0]/ s, maj_acc[1]/ s, maj_acc[2]/ s, t_tot, t_model, t_search, top_1_k, top_5_k, maj_k]
+            return [top_1_acc[0]/ s, top_5_acc[0]/ s, top_1_acc[1]/ s, top_5_acc[1]/ s, top_1_acc[2]/ s, top_5_acc[2]/ s, maj_acc[0]/ s, maj_acc[1]/ s, maj_acc[2]/ s, t_tot, t_model, t_search, t_transfer, top_1_k, top_5_k, maj_k]
         else:
-            return [top_1_acc[0]/ s, top_5_acc[0]/ s, top_1_acc[1]/ s, top_5_acc[1]/ s, top_1_acc[2]/ s, top_5_acc[2]/ s, maj_acc[0]/ s, maj_acc[1]/ s, maj_acc[2]/ s, t_tot, t_model, t_search, top_1_k, top_5_k, maj_k, wrong_new[class_name], wrong_old[class_name], div[class_name]]
+            return [top_1_acc[0]/ s, top_5_acc[0]/ s, top_1_acc[1]/ s, top_5_acc[1]/ s, top_1_acc[2]/ s, top_5_acc[2]/ s, maj_acc[0]/ s, maj_acc[1]/ s, maj_acc[2]/ s, t_tot, t_model, t_search, t_transfer, top_1_k, top_5_k, maj_k, wrong_new[class_name], wrong_old[class_name], div[class_name]]
         
     else:
-        return [top_1_acc[0]/ s, top_5_acc[0]/ s, top_1_acc[1]/ s, top_5_acc[1]/ s, top_1_acc[2]/ s, top_5_acc[2]/ s, maj_acc[0]/ s, maj_acc[1]/ s, maj_acc[2]/ s, t_tot, t_model, t_search]
+        return [top_1_acc[0]/ s, top_5_acc[0]/ s, top_1_acc[1]/ s, top_5_acc[1]/ s, top_1_acc[2]/ s, top_5_acc[2]/ s, maj_acc[0]/ s, maj_acc[1]/ s, maj_acc[2]/ s, t_tot, t_model, t_search, t_transfer]
     
 def stat(model, dataset, db_name, extractor, generalise, project_name, class_name, label):
     # Do 10 times the experiment
@@ -445,9 +481,9 @@ def stat(model, dataset, db_name, extractor, generalise, project_name, class_nam
     top_5_acc = np.zeros((3,50))
     maj_acc = np.zeros((3,50))
 
-    ts = np.zeros((3,50))
+    ts = np.zeros((4,50))
     for i in range(50):
-        top_1_acc[0][i], top_5_acc[0][i], top_1_acc[1][i], top_5_acc[1][i], top_1_acc[2][i], top_5_acc[2][i], maj_acc[0][i], maj_acc[1][i], maj_acc[2][i], ts[0][i], ts[1][i], ts[2][i] =  test(model, dataset, db_name, extractor, "random", generalise, project_name, class_name, False, label = label, stat = True)
+        top_1_acc[0][i], top_5_acc[0][i], top_1_acc[1][i], top_5_acc[1][i], top_1_acc[2][i], top_5_acc[2][i], maj_acc[0][i], maj_acc[1][i], maj_acc[2][i], ts[0][i], ts[1][i], ts[2][i], ts[3][i] =  test(model, dataset, db_name, extractor, "random", generalise, project_name, class_name, False, label = label, stat = True)
 
 
     print("Top 1 accuracy: ", np.mean(top_1_acc[0]), " +- ", np.std(top_1_acc[0]))
@@ -461,6 +497,8 @@ def stat(model, dataset, db_name, extractor, generalise, project_name, class_nam
     print("Maj accuracy on sim: ", np.mean(maj_acc[2]), " +- ", np.std(maj_acc[2]))
     print('t_tot:', np.mean(ts[0]/1020), "+-", np.std(ts[0]/1020))
     print('t_model:', np.mean(ts[1]/1020), "+-", np.std(ts[1]/1020))
+    print('t_transfer:', np.mean(ts[3]/1020), "+-", np.std(ts[3]/1020))
+    print('t model complet:', np.mean((ts[1]+ts[3])/1020), "+-", np.std((ts[1]+ts[3])/1020))
     print('t_search:', np.mean(ts[2]/1020), "+-", np.std(ts[2]/1020))
 
     return 0

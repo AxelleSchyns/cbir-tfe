@@ -17,7 +17,7 @@ def batch_image_paths(image_paths, batch_size):
         yield image_paths[i:i+batch_size]
 
 def encode(model, img):
-    exp = 7
+    exp = 1
     if exp == 7:
         code = model.module.encode_7(img).cpu()
     else:

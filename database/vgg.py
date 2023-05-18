@@ -36,7 +36,7 @@ class VGGEncoder(nn.Module):
     def __init__(self, configs, enable_bn=False, exp=0):
 
         super(VGGEncoder, self).__init__()
-        exp = 0
+        exp = 1
         if len(configs) != 5:
 
             raise ValueError("There should be 5 stage in VGG")
@@ -78,7 +78,7 @@ class VGGDecoder(nn.Module):
     def __init__(self, configs, enable_bn=False, exp=0):
 
         super(VGGDecoder, self).__init__()
-        exp = 0
+        exp = 1
         if len(configs) != 5:
 
             raise ValueError("There should be 5 stage in VGG")

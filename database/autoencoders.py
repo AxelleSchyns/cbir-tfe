@@ -15,7 +15,7 @@ def load_pretrained(model):
     return model
 
 def BuildAutoEncoder(model_name):
-    exp = 0
+    exp = 1
     if model_name in ["vgg11", "vgg16"]:
         configs = vgg.get_configs(model_name, exp)
         model = vgg.VGGAutoEncoder(configs)
@@ -35,7 +35,7 @@ def BuildAutoEncoder(model_name):
 class VAE(nn.Module):
     def __init__(self):
         super(VAE, self).__init__()
-        self.exp = "1"
+        self.exp = "2b"
 
         if self.exp == "1":
             self.fc1 = nn.Linear(784, 400)
@@ -50,13 +50,13 @@ class VAE(nn.Module):
             self.fc3 = nn.Linear(20, 400)
             self.fc4 = nn.Linear(400, 224*224*3)
         elif self.exp == "2b":
-            self.fc0 = nn.Linear(224*224*3, 750)
-            self.fc1 = nn.Linear(750, 400)
+            self.fc0 = nn.Linear(224*224*3, 784)
+            self.fc1 = nn.Linear(784, 400)
             self.fc21 = nn.Linear(400, 20)
             self.fc22 = nn.Linear(400, 20)
             self.fc3 = nn.Linear(20, 400)
-            self.fc4 = nn.Linear(400, 750)
-            self.fc5 = nn.Linear(750, 224*224*3)
+            self.fc4 = nn.Linear(400, 784)
+            self.fc5 = nn.Linear(784, 224*224*3)
         elif self.exp == "2c":
             self.fc0 = nn.Linear(224*224*3,1500)
             self.fc1 = nn.Linear(1500, 750)
@@ -65,7 +65,7 @@ class VAE(nn.Module):
             self.fc3 = nn.Linear(128, 750)
             self.fc4 = nn.Linear(750, 1500)
             self.fc5 = nn.Linear(1500, 224*224*3)
-        elif self.self.exp == "3":
+        elif self.exp == "3":
             # Encoder layers
             self.conv1 = nn.Conv2d(3, 32, kernel_size=3, stride=1, padding=1)
             self.conv2 = nn.Conv2d(32, 64, kernel_size=3, stride=2, padding=1)
@@ -136,7 +136,7 @@ class VAE(nn.Module):
 # Pytorch exampe VAE
 # Reconstruction + KL divergence losses summed over all elements and batch
 def loss_function(recon_x, x, mu, logvar):
-    exp = "1"
+    exp = "2b"
 
     if exp == "1":
         BCE = F.binary_cross_entropy(recon_x, x.view(-1, 784), reduction='sum')
@@ -162,69 +162,74 @@ def loss_function(recon_x, x, mu, logvar):
 class AutoEncoder(nn.Module):
     def __init__(self):
         super(AutoEncoder, self).__init__()
-        exp = 1
+        exp = 0
         self.flatten_layer = nn.Flatten()
 
         if exp == 0 or exp == 1:
             self.dense1 = nn.Linear(784, 64)
             self.dense2 = nn.Linear(64, 32)
-            self.dense3 = nn.Linear(32, 16)
+            self.bottleneck = nn.Linear(32, 16)
             self.dense4 = nn.Linear(16, 32)
             self.dense5 = nn.Linear(32, 64)
-            self.dense6 = nn.Linear(64, 784)
+            self.dense_final = nn.Linear(64, 784)
         elif exp == 2 or exp == 3:
             self.dense1 = nn.Linear(784, 400)
             self.dense2 = nn.Linear(400, 200)
             if exp == 2:
-                self.dense3 = nn.Linear(200, 16)
+                self.bottleneck = nn.Linear(200, 16)
                 self.dense4 = nn.Linear(16, 200)
             elif exp == 3:
-                self.dense3 = nn.Linear(200, 50)
+                self.bottleneck = nn.Linear(200, 50)
                 self.dense4 = nn.Linear(50, 200)
             self.dense5 = nn.Linear(200, 400)
-            self.dense6 = nn.Linear(400, 784)
+            self.dense_final = nn.Linear(400, 784)
         elif exp == 4:
             # 224*224*3 -> 64 -> 32 -> 16 
             self.dense1 = nn.Linear(224*224*3, 64)
             self.dense2 = nn.Linear(64, 32)
-            self.dense3 = nn.Linear(32, 16)
+            self.bottleneck = nn.Linear(32, 16)
             self.dense4 = nn.Linear(16, 32)
             self.dense5 = nn.Linear(32, 64)
-            self.dense6 = nn.Linear(64, 224*224*3)
+            self.dense_final = nn.Linear(64, 224*224*3)
 
         elif exp == 5:
             self.dense1 = nn.Linear(224*224*3, 512)
             self.dense2 = nn.Linear(512, 256)
-            self.dense3 = nn.Linear(256, 128)
+            self.bottleneck = nn.Linear(256, 128)
             self.dense4 = nn.Linear(128, 256)
             self.dense5 = nn.Linear(256, 512)
-            self.dense6 = nn.Linear(512, 224*224*3)
+            self.dense_final = nn.Linear(512, 224*224*3)
         elif exp == 6:
             # 224*224*3 -> 3000 -> 1500 -> 750
             self.dense1 = nn.Linear(224*224*3, 3000)
-            self.dense2 = nn.Linear(3000, 1500)
-            self.dense3 = nn.Linear(1500, 750)
-            self.dense4 = nn.Linear(750, 1500)
-            self.dense5 = nn.Linear(1500, 3000)
-            self.dense6 = nn.Linear(3000, 224*224*3)
+            self.dense2 = nn.Linear(3000, 1000)
+            self.bottleneck = nn.Linear(1000, 750)
+            self.dense4 = nn.Linear(750, 1000)
+            self.dense5 = nn.Linear(1000, 3000)
+            self.dense_final= nn.Linear(3000, 224*224*3)
         self.exp = exp
 
     def forward(self, inp):
+        if self.exp == 0 or self.exp == 1 or self.exp == 2 or self.exp == 3:
+            inp = inp.view(-1, 784)
+        elif self.exp == 4 or self.exp == 5 or self.exp == 6:
+            inp = inp.view(-1, 224*224*3)
+
         x_reshaped = self.flatten_layer(inp)
         h1 = torch.sigmoid(self.dense1(x_reshaped))
         h2 = torch.sigmoid(self.dense2(h1))
-        h3 = torch.sigmoid(self.dense3(h2))
+        h3 = torch.sigmoid(self.bottleneck(h2))
         h4 = torch.sigmoid(self.dense4(h3))
         h5 = torch.sigmoid(self.dense5(h4))
         #x = nn.functional.relu(self.dense6(x))
-        x = self.dense6(h5)
+        x = self.dense_final(h5)
         if self.exp == 0:
             ws = None
             for i in range(int(x.shape[0]/192)):
                 W = torch.matmul(torch.diag_embed(h1[i:i+192, :] * (1 - h1[i:i+192, :])), self.dense1.weight)
                 W = torch.matmul(self.dense2.weight, W)
                 W = torch.matmul(torch.diag_embed(h2[i:i+192, :] * (1 - h2[i:i+192, :])), W)
-                W = torch.matmul(self.dense3.weight, W)
+                W = torch.matmul(self.bottleneck.weight, W)
                 W = torch.matmul(torch.diag_embed(h3[i:i+192, :] * (1 - h3[i:i+192, :]))  , W)
 
                 if ws is None:
@@ -244,7 +249,7 @@ class AutoEncoder(nn.Module):
             #x = nn.functional.relu(self.dense6(x))
             x = self.dense_final(x)"""
 
-        return x, x_reshaped, h3, self.dense3.weight
+        return x, x_reshaped, h3, self.bottleneck.weight
 
 def loss_auto(x, x_bar, h, W, model):
     exp = 0

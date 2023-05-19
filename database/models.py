@@ -85,7 +85,6 @@ class Model(nn.Module):
                 self.model = models.resnet50(weights=None).to(device=device)
             else:
                 self.model = models.resnet50(weights='ResNet50_Weights.DEFAULT').to(device=device)
-            #self.model = nn.DataParallel(self.model)
         elif model == "vgg":
             self.forward_function = self.forward_model
             self.model = models.vgg19(weights="VGG19_Weights.DEFAULT").to(device=device)
@@ -104,7 +103,6 @@ class Model(nn.Module):
             num_ftrs = model_k.classifier.in_features
             model_final = fully_connected(model_k.features, num_ftrs, 30)
             model_final = model_final.to(device=device)
-            #
             model_final = nn.DataParallel(model_final)
             model_final.load_state_dict(torch.load('database/KimiaNet_Weights/weights/KimiaNetPyTorchWeights.pth'))
             self.model = model_final

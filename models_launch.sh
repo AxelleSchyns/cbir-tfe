@@ -1,209 +1,132 @@
 
 #!/usr/bin/env bash
 
-printf "98 deit \n"
-python database/add_images.py --path /home/labarvr4090/Documents/Axelle/cytomine/Data/test --extractor deit --weights weights_folder/98_deit --rewrite
+printf "84 resnet \n"
+python database/add_images.py --path /home/labarvr4090/Documents/Axelle/cytomine/Data/test --extractor resnet --weights weights_folder/84_resnet --rewrite
 
-printf "98 deit: random \n"
-python database/test_accuracy.py --path /home/labarvr4090/Documents/Axelle/cytomine/Data/validation --extractor deit --weights weights_folder/98_deit --measure stat
+printf "84 resnet: random \n"
+python database/test_accuracy.py --path /home/labarvr4090/Documents/Axelle/cytomine/Data/validation --extractor resnet --weights weights_folder/84_resnet --measure stat
 
-printf "98 deit: all \n"
-python database/test_accuracy.py --path /home/labarvr4090/Documents/Axelle/cytomine/Data/validation --extractor deit --weights weights_folder/98_deit --measure all
+printf "84 resnet: all \n"
+python database/test_accuracy.py --path /home/labarvr4090/Documents/Axelle/cytomine/Data/validation --extractor resnet --weights weights_folder/84_resnet --measure all
 
-printf "98 deit: weighted \n"
-python database/test_accuracy.py --path /home/labarvr4090/Documents/Axelle/cytomine/Data/validation --extractor deit --weights weights_folder/98_deit --measure weighted
+printf "84 resnet: weighted \n"
+python database/test_accuracy.py --path /home/labarvr4090/Documents/Axelle/cytomine/Data/validation --extractor resnet --weights weights_folder/84_resnet --measure weighted
 
 
 
+printf "14 kimianet \n"
+python database/add_images.py --path /home/labarvr4090/Documents/Axelle/cytomine/Data/test --extractor knet --weights weights_folder/14_kimianet --rewrite
 
-printf "85 resnet \n"
-python database/add_images.py --path /home/labarvr4090/Documents/Axelle/cytomine/Data/test --extractor resnet --weights weights_folder/85_resnet --rewrite
+printf "14 kimianet: random \n"
+python database/test_accuracy.py --path /home/labarvr4090/Documents/Axelle/cytomine/Data/validation --extractor knet --weights weights_folder/14_kimianet --measure stat
 
-printf "85 resnet: random \n"
-python database/test_accuracy.py --path /home/labarvr4090/Documents/Axelle/cytomine/Data/validation --extractor resnet --weights weights_folder/85_resnet --measure stat
+printf "14 kimianet: all \n"
+python database/test_accuracy.py --path /home/labarvr4090/Documents/Axelle/cytomine/Data/validation --extractor knet --weights weights_folder/14_kimianet --measure all
 
-printf "85 resnet: all \n"
-python database/test_accuracy.py --path /home/labarvr4090/Documents/Axelle/cytomine/Data/validation --extractor resnet --weights weights_folder/85_resnet --measure all
+printf "14 kimianet: weighted \n"
+python database/test_accuracy.py --path /home/labarvr4090/Documents/Axelle/cytomine/Data/validation --extractor knet --weights weights_folder/14_kimianet --measure weighted
 
-printf "85 resnet: weighted \n"
-python database/test_accuracy.py --path /home/labarvr4090/Documents/Axelle/cytomine/Data/validation --extractor resnet --weights weights_folder/85_resnet --measure weighted
 
 
-printf "18 vgg16 \n"
-python database/add_images.py --path /home/labarvr4090/Documents/Axelle/cytomine/Data/test --extractor vgg16 --weights weights_folder/18_vgg16 --rewrite
+printf "29 vision \n"
+python database/add_images.py --path /home/labarvr4090/Documents/Axelle/cytomine/Data/test --extractor vision --weights weights_folder/29_vision --rewrite
 
-printf "18 vgg16: random \n"
-python database/test_accuracy.py --path /home/labarvr4090/Documents/Axelle/cytomine/Data/validation --extractor vgg16 --weights weights_folder/18_vgg16 --measure stat
+printf "29 vision: random \n"
+python database/test_accuracy.py --path /home/labarvr4090/Documents/Axelle/cytomine/Data/validation --extractor vision --weights weights_folder/29_vision --measure stat
 
-printf "18 vgg16: all \n"
-python database/test_accuracy.py --path /home/labarvr4090/Documents/Axelle/cytomine/Data/validation --extractor vgg16 --weights weights_folder/18_vgg16 --measure all
+printf "29 vision: all \n"
+python database/test_accuracy.py --path /home/labarvr4090/Documents/Axelle/cytomine/Data/validation --extractor vision --weights weights_folder/29_vision --measure all
 
-printf "18 vgg16: weighted \n"
-python database/test_accuracy.py --path /home/labarvr4090/Documents/Axelle/cytomine/Data/validation --extractor vgg16 --weights weights_folder/18_vgg16 --measure weighted
+printf "29 vision: weighted \n"
+python database/test_accuracy.py --path /home/labarvr4090/Documents/Axelle/cytomine/Data/validation --extractor vision --weights weights_folder/29_vision --measure weighted
 
 
 
+printf "32 cvt \n"
+python database/add_images.py --path /home/labarvr4090/Documents/Axelle/cytomine/Data/test --extractor cvt --weights weights_folder/32_cvt --rewrite
 
-printf "86 resnet\n"
-python database/add_images.py --path /home/labarvr4090/Documents/Axelle/cytomine/Data/test --extractor resnet --weights weights_folder/86_resnet --rewrite
+printf "32 cvt: random \n"
+python database/test_accuracy.py --path /home/labarvr4090/Documents/Axelle/cytomine/Data/validation --extractor cvt --weights weights_folder/32_cvt --measure stat
 
-printf "86 resnet: random \n"
-python database/test_accuracy.py --path /home/labarvr4090/Documents/Axelle/cytomine/Data/validation --extractor resnet --weights weights_folder/86_resnet --measure stat
+printf "32 cvt: all \n"
+python database/test_accuracy.py --path /home/labarvr4090/Documents/Axelle/cytomine/Data/validation --extractor cvt --weights weights_folder/32_cvt --measure all
 
-printf "86 resnet: all \n"
-python database/test_accuracy.py --path /home/labarvr4090/Documents/Axelle/cytomine/Data/validation --extractor resnet --weights weights_folder/86_resnet --measure all
+printf "32 cvt: weighted \n"
+python database/test_accuracy.py --path /home/labarvr4090/Documents/Axelle/cytomine/Data/validation --extractor cvt --weights weights_folder/32_cvt --measure weighted
 
-printf "86 resnet: weighted \n"
-python database/test_accuracy.py --path /home/labarvr4090/Documents/Axelle/cytomine/Data/validation --extractor resnet --weights weights_folder/86_resnet --measure weighted
 
 
+printf "97 resnet \n"
+python database/add_images.py --path /home/labarvr4090/Documents/Axelle/cytomine/Data/test --extractor resnet --weights weights_folder/97_resnet --rewrite --dr_model
 
+printf "97 resnet: random \n"
+python database/test_accuracy.py --path /home/labarvr4090/Documents/Axelle/cytomine/Data/validation --extractor resnet --weights weights_folder/97_resnet --measure stat --dr_model
 
-printf "87 resnet \n"
-python database/add_images.py --path /home/labarvr4090/Documents/Axelle/cytomine/Data/test --extractor resnet --weights weights_folder/87_resnet --rewrite
+printf "97 resnet: all \n"
+python database/test_accuracy.py --path /home/labarvr4090/Documents/Axelle/cytomine/Data/validation --extractor resnet --weights weights_folder/97_resnet --measure all --dr_model
 
-printf "87 resnet: random \n"
-python database/test_accuracy.py --path /home/labarvr4090/Documents/Axelle/cytomine/Data/validation --extractor resnet --weights weights_folder/87_resnet --measure stat
-
-printf "87 resnet: all \n"
-python database/test_accuracy.py --path /home/labarvr4090/Documents/Axelle/cytomine/Data/validation --extractor resnet --weights weights_folder/87_resnet --measure all
-
-printf "87 resnet: weighted \n"
-python database/test_accuracy.py --path /home/labarvr4090/Documents/Axelle/cytomine/Data/validation --extractor resnet --weights weights_folder/87_resnet --measure weighted
-
-
-
-
-
-printf "88 resnet \n"
-python database/add_images.py --path /home/labarvr4090/Documents/Axelle/cytomine/Data/test --extractor resnet --weights weights_folder/88_resnet --rewrite
-
-printf "88 resnet: random \n"
-python database/test_accuracy.py --path /home/labarvr4090/Documents/Axelle/cytomine/Data/validation --extractor resnet --weights weights_folder/88_resnet --measure stat
-
-printf "88 resnet: all \n"
-python database/test_accuracy.py --path /home/labarvr4090/Documents/Axelle/cytomine/Data/validation --extractor resnet --weights weights_folder/88_resnet --measure all
-
-printf "88 resnet: weighted \n"
-python database/test_accuracy.py --path /home/labarvr4090/Documents/Axelle/cytomine/Data/validation --extractor resnet --weights weights_folder/88_resnet --measure weighted
-
-
-
-
-printf "89 resnet \n"
-python database/add_images.py --path /home/labarvr4090/Documents/Axelle/cytomine/Data/test --extractor resnet --weights weights_folder/89_resnet --rewrite
-
-printf "89 resnet: random \n"
-python database/test_accuracy.py --path /home/labarvr4090/Documents/Axelle/cytomine/Data/validation --extractor resnet --weights weights_folder/89_resnet --measure stat
-
-printf "89 resnet: all \n"
-python database/test_accuracy.py --path /home/labarvr4090/Documents/Axelle/cytomine/Data/validation --extractor resnet --weights weights_folder/89_resnet --measure all
-
-printf "89 resnet: weighted \n"
-python database/test_accuracy.py --path /home/labarvr4090/Documents/Axelle/cytomine/Data/validation --extractor resnet --weights weights_folder/89_resnet --measure weighted
-
-
-
-
-printf "90 resnet \n"
-python database/add_images.py --path /home/labarvr4090/Documents/Axelle/cytomine/Data/test --extractor resnet --weights weights_folder/90_resnet --rewrite
-
-printf "90 resnet: random \n"
-python database/test_accuracy.py --path /home/labarvr4090/Documents/Axelle/cytomine/Data/validation --extractor resnet --weights weights_folder/90_resnet --measure stat
-
-printf "90 resnet: all \n"
-python database/test_accuracy.py --path /home/labarvr4090/Documents/Axelle/cytomine/Data/validation --extractor resnet --weights weights_folder/90_resnet --measure all
-
-printf "90 resnet: weighted \n"
-python database/test_accuracy.py --path /home/labarvr4090/Documents/Axelle/cytomine/Data/validation --extractor resnet --weights weights_folder/90_resnet --measure weighted
-
-
-
-
-printf "91 resnet \n"
-python database/add_images.py --path /home/labarvr4090/Documents/Axelle/cytomine/Data/test --extractor resnet --weights weights_folder/91_resnet --rewrite
-
-printf "91 resnet: random \n"
-python database/test_accuracy.py --path /home/labarvr4090/Documents/Axelle/cytomine/Data/validation --extractor resnet --weights weights_folder/91_resnet --measure stat
-
-printf "91 resnet: all \n"
-python database/test_accuracy.py --path /home/labarvr4090/Documents/Axelle/cytomine/Data/validation --extractor resnet --weights weights_folder/91_resnet --measure all
-
-printf "91 resnet: weighted \n"
-python database/test_accuracy.py --path /home/labarvr4090/Documents/Axelle/cytomine/Data/validation --extractor resnet --weights weights_folder/91_resnet --measure weighted
-
-
-
-
-printf "92 resnet \n"
-python database/add_images.py --path /home/labarvr4090/Documents/Axelle/cytomine/Data/test --extractor resnet --weights weights_folder/92_resnet --rewrite
-
-printf "92 resnet: random \n"
-python database/test_accuracy.py --path /home/labarvr4090/Documents/Axelle/cytomine/Data/validation --extractor resnet --weights weights_folder/92_resnet --measure stat
-
-printf "92 resnet: all \n"
-python database/test_accuracy.py --path /home/labarvr4090/Documents/Axelle/cytomine/Data/validation --extractor resnet --weights weights_folder/92_resnet --measure all
-
-printf "92 resnet: weighted \n"
-python database/test_accuracy.py --path /home/labarvr4090/Documents/Axelle/cytomine/Data/validation --extractor resnet --weights weights_folder/92_resnet --measure weighted
-
-
-
-
-printf "93 resnet \n"
-python database/add_images.py --path /home/labarvr4090/Documents/Axelle/cytomine/Data/test --extractor resnet --weights weights_folder/93_resnet --rewrite
-
-printf "93 resnet: random \n"
-python database/test_accuracy.py --path /home/labarvr4090/Documents/Axelle/cytomine/Data/validation --extractor resnet --weights weights_folder/93_resnet --measure stat
-
-printf "93 resnet: all \n"
-python database/test_accuracy.py --path /home/labarvr4090/Documents/Axelle/cytomine/Data/validation --extractor resnet --weights weights_folder/93_resnet --measure all
-
-printf "93 resnet: weighted \n"
-python database/test_accuracy.py --path /home/labarvr4090/Documents/Axelle/cytomine/Data/validation --extractor resnet --weights weights_folder/93_resnet --measure weighted
-
-
-
-
-printf "94 resnet \n"
-python database/add_images.py --path /home/labarvr4090/Documents/Axelle/cytomine/Data/test --extractor resnet --weights weights_folder/94_resnet --rewrite
-
-printf "94 resnet: random \n"
-python database/test_accuracy.py --path /home/labarvr4090/Documents/Axelle/cytomine/Data/validation --extractor resnet --weights weights_folder/94_resnet --measure stat
-
-printf "94 resnet: all \n"
-python database/test_accuracy.py --path /home/labarvr4090/Documents/Axelle/cytomine/Data/validation --extractor resnet --weights weights_folder/94_resnet --measure all
-
-printf "94 resnet: weighted \n"
-python database/test_accuracy.py --path /home/labarvr4090/Documents/Axelle/cytomine/Data/validation --extractor resnet --weights weights_folder/94_resnet --measure weighted
-
+printf "97 resnet: weighted \n"
+python database/test_accuracy.py --path /home/labarvr4090/Documents/Axelle/cytomine/Data/validation --extractor resnet --weights weights_folder/97_resnet --measure weighted --dr_model
 
 
 
 printf "61 resnet \n"
-python database/add_images.py --path /home/labarvr4090/Documents/Axelle/cytomine/Data/test --extractor resnet --weights 61_resnet --rewrite
+python database/add_images.py --path /home/labarvr4090/Documents/Axelle/cytomine/Data/test --extractor resnet --weights weights_folder/61_resnet --rewrite
 
 printf "61 resnet: random \n"
-python database/test_accuracy.py --path /home/labarvr4090/Documents/Axelle/cytomine/Data/validation --extractor resnet --weights 61_resnet --measure stat
+python database/test_accuracy.py --path /home/labarvr4090/Documents/Axelle/cytomine/Data/validation --extractor resnet --weights weights_folder/61_resnet --measure stat
 
 printf "61 resnet: all \n"
-python database/test_accuracy.py --path /home/labarvr4090/Documents/Axelle/cytomine/Data/validation --extractor resnet --weights 61_resnet --measure all
+python database/test_accuracy.py --path /home/labarvr4090/Documents/Axelle/cytomine/Data/validation --extractor resnet --weights weights_folder/61_resnet --measure all
 
 printf "61 resnet: weighted \n"
-python database/test_accuracy.py --path /home/labarvr4090/Documents/Axelle/cytomine/Data/validation --extractor resnet --weights 61_resnet --measure weighted
-
+python database/test_accuracy.py --path /home/labarvr4090/Documents/Axelle/cytomine/Data/validation --extractor resnet --weights weights_folder/61_resnet --measure weighted
 
 
 
 printf "63 resnet \n"
-python database/add_images.py --path /home/labarvr4090/Documents/Axelle/cytomine/Data/test --extractor resnet --weights 63_resnet --rewrite
+python database/add_images.py --path /home/labarvr4090/Documents/Axelle/cytomine/Data/test --extractor resnet --weights weights_folder/63_resnet --rewrite
 
 printf "63 resnet: random \n"
-python database/test_accuracy.py --path /home/labarvr4090/Documents/Axelle/cytomine/Data/validation --extractor resnet --weights 63_resnet --measure stat
+python database/test_accuracy.py --path /home/labarvr4090/Documents/Axelle/cytomine/Data/validation --extractor resnet --weights weights_folder/63_resnet --measure stat
 
 printf "63 resnet: all \n"
-python database/test_accuracy.py --path /home/labarvr4090/Documents/Axelle/cytomine/Data/validation --extractor resnet --weights 63_resnet --measure all
+python database/test_accuracy.py --path /home/labarvr4090/Documents/Axelle/cytomine/Data/validation --extractor resnet --weights weights_folder/63_resnet --measure all
 
 printf "63 resnet: weighted \n"
-python database/test_accuracy.py --path /home/labarvr4090/Documents/Axelle/cytomine/Data/validation --extractor resnet --weights 63_resnet --measure weighted
+python database/test_accuracy.py --path /home/labarvr4090/Documents/Axelle/cytomine/Data/validation --extractor resnet --weights weights_folder/63_resnet --measure weighted
+
+
+
+printf "18 vgg16 \n"
+python database/add_images.py --path /home/labarvr4090/Documents/Axelle/cytomine/Data/test --extractor vgg16 --weights weights_folder/18_vgg16.pth --rewrite
+
+printf "18 vgg16: random \n"
+python database/test_accuracy.py --path /home/labarvr4090/Documents/Axelle/cytomine/Data/validation --extractor vgg16 --weights weights_folder/18_vgg16.pth --measure stat
+
+printf "18 vgg16: all \n"
+python database/test_accuracy.py --path /home/labarvr4090/Documents/Axelle/cytomine/Data/validation --extractor vgg16 --weights weights_folder/18_vgg16.pth --measure all
+
+printf "18 vgg16: weighted \n"
+python database/test_accuracy.py --path /home/labarvr4090/Documents/Axelle/cytomine/Data/validation --extractor vgg16 --weights weights_folder/18_vgg16.pth --measure weighted
+
+
+
+printf "64 vae \n"
+python database/add_images.py --path /home/labarvr4090/Documents/Axelle/cytomine/Data/test --extractor VAE --weights weights_folder/64_VAE --rewrite --num_features 3840
+
+printf "64 vae: random \n"
+python database/test_accuracy.py --path /home/labarvr4090/Documents/Axelle/cytomine/Data/validation --extractor VAE --weights weights_folder/64_VAE --measure stat --num_features 3840
+
+
+
+printf "82 auto \n"
+python database/add_images.py --path /home/labarvr4090/Documents/Axelle/cytomine/Data/test --extractor auto --weights weights_folder/82_auto --rewrite --num_features 3072
+
+printf "82 auto: random \n"
+python database/test_accuracy.py --path /home/labarvr4090/Documents/Axelle/cytomine/Data/validation --extractor auto --weights weights_folder/82_auto --measure stat --num_features 3072
+
+
+
 

@@ -35,7 +35,7 @@ def BuildAutoEncoder(model_name):
 class VAE(nn.Module):
     def __init__(self):
         super(VAE, self).__init__()
-        self.exp = "2b"
+        self.exp = "1"
 
         if self.exp == "1":
             self.fc1 = nn.Linear(784, 400)
@@ -86,11 +86,11 @@ class VAE(nn.Module):
             x= x.view(-1, 784)
         elif self.exp == "2a" or self.exp == "2b" or self.exp == "2c" :
             x = x.view(-1, 224*224*3)
+
         if self.exp == "1" or self.exp == "2a":
             h1 = F.relu(self.fc1(x))
             return self.fc21(h1), self.fc22(h1)
         elif self.exp == "2b" or self.exp == "2c":
-
             h0 = F.relu(self.fc0(x))
             h1 = F.relu(self.fc1(h0))
             return self.fc21(h1), self.fc22(h1)
@@ -136,12 +136,22 @@ class VAE(nn.Module):
 # Pytorch exampe VAE
 # Reconstruction + KL divergence losses summed over all elements and batch
 def loss_function(recon_x, x, mu, logvar):
-    exp = "2b"
+    exp = "1"
 
     if exp == "1":
         BCE = F.binary_cross_entropy(recon_x, x.view(-1, 784), reduction='sum')
-    elif exp == "2a" or exp == "2b" or exp == "2c":
+    elif exp == "2a":
+        BCE = F.binary_cross_entropy(recon_x, x.view(-1, 224*224*3), reduction='sum') 
+        KLD = -0.5 * torch.sum(1 + logvar - mu.pow(2) - logvar.exp()) 
+
+        if torch.isnan(BCE):
+            print("HEY")
+        if torch.isnan(KLD):
+            print("HEY")
+        return BCE + KLD
+    elif exp == "2b" or exp == "2c":
         BCE = F.binary_cross_entropy(recon_x, x.view(-1, 224*224*3), reduction='sum')
+        print(BCE)
     elif exp == "3":
         BCE = F.binary_cross_entropy(recon_x, x, reduction='sum')
     #
@@ -150,7 +160,7 @@ def loss_function(recon_x, x, mu, logvar):
     # https://arxiv.org/abs/1312.6114
     # 0.5 * sum(1 + log(sigma^2) - mu^2 - sigma^2)
     KLD = -0.5 * torch.sum(1 + logvar - mu.pow(2) - logvar.exp())
-
+    print(KLD)
     return BCE + KLD
 
 

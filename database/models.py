@@ -123,7 +123,7 @@ class Model(nn.Module):
         elif model == 'deit':
             self.forward_function = self.forward_model
             self.model = DeiTForImageClassification.from_pretrained('facebook/deit-base-distilled-patch16-224').to(device=device)
-        elif model == 'VAE':
+        elif model == 'vae':
             self.model = ae.VAE().to(device)
             self.encode = self.model.encode
             self.reparameterize = self.model.reparameterize
@@ -215,7 +215,7 @@ class Model(nn.Module):
     
     # Inspired by pytorch example - VAE
     def train_ae(self, model, dir, epochs, generalise, sched, lr, decay, beta_lr, gamma, lr_proxies):
-        data = dataset.TrainingDataset( root = dir, name = model, samples_per_class= 2,  generalise = generalise, load = None, transformer= self.transformer)
+        data = dataset.TrainingDataset( root = dir, name = model, samples_per_class= 2,  generalise = generalise, load = None)
         print('Size of dataset', data.__len__())
 
         to_optim = [{'params':self.parameters(),'lr':lr,'weight_decay':decay}]
@@ -246,17 +246,20 @@ class Model(nn.Module):
 
                     if self.model_name == "auto":
                         loss, inputs_reshaped, reconstruction = ae.grad_auto_bis(self.model, images_gpu.view(-1, 3, 224, 224)) 
+
                         optimizer.zero_grad(set_to_none=True)
                         loss.backward()
                     elif self.model_name == "vae":
                         recon_batch, mu, logvar = self.model(images_gpu)
                         loss = ae.loss_function(recon_batch, images_gpu.view(-1, 3, 224, 224), mu, logvar)
-                    
                         optimizer.zero_grad(set_to_none=True)
                         loss.backward()
                     else: 
                         out = self.model(images_gpu)
                         loss = nn.functional.mse_loss(images_gpu, out, reduction='mean')
+                        optimizer.zero_grad(set_to_none=True)
+                        loss.backward()
+
                     optimizer.step()
 
                     loss_list.append(loss.item())
@@ -281,7 +284,7 @@ class Model(nn.Module):
             print("Interrupted")
 
     def train_epochs(self, model, dir, epochs, sched, loss, generalise, load, lr, decay, beta_lr, gamma, lr_proxies):
-        data = dataset.TrainingDataset(dir, model, 2, generalise, load, self.transformer)
+        data = dataset.TrainingDataset(dir, model, 2, generalise, load)
         print('Size of dataset', data.__len__())
         if self.classification:
             loss_function = nn.CrossEntropyLoss() 
@@ -648,7 +651,7 @@ if __name__ == "__main__":
     siamese_losses = ['triplet', 'contrastive', 'BCE', 'cosine', 'infonce']
     if args.loss in siamese_losses:
         m.train_dr(args.training_data, args.num_epochs, args.lr, loss_name = args.loss, augmented=args.augmented, contrastive = not args.non_contrastive, sched= args.scheduler, gamma= args.gamma)
-    elif args.model == 'VAE' or args.model == 'auto' or args.model == "unet":
+    elif args.model == 'vae' or args.model == 'auto' or args.model == "unet":
         m.train_ae(args.model, args.training_data, args.num_epochs, args.generalise, args.scheduler, args.lr, args.decay, args.beta_lr, args.gamma, args.lr_proxies)
     else:
         m.train_epochs(args.model, args.training_data, args.num_epochs, args.scheduler, args.loss, args.generalise, args.load,

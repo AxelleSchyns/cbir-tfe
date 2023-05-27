@@ -17,6 +17,7 @@ import matplotlib.pyplot as plt
 from pytorch_metric_learning import losses
 from fastai.vision.all import *
 import autoencoders as ae
+from byol_pytorch import BYOL
 #from info_nce import InfoNCE as InfoNCELoss
 
 class fully_connected(nn.Module):
@@ -132,6 +133,14 @@ class Model(nn.Module):
             self.model = ae.AutoEncoder().to(device)
         elif model in ['vgg16', 'vgg11', 'resnet18', 'resnet50']:
             self.model = ae.BuildAutoEncoder(model).to(device)
+        elif model == 'byol':
+            resnet = models.resnet50(pretrained=True)
+            learner = BYOL(
+                resnet, 
+                image_size = 224,
+                hidden_layer = 'avgpool',
+            )
+            self.model = learner.to(device)
         else:
             print("model entered is not supported")
             exit(-1)
@@ -283,6 +292,58 @@ class Model(nn.Module):
         except KeyboardInterrupt:
             print("Interrupted")
 
+    def train_byol(self, model, dir, epochs, sched, loss, generalise, load, lr, decay, beta_lr, gamma, lr_proxies):
+        data = dataset.TrainingDataset(dir, model, 2, generalise, load)
+        print('Size of dataset', data.__len__())
+        optimizer = torch.optim.Adam(self.parameters(), lr=lr)
+        if sched == 'exponential':
+            scheduler = torch.optim.lr_scheduler.ExponentialLR(optimizer, gamma=gamma)
+        elif sched == 'step':
+            scheduler = torch.optim.lr_scheduler.MultiStepLR(optimizer, milestones=[epochs//2, epochs],
+                                                            gamma=gamma)
+
+        loader = torch.utils.data.DataLoader(data, batch_size=self.batch_size,
+                                             shuffle=True, num_workers=16,
+                                             pin_memory=True)
+
+        loss_list = []
+        loss_means = []
+        try:
+            for epoch in range(epochs):
+                start_time = time.time()
+                loss_list = []
+                for i, (labels, images) in enumerate(loader):
+                    if i%1000 == 0:
+                        print(i)
+                    images_gpu = images.to(device=self.device)
+
+                    loss = self.model(images_gpu)
+                    optimizer.zero_grad(set_to_none=True)
+                    loss.backward()
+                    optimizer.step()
+                    self.model.update_moving_average() # update moving average of target encoder
+
+                    loss_list.append(loss.item())
+
+                print("epoch {}, loss = {}, time {}".format(epoch, np.mean(loss_list),
+                                                            time.time() - start_time))
+                #print(len(loss_list)) 1 loss par batch 
+                print("\n----------------------------------------------------------------\n")
+                loss_means.append(np.mean(loss_list))
+                if sched != None:
+                    scheduler.step()
+                try:
+                    self.model = self.model.module
+                except AttributeError:
+                    self.model = self.model
+                torch.save(self.state_dict(), self.name)
+                if self.parallel:
+                    self.model = nn.DataParallel(self.model).to(self.device)
+            plt.plot(range(epochs),loss_means)
+            #plt.show()
+            plt.savefig(str(self.name[len(self.name)-9:])+"_loss.png")
+        except KeyboardInterrupt:
+            print("Interrupted")
     def train_epochs(self, model, dir, epochs, sched, loss, generalise, load, lr, decay, beta_lr, gamma, lr_proxies):
         data = dataset.TrainingDataset(dir, model, 2, generalise, load)
         print('Size of dataset', data.__len__())
@@ -412,7 +473,6 @@ class Model(nn.Module):
             #loss_function = SimpleBCELoss2()
         elif loss_name == 'contrastive':
             loss_function = ContrastiveLoss()
-            #loss_function = losses.ContrastiveLoss() 
         elif loss_name == 'cosine':
             loss_function = torch.nn.CosineEmbeddingLoss()
         elif loss_name == 'infonce':
@@ -651,8 +711,10 @@ if __name__ == "__main__":
     siamese_losses = ['triplet', 'contrastive', 'BCE', 'cosine', 'infonce']
     if args.loss in siamese_losses:
         m.train_dr(args.training_data, args.num_epochs, args.lr, loss_name = args.loss, augmented=args.augmented, contrastive = not args.non_contrastive, sched= args.scheduler, gamma= args.gamma)
-    elif args.model == 'vae' or args.model == 'auto' or args.model == "unet":
+    elif args.model == 'vae' or args.model == 'auto' or args.model in ['vgg16', 'vgg11', 'resnet18', 'resnet50']:
         m.train_ae(args.model, args.training_data, args.num_epochs, args.generalise, args.scheduler, args.lr, args.decay, args.beta_lr, args.gamma, args.lr_proxies)
+    elif args.model == 'byol':
+        m.train_byol(args.model, args.training_data, args.num_epochs, args.scheduler, args.loss, args.generalise, args.load, args.lr, args.decay, args.beta_lr, args.gamma, args.lr_proxies)
     else:
         m.train_epochs(args.model, args.training_data, args.num_epochs, args.scheduler, args.loss, args.generalise, args.load,
                        args.lr, args.decay, args.beta_lr, args.gamma, args.lr_proxies)

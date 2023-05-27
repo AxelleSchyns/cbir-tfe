@@ -93,7 +93,7 @@ if __name__ == "__main__":
     if model is None:
         print("Unkown feature extractor")
         exit(-1)
-    database = Database(args.db_name, model, load= not args.rewrite)
+    database = Database(args.db_name, model, load = not args.rewrite)
     t = time.time()
     database.add_dataset(args.path, args.extractor, args.generalise, label = not args.unlabeled)
     print("T_indexing = "+str(time.time() - t))

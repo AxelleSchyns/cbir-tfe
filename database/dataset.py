@@ -18,7 +18,7 @@ import random
 
 class DRDataset(Dataset):
 
-    def __init__(self, root='image_folder', transform=None, pair = False, contrastive = True):
+    def __init__(self, root='image_folder', transform=None, pair = False, contrastive = True, appl = None):
         if transform == None:
             transform = transforms.Compose(
                 [
@@ -52,6 +52,19 @@ class DRDataset(Dataset):
             )
             self.augmented = True
         self.contrastive = contrastive
+        self.appl = appl
+        if appl == 'Unique':
+            self.transform_2 = transforms.Compose(
+                [
+                    transforms.Resize((224, 224)),
+                    transforms.ToTensor(),
+                    transforms.Normalize(
+                        mean=[0.485, 0.456, 0.406],
+                        std=[0.229, 0.224, 0.225])
+                ]
+            )
+            
+
         self.pair = pair
         self.root = root
         self.transform = transform
@@ -121,10 +134,15 @@ class DRDataset(Dataset):
         else:
             paths = self._augmented_sample(idx)
         images = []
-        for i in paths:
-            tmp = Image.open(i).convert('RGB')
-            tmp = self.transform(tmp)
-            images.append(tmp)
+        if self.appl is None:
+            for i in paths:
+                tmp = Image.open(i).convert('RGB')
+                tmp = self.transform(tmp)
+                images.append(tmp)
+        elif self.appl == 'Unique':
+            images.append(self.transform_2(Image.open(paths[1]).convert('RGB')))
+            images.append(self.transform(Image.open(paths[1]).convert('RGB')))
+            images.append(self.transform_2(Image.open(paths[1]).convert('RGB')))
         if not self.pair:
             return (images[0], images[1], images[2])
         else:

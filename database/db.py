@@ -150,10 +150,7 @@ class Database:
                 out = utils.encode(self.model, images)
                 out = out.reshape([out.shape[0],self.model.num_features])
                 t_im = time.time() - t
-                t = time.time()
-                out = out.cpu()
-                t_transfer = t_transfer + time.time() - t
-            elif extractor == 'VAE':
+            elif extractor == 'vae':
                 t = time.time()
                 mu, logvar = self.model.encode(images)
                 out = self.model.reparameterize(mu, logvar)
@@ -168,18 +165,12 @@ class Database:
                 plt.imshow(  dec[0].permute(1, 2, 0)  )
                 plt.show()"""
                 t_im = time.time() - t
-                t = time.time()
-                out = out.cpu()
-                t_transfer = t_transfer + time.time() - t
             elif extractor == 'auto':
                 t = time.time()
                 reconstructed, flattened, latent, weights = self.model.model(images)
                 out = latent
                 out = out.view(-1, self.model.num_features)
                 t_im = time.time() - t
-                t = time.time()
-                out = out.cpu()
-                t_transfer = t_transfer + time.time() - t
                 # display image and its reconstruction
                 """dec = out1.cpu()
                 dec = dec.view(128, 3, 224, 224)
@@ -188,15 +179,22 @@ class Database:
                 plt.subplot(1, 2, 2)
                 plt.imshow(  dec[0].permute(1, 2, 0)  )
                 plt.show()"""
+            elif extractor == 'byol':
+                t = time.time()
+                out, emb = self.model.model(images, return_embedding=True)
+                #print(out.shape)
+                #print(p.shape)
+                t_im = time.time() - t
             else:
                 # Encode the images using the given model 
                 t = time.time()
                 out = self.model(images)
                 t_im = time.time() - t
-                t = time.time()
-                out = out.cpu()
-                t_transfer = t_transfer + time.time() - t
-                #print(time.time() - t)
+                
+            t = time.time()
+            out = out.cpu()
+            t_transfer = t_transfer + time.time() - t
+
             t = time.time()
             if generalise == 3:
                 kmeans = pickle.load(open("weights_folder/kmeans.pkl","rb"))
@@ -205,6 +203,7 @@ class Database:
                 self.add(out.numpy(), list(filenames), label, generalise, labels)
             else:
                 self.add(out.numpy(), list(filenames), label, generalise)
+
             t_im_ind = time.time() - t
             t_indexing = t_indexing + t_im_ind
             t_model = t_model + t_im
@@ -236,7 +235,7 @@ class Database:
             plt.imshow( out1[0].permute(1, 2, 0))
             plt.show()"""
             t_model = time.time() - t_model
-        elif extractor == 'VAE':
+        elif extractor == 'vae':
             t_model = time.time()
             mu, logvar = self.model.encode(image)
             out = self.model.reparameterize(mu, logvar)
@@ -255,6 +254,10 @@ class Database:
             plt.subplot(1,2,2)
             plt.imshow( out1[0].permute(1, 2, 0))
             plt.show()"""
+            t_model = time.time() - t_model
+        elif extractor == 'byol':
+            t_model = time.time()
+            out, emb = self.model.model(image, return_embedding=True)
             t_model = time.time() - t_model
         else:
             # Retrieves the result from the model

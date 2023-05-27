@@ -477,12 +477,12 @@ def test(model, dataset, db_name, extractor, measure, generalise, project_name, 
     
 def stat(model, dataset, db_name, extractor, generalise, project_name, class_name, label):
     # Do 10 times the experiment
-    top_1_acc = np.zeros((3,50))
-    top_5_acc = np.zeros((3,50))
-    maj_acc = np.zeros((3,50))
+    top_1_acc = np.zeros((3,30))
+    top_5_acc = np.zeros((3,30))
+    maj_acc = np.zeros((3,30))
 
-    ts = np.zeros((4,50))
-    for i in range(50):
+    ts = np.zeros((4,30))
+    for i in range(30):
         top_1_acc[0][i], top_5_acc[0][i], top_1_acc[1][i], top_5_acc[1][i], top_1_acc[2][i], top_5_acc[2][i], maj_acc[0][i], maj_acc[1][i], maj_acc[2][i], ts[0][i], ts[1][i], ts[2][i], ts[3][i] =  test(model, dataset, db_name, extractor, "random", generalise, project_name, class_name, False, label = label, stat = True)
 
 

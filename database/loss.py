@@ -310,42 +310,12 @@ class SimpleBCELoss(torch.nn.Module): # Exist other implementations where the 2 
         label = label.type(torch.FloatTensor)
         loss_bce = self.bce_loss(edist,label)
         return loss_bce
-# https://pchanda.github.io/Siamese_plots_torch/ and https://github.com/pytorch/examples/blob/main/siamese_network/main.py
-class SimpleBCELoss2(torch.nn.Module):
-    def __init__(self):
-        super(SimpleBCELoss,self).__init__()
-        self.bce_loss = torch.nn.BCELoss()
-        self.fc = torch.nn.Sequential(
-            torch.nn.Linear(self.fc_in_features * 2, 256),
-            torch.nn.ReLU(inplace=True),
-            torch.nn.Linear(256, 1),
-        )
-        self.sigmoid = torch.nn.Sigmoid()
-
-        self.fc.apply(self.init_weights)
-        
-    def init_weights(self, m):
-        if isinstance(m, torch.nn.Linear):
-            torch.nn.init.xavier_uniform_(m.weight)
-            m.bias.data.fill_(0.01)
-        
-    def forward(self,output1,output2,label):
-        # concatenate both images' features
-        output = torch.cat((output1, output2), 1)
-
-        # pass the concatenation to the linear layers
-        output = self.fc(output)
-
-        # pass the out of the linear layers to sigmoid layer
-        output = self.sigmoid(output)
-        loss_bce = self.bce_loss(output,label)
-        return loss_bce
 
     
 # https://pchanda.github.io/Siamese_plots_torch/
 class ContrastiveLoss(torch.nn.Module): 
     """
-    Contrastive loss function - first version
+    Contrastive loss function 
     Based on: http://yann.lecun.com/exdb/publis/pdf/hadsell-chopra-lecun-06.pdf
     """
 
@@ -361,6 +331,7 @@ class ContrastiveLoss(torch.nn.Module):
 
         pred = (self.margin < euclidean_distance).type(torch.float)         
         return loss_contrastive
+    
 class InfoNCE(torch.nn.Module):
     def __init__(self, contrastive, temperature=0.07):
         super(InfoNCE, self).__init__()
@@ -385,10 +356,8 @@ class InfoNCE(torch.nn.Module):
             loss = losses.SelfSupervisedLoss(self.loss)(output1, output2)
             return loss
 
+
 # Implementation of SoftTriple Loss - https://github.com/idstcv/SoftTriple/tree/master
-
-
-
 class SoftTriple(nn.Module):
     def __init__(self, device, la=20, gamma=0.1, tau=0.2, margin=0.01, dim=128, cN=67, K=10): # K = number of centers , cN = number of classes 
         super(SoftTriple, self).__init__()

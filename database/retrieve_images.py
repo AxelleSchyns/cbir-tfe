@@ -119,7 +119,7 @@ if __name__ == "__main__":
 
     ret_values = retriever.retrieve(feat_extract(Image.open(args.path).convert('RGB')), args.extractor, args.nrt_neigh, args.generalise)
     dir = args.results_dir
-    
+
     if args.generalise == 3:
          names = ret_values[0][0]
     else:
@@ -128,7 +128,7 @@ if __name__ == "__main__":
     names_only = []
     class_names = []
     classement = 0 
-    Image.open(args.path).convert('RGB').save(os.path.join(dir, "query_image.png"))
+    Image.open(args.path).convert('RGB').save(os.path.join(dir, "3_query_image.png"))
     for n in names:
         classement += 1
         class_names.append(utils.get_class(n))
@@ -153,7 +153,7 @@ if __name__ == "__main__":
         plt.title(class_name,fontsize=8)
 
         plt.axis('off')
-    plt.savefig(os.path.join(dir, "nearest_images.png"))
+    plt.savefig(os.path.join(dir, "3_nearest_images.png"))
     
     plt.subplot(1,2,1)
     plt.imshow(Image.open(args.path).convert('RGB'))
@@ -161,6 +161,6 @@ if __name__ == "__main__":
     plt.subplot(1,2,2)
     plt.imshow(Image.open(names[0]).convert('RGB'))
     plt.title("Nearest image", fontsize=8)
-    plt.savefig(os.path.join(dir, "nearest_image.png"))
+    plt.savefig(os.path.join(dir, "3_nearest_image.png"))
     print("The names of the nearest images are: "+str(class_names))
     

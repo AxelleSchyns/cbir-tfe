@@ -11,19 +11,17 @@
 #python database/test_accuracy.py --path /home/labarvr4090/Documents/Axelle/cytomine/Data/validation --extractor resnet --weights weights_folder/50_resnet --measure weighted --generalise 3
 
 
-printf "62 vgg16 \n"
-python database/add_images.py --path /home/labarvr4090/Documents/Axelle/cytomine/Data/test --extractor vgg16 --weights weights_folder/62_vgg16.pth --rewrite --num_features 25088
-python database/tsne.py --namefig tsne_62_vgg16
+printf "71 auto \n"
+python database/add_images.py --path /home/labarvr4090/Documents/Axelle/cytomine/Data/test --extractor auto --weights weights_folder/71_auto --rewrite 
+python database/tsne.py --namefig tsne_71_auto
 
+printf "50 resnet \n"
+python database/add_images.py --path /home/labarvr4090/Documents/Axelle/cytomine/Data/test --extractor resnet --weights weights_folder/50_resnet --rewrite --generalise 3
+python database/tsne.py --namefig tsne_50_resnet --generalise 
 
-printf "103 vae \n"
-python database/add_images.py --path /home/labarvr4090/Documents/Axelle/cytomine/Data/test --extractor vae --weights weights_folder/103_vae --rewrite --num_features 20
-python database/tsne.py --namefig tsne_103_vae
-
-printf "82 auto \n"
-python database/add_images.py --path /home/labarvr4090/Documents/Axelle/cytomine/Data/test --extractor auto --weights weights_folder/82_auto --rewrite --num_features 3072
-python database/tsne.py --namefig tsne_82_auto
-
+printf "116 byol \n"
+python database/add_images.py --path /home/labarvr4090/Documents/Axelle/cytomine/Data/test --extractor byol --weights weights_folder/116_byol --rewrite --num_features 256 
+python database/tsne.py --namefig tsne_116_byol 
 
 
 #printf "116 byol + test\n"

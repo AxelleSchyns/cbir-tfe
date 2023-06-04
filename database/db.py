@@ -192,7 +192,7 @@ class Database:
 
             t = time.time()
             if generalise == 3:
-                kmeans = pickle.load(open("weights_folder/kmeans_104.pkl","rb"))
+                kmeans = pickle.load(open("weights_folder/kmeans_50.pkl","rb"))
                 batch_data = np.array([utils.load_image(path) for path in filenames])
                 labels = kmeans.predict(batch_data)
                 self.add(out.numpy(), list(filenames), label, generalise, labels)

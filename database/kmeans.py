@@ -22,8 +22,8 @@ def make_list_images(classes, root):
 
 def load_kmeans(list_img):
     labels = []
-    kmeans = pickle.load(open("weights_folder/kmeans.pkl","rb"))
-    dic_labs = pickle.load(open("weights_folder/labels_kmeans.pkl","rb"))
+    kmeans = pickle.load(open("weights_folder/kmeans_50.pkl","rb"))
+    dic_labs = pickle.load(open("weights_folder/labels_kmeans_50.pkl","rb"))
     for im in list_img:
         if im in dic_labs:
             labels.append(dic_labs[im])

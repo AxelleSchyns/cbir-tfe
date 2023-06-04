@@ -1,3 +1,4 @@
+import json
 import numpy as np
 import faiss
 from sklearn.manifold import TSNE
@@ -20,6 +21,10 @@ if __name__ == "__main__":
         '--namefig',
         default='tsne'
     )
+    parser.add_argument(
+        '--generalise',
+        action='store_true'
+    )
     args = parser.parse_args()
 
     index = faiss.read_index(args.db_name + '_labeled')
@@ -29,9 +34,20 @@ if __name__ == "__main__":
 
     labels = list(range(index.ntotal)) # WILL NOT WORK WHEN REMOVING IDS
     names = []
-    for l in labels:
-        n = r.get(str(l) + 'labeled').decode('utf-8')
-        names.append(utils.get_class(n))    
+    
+    if args.generalise:
+        names = []
+        labs = []
+        for l in labels:
+            v =r.get(str(l) + 'labeled').decode('utf-8')
+            v = json.loads(v)
+            names.append(v[0]['name'])
+            labs.append(v[1]['label'])
+        n = r.get(str(l) + 'generalised').decode('utf-8')
+    else:
+        for l in labels:
+            n = r.get(str(l) + 'labeled').decode('utf-8')
+            names.append(utils.get_class(n))    
     
     classes = list(set(names))
     classes.sort()
@@ -54,4 +70,14 @@ if __name__ == "__main__":
     plt.savefig(args.namefig + '.png',)
     #plt.show()
 
+    if args.generalise: 
+        labs_k = list(set(labs))
+        labs_k.sort()
+        conversion_k = {x: i for i, x in enumerate(labs_k)}
+        int_labs = np.array([conversion_k[n] for n in labs])
+
+        
+        plt.scatter(embeddings[:,0], embeddings[:,1], c=int_labs,cmap='viridis', s=1.5, linewidths=1.5, edgecolors='none')
+        plt.colorbar()
+        plt.savefig(args.namefig + '_k.png',)
 

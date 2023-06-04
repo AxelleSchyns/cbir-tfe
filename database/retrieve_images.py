@@ -12,8 +12,8 @@ class ImageRetriever:
     def __init__(self, db_name, model):
         self.db = Database(db_name, model, True)
 
-    def retrieve(self, image, extractor, nrt_neigh=10):
-        return self.db.search(image,extractor, nrt_neigh)
+    def retrieve(self, image, extractor, nrt_neigh=10, generalise=0):
+        return self.db.search(image,extractor,nrt_neigh= nrt_neigh, generalise=generalise)
 
 if __name__ == "__main__":
     parser = ArgumentParser()
@@ -67,6 +67,10 @@ if __name__ == "__main__":
     parser.add_argument(
         '--results_dir'
     )
+    parser.add_argument(
+        '--generalise',
+        default=0,
+    )
     args = parser.parse_args()
 
     if args.gpu_id >= 0:
@@ -112,9 +116,12 @@ if __name__ == "__main__":
             )])
     retriever = ImageRetriever(args.db_name, model)
 
-    ret_values = retriever.retrieve(feat_extract(Image.open(args.path).convert('RGB')), args.extractor, args.nrt_neigh)
+    ret_values = retriever.retrieve(feat_extract(Image.open(args.path).convert('RGB')), args.extractor, args.nrt_neigh, args.generalise)
     dir = args.results_dir
-    names = ret_values[0]
+    if args.generalise == 3:
+         names = ret_values[0][0]
+    else:
+        names = ret_values[0]
     dist = ret_values[1]
     names_only = []
     class_names = []

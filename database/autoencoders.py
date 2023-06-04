@@ -23,11 +23,11 @@ def BuildAutoEncoder(model_name):
     elif model_name in ["resnet18", "resnet50"]:
         configs, bottleneck = resnet.get_configs(model_name)
         model = resnet.ResNetAutoEncoder(configs, bottleneck)
-    #model = nn.DataParallel(model)
-    if exp == 4: 
-        
-        model = load_pretrained(model)
     
+    if exp == 4: 
+        model = nn.DataParallel(model)
+        model = load_pretrained(model)
+    exp = "3b"
     return model, exp
 
 
@@ -173,7 +173,7 @@ def loss_function(recon_x, x, mu, logvar):
 class AutoEncoder(nn.Module):
     def __init__(self):
         super(AutoEncoder, self).__init__()
-        exp = 5
+        exp = 0
         self.flatten_layer = nn.Flatten()
 
         if exp == 0 or exp == 1:
@@ -262,7 +262,7 @@ class AutoEncoder(nn.Module):
         return x, x_reshaped, x_hid, self.bottleneck.weight
 
 def loss_auto(x, x_bar, h, W, model):
-    exp = 5
+    exp = 0
     if exp == 0:
         reconstruction_loss = nn.functional.mse_loss(x, x_bar, reduction='mean')
         contractive = torch.sum(W**2, axis=(1,2))
@@ -280,7 +280,7 @@ def loss_auto(x, x_bar, h, W, model):
     return total_loss
 
 def grad_auto(model, inputs):
-    exp = 5
+    exp = 0
     if exp == 0 or exp == 1 or exp == 2 or exp == 3:
         reconstruction, inputs_reshaped, hidden, _ = model(inputs.view(-1, 784))
     else:

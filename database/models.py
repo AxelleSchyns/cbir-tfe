@@ -199,7 +199,9 @@ class Model(nn.Module):
             #self.model = nn.DataParallel(self.model)
             if model in ['vgg16', 'vgg11', 'resnet18', 'resnet50']:
                 if exp != "3b":   
-                    builder.load_dict(args.weights, self.model)
+                    builder.load_dict(name, self.model)
+                    if exp == 4:
+                        self.model = self.model.module
                 else:
                     self.load_state_dict(torch.load(name))
             else:

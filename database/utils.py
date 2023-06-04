@@ -17,12 +17,14 @@ def batch_image_paths(image_paths, batch_size):
         yield image_paths[i:i+batch_size]
 
 def encode(model, img):
-    exp = "3b"
+    exp = 4
     if exp == 7:
         code = model.module.encode_7(img).cpu()
     else:
         with torch.no_grad():
             if exp=="3b":
+                code = model.model.encoder(img).cpu()
+            elif exp==4:
                 code = model.model.encoder(img).cpu()
             else:
                 code = model.module.encoder(img).cpu()

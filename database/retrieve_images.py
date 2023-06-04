@@ -70,6 +70,7 @@ if __name__ == "__main__":
     parser.add_argument(
         '--generalise',
         default=0,
+        type=int
     )
     args = parser.parse_args()
 
@@ -118,6 +119,7 @@ if __name__ == "__main__":
 
     ret_values = retriever.retrieve(feat_extract(Image.open(args.path).convert('RGB')), args.extractor, args.nrt_neigh, args.generalise)
     dir = args.results_dir
+    
     if args.generalise == 3:
          names = ret_values[0][0]
     else:

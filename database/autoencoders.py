@@ -15,7 +15,7 @@ def load_pretrained(model):
     return model
 
 def BuildAutoEncoder(model_name):
-    exp = "3b"
+    exp = 4
     if model_name in ["vgg11", "vgg16"]:
         configs = vgg.get_configs(model_name)
         model = vgg.VGGAutoEncoder(configs, exp)
@@ -27,7 +27,6 @@ def BuildAutoEncoder(model_name):
     if exp == 4: 
         model = nn.DataParallel(model)
         model = load_pretrained(model)
-    exp = "3b"
     return model, exp
 
 

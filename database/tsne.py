@@ -43,7 +43,6 @@ if __name__ == "__main__":
             v = json.loads(v)
             names.append(v[0]['name'])
             labs.append(v[1]['label'])
-        n = r.get(str(l) + 'generalised').decode('utf-8')
     else:
         for l in labels:
             n = r.get(str(l) + 'labeled').decode('utf-8')

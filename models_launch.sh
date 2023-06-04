@@ -10,10 +10,7 @@
 #printf "50 resnet: weighted \n"
 #python database/test_accuracy.py --path /home/labarvr4090/Documents/Axelle/cytomine/Data/validation --extractor resnet --weights weights_folder/50_resnet --measure weighted --generalise 3
 
-
-printf "71 auto \n"
-python database/add_images.py --path /home/labarvr4090/Documents/Axelle/cytomine/Data/test --extractor auto --weights weights_folder/71_auto --rewrite 
-python database/tsne.py --namefig tsne_71_auto
+/tsne.py --namefig tsne_71_auto
 
 printf "50 resnet \n"
 python database/add_images.py --path /home/labarvr4090/Documents/Axelle/cytomine/Data/test --extractor resnet --weights weights_folder/50_resnet --rewrite --generalise 3

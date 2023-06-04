@@ -152,6 +152,7 @@ class Database:
                 mu, logvar = self.model.encode(images)
                 out = self.model.reparameterize(mu, logvar)
                 dec = self.model.decode(out)
+                
                 out = out.view(-1, self.model.num_features) #print(out.shape)
                 #print(out.shape)
                 # For visualisation of the reconstruction
@@ -176,6 +177,7 @@ class Database:
                 plt.subplot(1, 2, 2)
                 plt.imshow(  dec[0].permute(1, 2, 0)  )
                 plt.show()"""
+
             elif extractor == 'byol':
                 t = time.time()
                 out, emb = self.model.model(images, return_embedding=True)

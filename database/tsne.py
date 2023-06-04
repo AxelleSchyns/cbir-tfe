@@ -30,8 +30,9 @@ if __name__ == "__main__":
     index = faiss.read_index(args.db_name + '_labeled')
     r = redis.Redis(host='localhost', port='6379', db=0)
     # Retrieve the vectors from the index
+    print(index.ntotal)
     vectors = index.index.reconstruct_n(0, index.ntotal)
-
+    
     labels = list(range(index.ntotal)) # WILL NOT WORK WHEN REMOVING IDS
     names = []
     
@@ -41,7 +42,7 @@ if __name__ == "__main__":
         for l in labels:
             v =r.get(str(l) + 'labeled').decode('utf-8')
             v = json.loads(v)
-            names.append(v[0]['name'])
+            names.append(utils.get_class(v[0]['name']))
             labs.append(v[1]['label'])
     else:
         for l in labels:

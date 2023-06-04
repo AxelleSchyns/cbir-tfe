@@ -81,19 +81,15 @@ if __name__ == "__main__":
         print("The path mentionned is not a folder")
         exit(-1)
     
-    if args.extractor == 'vgg16' or args.extractor == "vgg11" or args.extractor == 'resnet18' or args.extractor == "resnet50":
-        model = builder.BuildAutoEncoder(args)     
-        builder.load_dict(args.weights, model)
-        model.model_name = args.extractor
-        model.num_features = args.num_features
-    else:
-        model = models.Model(model=args.extractor, use_dr=args.dr_model, num_features=args.num_features, name=args.weights,
+    
+    model = models.Model(model=args.extractor, use_dr=args.dr_model, num_features=args.num_features, name=args.weights,
                            device=device)
-
     if model is None:
         print("Unkown feature extractor")
         exit(-1)
     database = Database(args.db_name, model, load = not args.rewrite)
+    print(database.index_labeled.ntotal)
     t = time.time()
     database.add_dataset(args.path, args.extractor, args.generalise, label = not args.unlabeled)
+    print(database.index_labeled.ntotal)
     print("T_indexing = "+str(time.time() - t))

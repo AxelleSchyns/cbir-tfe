@@ -329,7 +329,7 @@ class ContrastiveLoss(torch.nn.Module):
         loss_contrastive = torch.mean((1-label) * torch.pow(euclidean_distance, 2) +
                                       (label) * torch.pow(torch.clamp(self.margin - euclidean_distance, min=0.0), 2))
 
-        pred = (self.margin < euclidean_distance).type(torch.float)         
+        #pred = (self.margin < euclidean_distance).type(torch.float)         
         return loss_contrastive
     
 class InfoNCE(torch.nn.Module):

@@ -15,6 +15,11 @@ if __name__ == "__main__":
         '--db_name',
         default='db'
     )
+
+    parser.add_argument(
+        '--namefig',
+        default='tsne'
+    )
     args = parser.parse_args()
 
     index = faiss.read_index(args.db_name + '_labeled')
@@ -29,6 +34,7 @@ if __name__ == "__main__":
         names.append(utils.get_class(n))    
     
     classes = list(set(names))
+    classes.sort()
     conversion = {x: i for i, x in enumerate(classes)}
     int_names = np.array([conversion[n] for n in names])
     # Perform t-SNE on the vectors
@@ -40,11 +46,12 @@ if __name__ == "__main__":
     t_fit = time.time() - t
     print(t_fit)
 
-    sns.scatterplot(embeddings[:,0], embeddings[:,1], hue=names)
-    plt.show()
+    #sns.scatterplot(embeddings[:,0], embeddings[:,1], hue=names, size=0.5)
+    #plt.show()
     # Visualize the embeddings
-    plt.scatter(embeddings[:,0], embeddings[:,1], c=int_names,cmap='viridis')
+    plt.scatter(embeddings[:,0], embeddings[:,1], c=int_names,cmap='viridis', s=1.5, linewidths=1.5, edgecolors='none')
     plt.colorbar()
-    plt.show()
+    plt.savefig(args.namefig + '.png',)
+    #plt.show()
 
 

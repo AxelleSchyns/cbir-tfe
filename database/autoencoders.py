@@ -15,7 +15,7 @@ def load_pretrained(model):
     return model
 
 def BuildAutoEncoder(model_name):
-    exp = 3
+    exp = "3b"
     if model_name in ["vgg11", "vgg16"]:
         configs = vgg.get_configs(model_name, exp)
         model = vgg.VGGAutoEncoder(configs)
@@ -25,7 +25,7 @@ def BuildAutoEncoder(model_name):
         model = resnet.ResNetAutoEncoder(configs, bottleneck)
     if exp == 4: 
         model = load_pretrained(model)
-    return model
+    return model, exp
 
 
 #---------------------------------------------------------------------------------------------------------
@@ -35,7 +35,7 @@ def BuildAutoEncoder(model_name):
 class VAE(nn.Module):
     def __init__(self):
         super(VAE, self).__init__()
-        self.exp = "3"
+        self.exp = "2c"
 
         if self.exp == "1":
             self.fc1 = nn.Linear(784, 400)
@@ -136,7 +136,7 @@ class VAE(nn.Module):
 # Pytorch exampe VAE
 # Reconstruction + KL divergence losses summed over all elements and batch
 def loss_function(recon_x, x, mu, logvar):
-    exp = "3"
+    exp = "2c"
 
     if exp == "1":
         BCE = F.binary_cross_entropy(recon_x, x.view(-1, 784), reduction='sum')
@@ -151,7 +151,6 @@ def loss_function(recon_x, x, mu, logvar):
         return BCE + KLD
     elif exp == "2b" or exp == "2c":
         BCE = F.binary_cross_entropy(recon_x, x.view(-1, 224*224*3), reduction='sum')
-        print(BCE)
     elif exp == "3":
         BCE = F.binary_cross_entropy(recon_x, x, reduction='sum')
     #
@@ -160,7 +159,6 @@ def loss_function(recon_x, x, mu, logvar):
     # https://arxiv.org/abs/1312.6114
     # 0.5 * sum(1 + log(sigma^2) - mu^2 - sigma^2)
     KLD = -0.5 * torch.sum(1 + logvar - mu.pow(2) - logvar.exp())
-    print(KLD)
     return BCE + KLD
 
 
@@ -172,7 +170,7 @@ def loss_function(recon_x, x, mu, logvar):
 class AutoEncoder(nn.Module):
     def __init__(self):
         super(AutoEncoder, self).__init__()
-        exp = 4
+        exp = 5
         self.flatten_layer = nn.Flatten()
 
         if exp == 0 or exp == 1:
@@ -225,7 +223,7 @@ class AutoEncoder(nn.Module):
         elif self.exp == 4 or self.exp == 5 or self.exp == 6:
             inp = inp.view(-1, 224*224*3)
 
-        x_reshaped = self.flatten_layer(inp)
+        """x_reshaped = self.flatten_layer(inp)
         h1 = torch.sigmoid(self.dense1(x_reshaped))
         h2 = torch.sigmoid(self.dense2(h1))
         h3 = torch.sigmoid(self.bottleneck(h2))
@@ -246,23 +244,22 @@ class AutoEncoder(nn.Module):
                     ws = W
                 else:
                     ws = torch.cat((ws, W), axis=0)
-            return x, x_reshaped, h3, ws
-            """#x_reshaped = inp #
-            x_reshaped = self.flatten_layer(inp)
-            x = nn.functional.relu(self.dense1(x_reshaped))
-            x = nn.functional.relu(self.dense2(x))
-            #x = nn.functional.relu(self.dense3(x))
-            x = nn.functional.relu(self.bottleneck(x))
-            x_hid = x
-            x = nn.functional.relu(self.dense4(x))
-            x = nn.functional.relu(self.dense5(x))
-            #x = nn.functional.relu(self.dense6(x))
-            x = self.dense_final(x)"""
+            return x, x_reshaped, h3, ws"""
+        #x_reshaped = inp #
+        x_reshaped = self.flatten_layer(inp)
+        x = nn.functional.relu(self.dense1(x_reshaped))
+        x = nn.functional.relu(self.dense2(x))
+        x = nn.functional.relu(self.bottleneck(x))
+        x_hid = x
+        x = nn.functional.relu(self.dense4(x))
+        x = nn.functional.relu(self.dense5(x))
+        #x = nn.functional.relu(self.dense6(x))
+        x = self.dense_final(x)
 
-        return x, x_reshaped, h3, self.bottleneck.weight
+        return x, x_reshaped, x_hid, self.bottleneck.weight
 
 def loss_auto(x, x_bar, h, W, model):
-    exp = 4
+    exp = 5
     if exp == 0:
         reconstruction_loss = nn.functional.mse_loss(x, x_bar, reduction='mean')
         contractive = torch.sum(W**2, axis=(1,2))
@@ -280,7 +277,7 @@ def loss_auto(x, x_bar, h, W, model):
     return total_loss
 
 def grad_auto(model, inputs):
-    exp = 4
+    exp = 5
     if exp == 0 or exp == 1 or exp == 2 or exp == 3:
         reconstruction, inputs_reshaped, hidden, _ = model(inputs.view(-1, 784))
     else:

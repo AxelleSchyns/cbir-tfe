@@ -154,7 +154,35 @@ def width_height(train, test, val):
     widths = np.zeros((67, 1))
     heights = np.zeros((67, 1))
     nb = np.zeros((67, 1))
-    for s in range(len(sets)):
+    classes = os.listdir(sets[0])
+    classes.sort()
+    for c in range(len(classes)):
+        widths_l = []
+        heights_l = []
+        for s in sets:
+            images = os.listdir(os.path.join(s, classes[c]))
+            for im in images:
+                im = Image.open(os.path.join(s, classes[c], im))
+                widths_l.append(im.size[0])
+                heights_l.append(im.size[1])
+                widths[c] += im.size[0]
+                heights[c] += im.size[1]
+                nb[c] += 1
+        print(classes[c])
+        print(widths[c]/nb[c])
+        print(heights[c]/nb[c])
+        print(nb[c])
+        """print(np.max(np.array(widths_l)))
+        print(np.max(np.array(heights_l)))
+        print(np.median(np.array(widths_l)))
+        print(np.median(np.array(heights_l)))
+        print(np.min(np.array(widths_l)))
+        print(np.min(np.array(heights_l)))"""
+        print(np.std(np.array(widths_l)))
+        print(np.std(np.array(heights_l)))
+
+
+    """for s in range(len(sets)):
         classes = os.listdir(sets[s])
         classes.sort()
         for c in range(len(classes)):
@@ -164,12 +192,10 @@ def width_height(train, test, val):
                 widths[c] += im.size[0]
                 heights[c] += im.size[1]
                 nb[c] += 1
-            print(c)
+            print(c)"""
     widths = widths/nb
     heights = heights/nb
-    print(classes)
-    print(widths)
-    print(heights)
+    
     print(np.mean(widths))
     print(np.mean(heights))
 
@@ -343,16 +369,16 @@ if __name__ == "__main__":
 
     #bar_plot(train, test, val)
     
-    #width_height(train, test, val)
+    width_height(train, test, val)
 
-    p = '/home/labarvr4090/Documents/Axelle/cytomine/Data/train/janowczyk5_1/01_117238845_1502_393_250_250_2.png'
-    p2 = '/home/labarvr4090/Documents/Axelle/cytomine/Data/train/janowczyk6_0/8863_idx5_x651_y1551_class0.png'
-    p3 = '/home/labarvr4090/Documents/Axelle/cytomine/Data/train/iciar18_micro_113351562/17_118316818_512_0_512_512.png'
-    paths = [p, p2, p3]
+    #p = '/home/labarvr4090/Documents/Axelle/cytomine/Data/train/janowczyk5_1/01_117238845_1502_393_250_250_2.png'
+    #p2 = '/home/labarvr4090/Documents/Axelle/cytomine/Data/train/janowczyk6_0/8863_idx5_x651_y1551_class0.png'
+    #p3 = '/home/labarvr4090/Documents/Axelle/cytomine/Data/train/iciar18_micro_113351562/17_118316818_512_0_512_512.png'
+    #paths = [p, p2, p3]
     #vis_transf(p)
 
     #resized_vis(paths)
 
     #means_pixel([train, test, val])
 
-    diversity()
+    #diversity()

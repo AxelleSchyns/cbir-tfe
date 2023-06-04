@@ -40,7 +40,7 @@ def train_kmeans(n_clusters, list_img):
         batch_data = np.array([utils.load_image(path) for path in batch_paths])
         kmeans.partial_fit(batch_data)
     print("KMeans training time is: "+ str(time.time() - t))
-    pickle.dump(kmeans, open("weights_folder/kmeans.pkl","wb"))
+    pickle.dump(kmeans, open("weights_folder/kmeans_104.pkl","wb"))
 
     return kmeans
 
@@ -106,7 +106,7 @@ def get_labels(list_img, kmeans):
             temp_labs = labs
             temp_batch = batch_data
 
-    pickle.dump(dic_labs, open("weights_folder/labels_kmeans.pkl","wb"))
+    pickle.dump(dic_labs, open("weights_folder/labels_kmeans_104.pkl","wb"))
     print("The silhouette score is: "+str(np.mean(silhouette_scores)))
     print("Labels predictions took: "+str(time.time() - t))
 
@@ -279,7 +279,7 @@ def analyse_clusters(cm_obj):
 
 
 def execute_kmeans(load, list_img):
-    n_clusters = 10
+    n_clusters = 67
     classes = [i for i in range(0, n_clusters)]
     if load == "testing":
         elbow_plot(list_img)
@@ -290,12 +290,12 @@ def execute_kmeans(load, list_img):
             print(len(list_img))
             kmeans = train_kmeans(n_clusters, list_img)
         else:
-            kmeans = pickle.load(open("weights_folder/kmeans.pkl","rb"))   
+            kmeans = pickle.load(open("weights_folder/kmeans_104.pkl","rb"))   
         labels = get_labels(list_img, kmeans)
 
-    cm_obj = display_graph(labels, list_img)
+    #cm_obj = display_graph(labels, list_img)
 
-    analyse_clusters(cm_obj)
+    #analyse_clusters(cm_obj)
     
     return kmeans, labels, classes
 

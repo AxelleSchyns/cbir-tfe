@@ -18,7 +18,6 @@ import pickle
 import utils
 class Database:
     def __init__(self, filename, model, load=False, device='cuda:0'):
-        #print(type(model.model))
         self.name = filename # = name of the database 
         self.num_features = model.num_features
         self.model = model
@@ -45,8 +44,6 @@ class Database:
             self.r.set('last_id_labeled', 0) # Set a value in redis with key = last_id_labeled
             self.r.set('last_id_unlabeled', 0)
 
-            """open(filename + '_labeledvectors', 'wb').close()
-            open(filename + '_unlabeledvectors', 'wb').close()"""
 
         if device == 'gpu':
             self.index_labeled = faiss.index_cpu_to_gpu(res_labeled, 0, self.index_labeled)
@@ -133,7 +130,7 @@ class Database:
     def add_dataset(self, data_root, extractor, generalise=0, name_list=[], label=True):
         # Create a dataset from a directory root
         if name_list == []:
-            data = dataset.AddDataset(data_root, extractor)
+            data = dataset.AddDataset(data_root, extractor, generalise)
         # create a dataset from a list of image names
         else:
             data = dataset.AddDatasetList(data_root, extractor, name_list)
@@ -182,8 +179,6 @@ class Database:
             elif extractor == 'byol':
                 t = time.time()
                 out, emb = self.model.model(images, return_embedding=True)
-                #print(out.shape)
-                #print(p.shape)
                 t_im = time.time() - t
             else:
                 # Encode the images using the given model 
@@ -197,7 +192,7 @@ class Database:
 
             t = time.time()
             if generalise == 3:
-                kmeans = pickle.load(open("weights_folder/kmeans.pkl","rb"))
+                kmeans = pickle.load(open("weights_folder/kmeans_104.pkl","rb"))
                 batch_data = np.array([utils.load_image(path) for path in filenames])
                 labels = kmeans.predict(batch_data)
                 self.add(out.numpy(), list(filenames), label, generalise, labels)
@@ -273,7 +268,6 @@ class Database:
             # Récupère l'index des nrt_neigh images les plus proches de x
             distance, labels = self.index_labeled.search(out.numpy(), nrt_neigh) 
             labels = [l for l in list(labels[0]) if l != -1]
-            
             # retrieves the names of the images based on their index
             values = []
             if generalise == 3:
@@ -424,24 +418,6 @@ class Database:
                 index = int(index)
                 vec = self.index_labeled.index.reconstruct(index)
                 x.append(vec)
-            #elif k.find('_') != - 1 and k.find('/')==-1:
-            #    print(k)
-        """# Keep momentarily to debug if needed
-        with open(self.filename + '_labeledvectors', 'rb') as file:
-            while True:
-                binary = file.read(4 + self.num_features * 4)
-
-                if not binary:
-                    break
-                index, *vector = struct.unpack("i"+str(self.num_features)+"f", binary)
-                vec = all_index.index.reconstruct(index)
-                vector = np.array(vector)
-                if not np.array_equal(vec, vector):
-                    print(vector)
-                    print(vec)
-                    print(vector-vec)
-                keys.append(index)
-                x.append(np.array(vector))"""
         if len(x) >= 10:
             num_clusters = int(np.sqrt(self.index_labeled.ntotal))
 
@@ -487,7 +463,7 @@ class Database:
             self.index_unlabeled = faiss.IndexIVFFlat(self.quantizer, self.model.num_features,
                                                       num_clusters)
 
-            if self.device == 'gpu':
+            if self.device == 'cuda:0':
                 res_unlabeled = faiss.StandardGpuResources()
                 self.index_unlabeled = faiss.index_cpu_to_gpu(res_unlabeled, 0, self.index_unlabeled)
 

@@ -21,41 +21,60 @@ import pickle
 from transformers import DeiTFeatureExtractor, AutoImageProcessor, ConvNextImageProcessor
 from torchvision import transforms
 
-def compute_old_new(label, name, class_im, image, wrong_old, wrong_new, data, div):
-    kmeans = pickle.load(open("kmeans.pkl","rb"))
-    batch_data = np.array([utils.load_image(image[0])])
-    lab = kmeans.predict(batch_data)[0]
+# This function looks into the errors made with the old labels and the errors made with the new labels obtained through kmeans
+# - label = K-mean label of the retrieved image
+# - ret_image = name of the retrieved image
+# - class_im = class of the query
+# - image = query image
+# - wrong_old = list containing the number of wrong old labels per class at current
+# - wrong_new = list containing the number of wrong new labels per class at current
+# - data = dataset object containing the data
+# - div = list containing the number of divergences bteween old and new per class at current
+def compute_old_new(label, ret_image, class_im, image, wrong_old, wrong_new, data, div, lab):
 
-    class_retr = utils.get_class(name)
+    # Get the original label of the retrieved image
+    class_retr = utils.get_class(ret_image)
+
+    # K-means label of the retrieved image match the Kmean label of the query
     if str(lab) == label: 
+        # Old label of the retrieved image is different from the old label of the query (-> divergence) 
         if class_retr != class_im:
             wrong_old[data.conversion[class_im]] += 1
             div[data.conversion[class_im]] += 1
     
-    else:
+    else: # K-means label of the retrieved image is different from the Kmean label of the query
+        # Old label of the retrieved image is the same as the old label of the query (-> divergence)
         if class_retr == class_im:
             wrong_new[data.conversion[class_im]]+=1
             div[data.conversion[class_im]] += 1
     return wrong_new, wrong_old, div
 
-
-def compute_results_kmeans(labels, image, top_1_k, top_5_k, maj_k, predictions_kmeans, ground_truth_kmeans):
-    kmeans = pickle.load(open("kmeans.pkl","rb"))
-    batch_data = np.array([utils.load_image(image[0])])
-    label = kmeans.predict(batch_data)[0]
+# This function computes the results given the search results and the query for the kmeans protocol
+# - labels = K-Means labels of the most similar images in the database
+# - image = query image 
+# - top_1_k = top-1 accuracy at current
+# - top_5_k = top-5 accuracy at current
+# - maj_k = maj accuracy at current
+# - predictions_kmeans = complete list of the label of the top-1 result for each query
+# - ground_truth_kmeans = complete list of Kmeans labels for  each query
+def compute_results_kmeans(labels, image, top_1_k, top_5_k, maj_k, predictions_kmeans, ground_truth_kmeans, label, kmeans):
     ground_truth_kmeans.append(label)
+
     already_found_5 = 0
+
+    # dictionary to convert the labels of kmeans from integers to strings
     conversion_kmeans =  []
     for i in range(kmeans.cluster_centers_.shape[0]):
         conversion_kmeans.append(str(i))
 
-    
     for j in range(5):
+        # Top-1 label 
         if j == 0:
             if labels[j] in conversion_kmeans:
                 predictions_kmeans.append(int(labels[j]))
             else:
                 predictions_kmeans.append(-1)
+        # label of retrieved image is the same as query
         if labels[j] == str(label):
             if already_found_5 == 0:
                 top_5_k += 1
@@ -70,7 +89,17 @@ def compute_results_kmeans(labels, image, top_1_k, top_5_k, maj_k, predictions_k
 
 
 
-
+# This function computes the results given the search results and the query
+# - names = list of the most similar images in the database
+# - data = dataset object containing the data
+# - predictions = complete list of the label of the top-1 result for each query
+# - class_im = class of the query
+# - proj_im = project of the query
+# - top_1_acc = list containing the top-1 accuracy at current
+# - top_5_acc = list containing the top-5 accuracy at current
+# - maj_acc = list containing the maj accuracy at current
+# - predictions_maj = complete list of the label of the maj result for each query
+# - weights = list containing the weights of each class for the weighted protocol
 def compute_results(names, data, predictions, class_im, proj_im, top_1_acc, top_5_acc, maj_acc, predictions_maj, weights):
     similar = names[:5]
     temp = []
@@ -80,6 +109,7 @@ def compute_results(names, data, predictions, class_im, proj_im, top_1_acc, top_
 
     idx_class = data.conversion[class_im]
     for j in range(len(similar)):
+        # Gets the class and project of the retrieved image
         class_retr = utils.get_class(similar[j])
         temp.append(class_retr)
         proj_retr = utils.get_proj(similar[j])
@@ -164,16 +194,19 @@ def compute_results(names, data, predictions, class_im, proj_im, top_1_acc, top_
         maj_acc[1] += weights[idx_class]
     if already_found_5_sim > 2:
         maj_acc[2] += weights[idx_class]
+    # Get label of the majority class for confusion matrix
     predictions_maj.append(data.conversion[max(set(temp), key = temp.count)])
 
     return predictions, predictions_maj, top_1_acc, top_5_acc, maj_acc
 
+# Creates and displays the confusion matrix relative to kmeans accuracy (simpler as no labels names)
 def display_cm_kmeans(ground_truth_k, predictions_k):
-    cm = sklearn.metrics.confusion_matrix(ground_truth_k, predictions_k, labels = range(10))
+    cm = sklearn.metrics.confusion_matrix(ground_truth_k, predictions_k, labels = range(67))
     plt.figure(figsize = (10,7))
     sn.heatmap(cm, annot=True, xticklabels=True, yticklabels=True)
     plt.show()
 
+# Creates and displays the confusion matrix relative to top-1 and maj accuracy 
 def display_cm(ground_truth, data, predictions, predictions_maj):
     rows_lab = []
     rows = []
@@ -194,7 +227,7 @@ def display_cm(ground_truth, data, predictions, predictions_maj):
     columns = sorted(columns)
     columns_lab=sorted(columns_lab)
         
-    cm = sklearn.metrics.confusion_matrix(ground_truth, predictions, labels=range(len(os.listdir(data.root)))) # classes predites = colonnes)
+    cm = sklearn.metrics.confusion_matrix(ground_truth, predictions, labels=range(len(os.listdir(data.root)))) # classes predites = colonnes
     # ! only working cause the dic is sorted and sklearn is creating cm by sorting the labels
     df_cm = pd.DataFrame(cm[np.ix_(rows, columns)], index=rows_lab, columns=columns_lab)
     plt.figure(figsize = (10,7))
@@ -217,15 +250,28 @@ def display_cm(ground_truth, data, predictions, predictions_maj):
     sn.heatmap(df_cm, annot=True, xticklabels=True, yticklabels=True)
     plt.show()
 
+# Compute the metrics per class of the dataset 
+# - model = python object containing the feature extractor
+# - dataset = path to the dataset from which to get the queries
+# - db_name = name of the database in which the data is indexed
+# - extractor = name of the feature extractor used
+# - measure = protocol for the results (random, remove, all, weighted)
+# - name = name to give to the excel sheet in which to write the results
+# - excel_path = path to the excel file in which to write the results
+# - label = if the database to search into is the labelled, unlabelled or mixed one ("True", "False", "mixed")
+# - generalise = 0 if no generalisation, 1 -2 for half the classes, 3 if generalisation on kmeans
+
 def test_each_class(model, dataset, db_name, extractor, measure, name, excel_path, label, generalise=0):
     classes = sorted(os.listdir(dataset))
     if generalise == 3:
         res = np.zeros((len(classes), 19))
     else:
         res = np.zeros((len(classes), 13))
+
+    # Compute the results for each class
     i = 0
     for c in classes:
-        r = test(model, dataset, db_name, extractor, measure, False, False, c, False, label=label, generalise=generalise)
+        r = test(model, dataset, db_name, extractor, measure, project_name = False, class_name= c, see_cms= False, label=label, generalise=generalise, stat = True)
         res[i][:] = r
         i += 1
     if generalise == 3:
@@ -242,11 +288,19 @@ def test_each_class(model, dataset, db_name, extractor, measure, name, excel_pat
     df.to_excel(writer, sheet_name = name)
     writer.close()
 
-
+# Dataset class for the test
 class TestDataset(Dataset):
+    # - model = python object containing the feature extractor
+    # - root = path to the dataset from which to get the queries
+    # - measure = protocol for the results (random, remove, separated, all, weighted)
+    # - generalise = 0 if no generalisation, 1 -2 for half the classes, 3 if generalisation on kmeans
+    # - name = name of the project to compute the results of if only one project is wanted
+    # - class_name = name of the class to compute the results of if only one class is wanted
     def __init__(self, model, root, measure, generalise,name=None, class_name =None):
         
         self.root = root
+
+        # Define the transforms 
         if model.model_name == 'deit':
                 self.feat_extract = DeiTFeatureExtractor.from_pretrained('facebook/deit-base-distilled-patch16-224',
 		                                                         size=224, do_center_crop=False,
@@ -279,8 +333,8 @@ class TestDataset(Dataset):
         self.classes = os.listdir(root)
         self.classes = sorted(self.classes)
         
-        self.conversion = {x: i for i, x in enumerate(self.classes)}
-        # User has specify the classes whose results he wants to compute
+
+        # User has specify the classe whose results he wants to compute
         if class_name is not None:
             for c in self.classes:
                 if c == class_name:
@@ -303,6 +357,7 @@ class TestDataset(Dataset):
             self.classes.remove('camelyon16_0')
             self.classes.remove('janowczyk6_0')
 
+        # Keep only half the classes 
         if generalise == 1:
             list_classes = ['janowczyk2_0','janowczyk2_1', 'lbpstroma_113349434', 'lbpstroma_113349448', 'mitos2014_0', 'mitos2014_1', 'mitos2014_2', 
                             'patterns_no_aug_0', 'patterns_no_aug_1', 'tupac_mitosis_0', 'tupac_mitosis_1', 'ulg_lbtd_lba_406558', 'ulg_lbtd_lba_4762', 
@@ -311,11 +366,23 @@ class TestDataset(Dataset):
                             'umcm_colorectal_05_DEBRIS', 'umcm_colorectal_06_MUCOSA', 'umcm_colorectal_07_ADIPOSE', 'umcm_colorectal_08_EMPTY', 
                             'warwick_crc_0', 'camelyon16_0', 'camelyon16_1', 'iciar18_micro_113351562', 'iciar18_micro_113351588', 
                             'iciar18_micro_113351608', 'iciar18_micro_113351628']
-            for c in self.classes:
+            for c in self.classes[:]:
                 if c in list_classes:
                     self.classes.remove(c)
             #self.classes = self.classes[len(self.classes) // 2:]
 
+        elif generalise == 2:
+            list_classes = ['camelyon16_0', 'camelyon16_1', 'iciar18_micro_113351562', 'iciar18_micro_113351588', 'iciar18_micro_113351608',
+                            'cells_no_aug_0', 'cells_no_aug_1', 'glomeruli_no_aug_0', 'glomeruli_no_aug_1', 'lbpstroma_113349434', 'lbpstroma_113349448',
+                            'mitos2014_0', 'mitos2014_1', 'mitos2014_2', 'patterns_no_aug_0', 'patterns_no_aug_1', 'tupac_mitosis_0', 'tupac_mitosis_1',
+                            'ulb_anapath_lba_4711', 'ulb_anapath_lba_4712', 'ulb_anapath_lba_4713', 'ulb_anapath_lba_4714', 'ulb_anapath_lba_4715',
+                            'ulb_anapath_lba_4720', 'ulb_anapath_lba_68567', 'ulb_anapath_lba_485565', 'ulb_anapath_lba_672444', 'ulg_bonemarrow_0',
+                            'ulg_bonemarrow_1', 'ulg_bonemarrow_2', 'ulg_bonemarrow_3', 'ulg_bonemarrow_4', 'ulg_bonemarrow_5', 'ulg_bonemarrow_6','ulg_bonemarrow_7']
+            for c in self.classes[:]:
+                if c in list_classes:
+                    self.classes.remove(c)
+        self.conversion = {x: i for i, x in enumerate(self.classes)}
+        # Register images in list and compute weights for weighted protocol
         if measure != 'random':
             if measure == "weighted":
                 weights = np.zeros(len(self.classes))
@@ -328,7 +395,7 @@ class TestDataset(Dataset):
                 for i in self.classes:
                     for img in os.listdir(os.path.join(root, str(i))):
                         self.img_list.append(os.path.join(root, str(i), img))
-        
+        # Selection of the 1020 images for the random protocol
         else:
             for i in self.classes:
                 for img in os.listdir(os.path.join(root, str(i))):
@@ -365,16 +432,35 @@ class TestDataset(Dataset):
 
         return self.feat_extract(images=img, return_tensors='pt')['pixel_values'], self.img_list[idx]
 
+
+# Main function of the file, calls the different computation functions and display functions given the value of the parameters
+# - model = python object containing the feature extractor 
+# - dataset = path to the dataset from which to get the queries
+# - db_name = name of the database in which the data is indexed
+# - extractor = name of the feature extractor used
+# - measure = protocol for the results (random, remove, separated, all, weighted)
+# - generalise = 0 if no generalisation, 1 -2 for half the classes, 3 if generalisation on kmeans
+# - project_name = name of the project to compute the results of if only one project is wanted
+# - class_name = name of the class to compute the results of if only one class is wanted
+# - see_cms = True if the graphics of the results must be displayed
+# - label = if the database to search into is the labelled, unlabelled or mixed one ("True", "False", "mixed")
+# - stat = True if the protocol is stat, False otherwise. Controls the display of the results in terminal 
 def test(model, dataset, db_name, extractor, measure, generalise, project_name, class_name, see_cms, label, stat = False):
+
+    # Load database
     database = db.Database(db_name, model, True)
 
+    # Load data 
     data = TestDataset(model, dataset, measure, generalise, project_name, class_name)
+    loader = torch.utils.data.DataLoader(data, batch_size=1, shuffle=False,
+                                         num_workers=4, pin_memory=True)
+    
+    # Load weights 
     if measure == 'weighted':
         weights = data.weights
     else:
         weights = np.ones(len(data.classes))
-    loader = torch.utils.data.DataLoader(data, batch_size=1, shuffle=False,
-                                         num_workers=4, pin_memory=True)
+    
 
     top_1_acc = np.zeros((3,1)) # in order: class - project - similarity 
     top_5_acc = np.zeros((3,1))
@@ -386,6 +472,7 @@ def test(model, dataset, db_name, extractor, measure, generalise, project_name, 
     predictions = []
     predictions_maj = []
     
+    # Define new metrics for K-means 
     if generalise == 3:
         ground_truth_k = []
         predictions_k = []
@@ -401,7 +488,12 @@ def test(model, dataset, db_name, extractor, measure, generalise, project_name, 
     t_transfer = 0
     t_tot = 0
 
+    # For each image in the dataset, search for the 5 most similar images in the database and compute the accuracy
     for i, (image, filename) in enumerate(loader):
+            
+        if i % 10000 == 0:
+            print(i)
+        # Search for the 5 most similar images in the database
         t = time.time()
         names, _, t_model_tmp, t_search_tmp, t_transfer_tmp = database.search(image, extractor, retrieve_class=label, generalise=generalise)
         image = filename
@@ -410,27 +502,34 @@ def test(model, dataset, db_name, extractor, measure, generalise, project_name, 
         t_transfer += t_transfer_tmp
         t_search += t_search_tmp
 
-        # Retrieve class of images
+        # Retrieve class and project of query 
         class_im = utils.get_class(image[0])
         proj_im = utils.get_proj(image[0])
         nbr_per_class[class_im] += 1
         ground_truth.append(data.conversion[class_im])
 
+        # Get results for K-means 
         if generalise == 3:
+            # Retrieve the K-mean label of the query image
+            kmeans = pickle.load(open("weights_folder/kmeans_104.pkl","rb"))
+            batch_data = np.array([utils.load_image(image[0])])
+            lab = kmeans.predict(batch_data)[0]
             labs = names[1]
             names = names[0]
-            top_1_k, top_5_k, maj_k, ground_truth_k, predictions_k = compute_results_kmeans( labs, image, top_1_k, top_5_k, maj_k, predictions_k, ground_truth_k)
+            top_1_k, top_5_k, maj_k, ground_truth_k, predictions_k = compute_results_kmeans( labs, image, top_1_k, top_5_k, maj_k, predictions_k, ground_truth_k, lab, kmeans)
             
-            wrong_new, wrong_old, div = compute_old_new(labs[0], names[0], class_im, image, wrong_old, wrong_new, data, div)
+            wrong_new, wrong_old, div = compute_old_new(labs[0], names[0], class_im, image, wrong_old, wrong_new, data, div, lab)
 
         # Compute accuracy 
         predictions, predictions_maj, top_1_acc, top_5_acc, maj_acc = compute_results(names, data, predictions, class_im, proj_im, top_1_acc,top_5_acc,maj_acc,predictions_maj, weights)
 
+
     if measure == 'weighted':
-        s = len(data.classes)
+        s = len(data.classes) # In weighted, each result was already divided by the length of the class
     else:
         s = data.__len__()
     
+    # Display results in terminal
     if not stat:
         print("top-1 accuracy : ", top_1_acc[0] / s)
         print("top-5 accuracy : ", top_5_acc[0] / s)
@@ -443,11 +542,12 @@ def test(model, dataset, db_name, extractor, measure, generalise, project_name, 
         print("maj accuracy sim : ", maj_acc[2] / s)
 
         if generalise == 3:
+            s = data.__len__()
             print("Top 1 accuracy on new labels: ", top_1_k / s)
             print("Top 5 accuracy on new labels: ", top_5_k / s)
             print("Maj accuracy on new labels: ", maj_k / s)
             if class_name is None:
-                for j in range(67):
+                for j in range(len(data.classes)):
                     if nbr_per_class[list(data.conversion.keys())[j]] != 0:
                         wrong_new[j] = wrong_new[j] / nbr_per_class[list(data.conversion.keys())[j]]
                         wrong_old[j] = wrong_old[j] / nbr_per_class[list(data.conversion.keys())[j]]
@@ -460,12 +560,13 @@ def test(model, dataset, db_name, extractor, measure, generalise, project_name, 
         print('t_transfer:', t_transfer)
         print('t_search:', t_search)
 
-    
+    # Display results in graphics
     if see_cms:
         display_cm(ground_truth, data, predictions, predictions_maj)
         if generalise == 3:
             display_cm_kmeans(ground_truth_k, predictions_k)
-        
+    
+    # Return results
     if generalise == 3:
         if class_name is None:
             return [top_1_acc[0]/ s, top_5_acc[0]/ s, top_1_acc[1]/ s, top_5_acc[1]/ s, top_1_acc[2]/ s, top_5_acc[2]/ s, maj_acc[0]/ s, maj_acc[1]/ s, maj_acc[2]/ s, t_tot, t_model, t_search, t_transfer, top_1_k, top_5_k, maj_k]
@@ -475,14 +576,15 @@ def test(model, dataset, db_name, extractor, measure, generalise, project_name, 
     else:
         return [top_1_acc[0]/ s, top_5_acc[0]/ s, top_1_acc[1]/ s, top_5_acc[1]/ s, top_1_acc[2]/ s, top_5_acc[2]/ s, maj_acc[0]/ s, maj_acc[1]/ s, maj_acc[2]/ s, t_tot, t_model, t_search, t_transfer]
     
+# This function executes the random protocol 50 times for stability of the results
 def stat(model, dataset, db_name, extractor, generalise, project_name, class_name, label):
-    # Do 10 times the experiment
-    top_1_acc = np.zeros((3,30))
-    top_5_acc = np.zeros((3,30))
-    maj_acc = np.zeros((3,30))
+    # Do 50 times the experiment
+    top_1_acc = np.zeros((3,10))
+    top_5_acc = np.zeros((3,10))
+    maj_acc = np.zeros((3,10))
 
-    ts = np.zeros((4,30))
-    for i in range(30):
+    ts = np.zeros((4,10))
+    for i in range(10):
         top_1_acc[0][i], top_5_acc[0][i], top_1_acc[1][i], top_5_acc[1][i], top_1_acc[2][i], top_5_acc[2][i], maj_acc[0][i], maj_acc[1][i], maj_acc[2][i], ts[0][i], ts[1][i], ts[2][i], ts[3][i] =  test(model, dataset, db_name, extractor, "random", generalise, project_name, class_name, False, label = label, stat = True)
 
 
@@ -547,13 +649,13 @@ if __name__ == "__main__":
 
     parser.add_argument(
         '--measure',
-        help='random samples from validation set <random>, remove camelyon16_0 and janowczyk6_0 <remove>, all in separated class <separated> or all <all>',
+        help='random samples from validation set <random>, remove camelyon16_0 and janowczyk6_0 <remove>, all in separated class <separated>, all <all>, weighted <weighted> or stat <stat>',
         default = 'random'
     )
 
     parser.add_argument(
         '--generalise',
-        help='use only half the classes to compute the accuracy',
+        help='0 to use entire training set, 1 to use first separation in half, 2 to use second separation in half, 3 to use kmeans',
         default = 0,
         type= int
     )
@@ -606,18 +708,19 @@ if __name__ == "__main__":
     if args.class_name is not None and args.class_name not in os.listdir(args.path):
         print("Class name does not exist")
         exit(-1)
-    if args.extractor == 'vgg16' or args.extractor == 'vgg11' or args.extractor == 'resnet18' or args.extractor == "resnet50":
-            model = builder.BuildAutoEncoder(args) 
-            builder.load_dict(args.weights, model)
-            model.model_name = args.extractor
-            model.num_features = args.num_features
-    else:
-        model = Model(num_features=args.num_features, name=args.weights, model=args.extractor,
+    
+    model = Model(num_features=args.num_features, name=args.weights, model=args.extractor,
                   use_dr=args.dr_model, device=device, parallel=args.parallel) # eval est par defaut true
-    if args.excel_path is not None:
+        
+    # Compute results per class and save them in given excel file 
+    if args.measure == "separated":
+        if args.excel_path is None:
+            print("Please give the path to the excel file where to save the results")
+            exit(-1)
         test_each_class(model, args.path, args.db_name, args.extractor, args.measure, args.name, args.excel_path, args.retrieve_class)
     else:
+        # Random protocol realised 50 times to make stat
         if args.measure == "stat":
             stat(model, args.path, args.db_name, args.extractor, args.generalise, args.project_name, args.class_name, args.retrieve_class)
-        else:
+        else: # Other protocols: weighted - default - remove - random 
             r = test(model, args.path, args.db_name, args.extractor, args.measure, args.generalise, args.project_name, args.class_name, False, label = args.retrieve_class)

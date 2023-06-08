@@ -106,8 +106,10 @@ def compute_results(names, data, predictions, class_im, proj_im, top_1_acc, top_
     already_found_5 = 0
     already_found_5_proj = 0
     already_found_5_sim = 0
-
-    idx_class = data.conversion[class_im]
+    if len(data.classes) == 1:
+        idx_class = 0
+    else:
+        idx_class = data.conversion[class_im]
     for j in range(len(similar)):
         # Gets the class and project of the retrieved image
         class_retr = utils.get_class(similar[j])
@@ -271,6 +273,7 @@ def test_each_class(model, dataset, db_name, extractor, measure, name, excel_pat
     # Compute the results for each class
     i = 0
     for c in classes:
+        print("Class: ", c)
         r = test(model, dataset, db_name, extractor, measure, project_name = False, class_name= c, see_cms= False, label=label, generalise=generalise, stat = True)
         res[i][:] = r
         i += 1
@@ -280,9 +283,11 @@ def test_each_class(model, dataset, db_name, extractor, measure, name, excel_pat
         df = pd.DataFrame(res, columns=["top_1_acc", "top_5_acc", "top_1_proj", "top_5_proj", "top_1_sim", "top_5_sim", "maj_acc_class", "maj_acc_proj", "maj_acc_sim", "t_tot", "t_model", "t_search", "t_transfer"])
     df.index = classes
 
-    book = load_workbook(excel_path)
+
+    writer = pd.ExcelWriter(excel_path, engine="openpyxl", mode="a")
+    """book = load_workbook(excel_path)
     writer = pd.ExcelWriter(excel_path, engine = 'openpyxl')
-    writer.book = book
+    writer.book = book"""
     if name is None:
         name = "Sheet ?" 
     df.to_excel(writer, sheet_name = name)
@@ -333,9 +338,10 @@ class TestDataset(Dataset):
         self.classes = os.listdir(root)
         self.classes = sorted(self.classes)
         
-
+        self.conversion = {x: i for i, x in enumerate(self.classes)}
         # User has specify the classe whose results he wants to compute
         if class_name is not None:
+            
             for c in self.classes:
                 if c == class_name:
                     self.classes = [c]
@@ -370,6 +376,7 @@ class TestDataset(Dataset):
                 if c in list_classes:
                     self.classes.remove(c)
             #self.classes = self.classes[len(self.classes) // 2:]
+            self.conversion = {x: i for i, x in enumerate(self.classes)}
 
         elif generalise == 2:
             list_classes = ['camelyon16_0', 'camelyon16_1', 'iciar18_micro_113351562', 'iciar18_micro_113351588', 'iciar18_micro_113351608',
@@ -381,7 +388,8 @@ class TestDataset(Dataset):
             for c in self.classes[:]:
                 if c in list_classes:
                     self.classes.remove(c)
-        self.conversion = {x: i for i, x in enumerate(self.classes)}
+          
+            self.conversion = {x: i for i, x in enumerate(self.classes)}
         # Register images in list and compute weights for weighted protocol
         if measure != 'random':
             if measure == "weighted":
@@ -458,6 +466,8 @@ def test(model, dataset, db_name, extractor, measure, generalise, project_name, 
     # Load weights 
     if measure == 'weighted':
         weights = data.weights
+    elif measure == 'remove':
+        weights = np.ones(len(data.conversion))
     else:
         weights = np.ones(len(data.classes))
     
@@ -491,7 +501,7 @@ def test(model, dataset, db_name, extractor, measure, generalise, project_name, 
     # For each image in the dataset, search for the 5 most similar images in the database and compute the accuracy
     for i, (image, filename) in enumerate(loader):
             
-        if i % 10000 == 0:
+        if (i+1) % 1000000 == 0:
             print(i)
         # Search for the 5 most similar images in the database
         t = time.time()

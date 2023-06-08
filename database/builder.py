@@ -1,10 +1,7 @@
-import torch.nn as nn
-import torch.nn.parallel as parallel
 import os
 import sys
 import torch
-import vgg, resnet
-
+## From  Horizon2333  github, https://github.com/Horizon2333/imagenet-autoencoderhttps://github.com/Horizon2333/imagenet-autoencoder
 def load_dict(resume_path, model):
     if os.path.isfile(resume_path):
         checkpoint = torch.load(resume_path)

@@ -87,16 +87,11 @@ class Database:
                     json_val = json.dumps([{'name':n}, {'label':l}])
                     self.r.set(str(last_id)+ 'labeled', json_val)
                     self.r.set(n, str(last_id)+'labeled')
-                    #binary = struct.pack("i"+str(self.num_features)+"f",last_id, *x_)
-                    #file.write(binary)
                     last_id += 1
             else:
                 for n, x_  in zip(names, x):
                     self.r.set(str(last_id) + 'labeled', n) # Set the name of the image at key = id
                     self.r.set(n, str(last_id) + 'labeled') # Set the id of the image at key = name 
-                    #binary = struct.pack("i"+str(self.num_features)+"f",last_id, *x_)
-                    #file.write(binary)
-                    #file.write('\n' + str(last_id) + str(x_)) # Writes in the file the id alongside the image 
                     last_id += 1
 
             self.r.set('last_id_labeled', last_id) # Update the last id to take into account the added images
@@ -142,8 +137,6 @@ class Database:
             images = images.view(-1, 3, 224, 224).to(device=next(self.model.parameters()).device)
             if extractor == 'vgg11' or extractor == 'resnet18' or extractor == 'vgg16' or extractor == 'resnet50':
                 t = time.time()
-                #_, out = self.model(images)
-                #out = out.cpu()
                 out = utils.encode(self.model, images)
                 out = out.reshape([out.shape[0],self.model.num_features])
                 t_im = time.time() - t
@@ -153,15 +146,7 @@ class Database:
                 out = self.model.reparameterize(mu, logvar)
                 dec = self.model.decode(out)
                 
-                out = out.view(-1, self.model.num_features) #print(out.shape)
-                #print(out.shape)
-                # For visualisation of the reconstruction
-                """dec = dec.view(128, 3, 224, 224)
-                plt.subplot(1, 2, 1)
-                plt.imshow(  images[0].cpu().permute(1, 2, 0)  )
-                plt.subplot(1, 2, 2)
-                plt.imshow(  dec[0].permute(1, 2, 0)  )
-                plt.show()"""
+                out = out.view(-1, self.model.num_features) 
                 t_im = time.time() - t
             elif extractor == 'auto':
                 t = time.time()
@@ -169,14 +154,6 @@ class Database:
                 out = latent
                 out = out.view(-1, self.model.num_features)
                 t_im = time.time() - t
-                # display image and its reconstruction
-                """dec = out1.cpu()
-                dec = dec.view(128, 3, 224, 224)
-                plt.subplot(1, 2, 1)
-                plt.imshow(  images[0].cpu().permute(1, 2, 0)  )
-                plt.subplot(1, 2, 2)
-                plt.imshow(  dec[0].permute(1, 2, 0)  )
-                plt.show()"""
 
             elif extractor == 'byol':
                 t = time.time()
@@ -194,7 +171,7 @@ class Database:
 
             t = time.time()
             if generalise == 3:
-                kmeans = pickle.load(open("weights_folder/kmeans_50.pkl","rb"))
+                kmeans = pickle.load(open("weights_folder/kmeans_104.pkl","rb"))
                 batch_data = np.array([utils.load_image(path) for path in filenames])
                 labels = kmeans.predict(batch_data)
                 self.add(out.numpy(), list(filenames), label, generalise, labels)
@@ -220,17 +197,6 @@ class Database:
             t_model = time.time()
             out = utils.encode(self.model, image)
             out = out.reshape([out.shape[0],self.model.num_features])
-            """out1, out = self.model(image.to(device=next(self.model.parameters()).device).view(-1, 3, 224, 224))
-            out = out.cpu()
-
-            out1 = out1.cpu() 
-            out1 = out1.view(-1, 3, 224, 224)
-            plt.subplot(1,2,1)
-            # display image and its reconstruction
-            plt.imshow(  image.cpu().permute(1, 2, 0)  )
-            plt.subplot(1,2,2)
-            plt.imshow( out1[0].permute(1, 2, 0))
-            plt.show()"""
             t_model = time.time() - t_model
         elif extractor == 'vae':
             t_model = time.time()
@@ -243,14 +209,6 @@ class Database:
             reconstructed, flattened, latent, weights = self.model.model(image)
             out = latent
             out = out.view(-1, self.model.num_features)
-            """out = original.cpu() 
-            out1 = out1.view(-1, 3, 224, 224)
-            plt.subplot(1,2,1)
-            # display image and its reconstruction
-            plt.imshow(  image.cpu().permute(1, 2, 0)  )
-            plt.subplot(1,2,2)
-            plt.imshow( out1[0].permute(1, 2, 0))
-            plt.show()"""
             t_model = time.time() - t_model
         elif extractor == 'byol':
             t_model = time.time()

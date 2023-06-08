@@ -7,7 +7,7 @@ import matplotlib.pyplot as plt
 from PIL import Image
 from torchvision import transforms
 import utils
-
+import random
 
 def summary_image(path):
     classes = os.listdir(path)
@@ -204,8 +204,41 @@ def vis_transf(path):
     # Visualize the transformation
     # Load the image
     img = Image.open(path)
+    transform = transforms.Compose(
+                [transforms.RandomVerticalFlip(.5),
+                transforms.RandomHorizontalFlip(.5),
+                transforms.ColorJitter(brightness=.4, contrast=.4, saturation=.4, hue=.4),
+                transforms.RandomResizedCrop(224, scale = (.8,1)),
+                transforms.RandomApply([transforms.GaussianBlur(23)]),
+                transforms.RandomRotation(random.randint(0,360)),
+                transforms.RandomGrayscale(0.05),
+                transforms.ToTensor(),
+                transforms.Normalize(
+                    mean=[0.485, 0.456, 0.406],
+                    std=[0.229, 0.224, 0.225]
+                )
+                ]
+            )
+            # AMDIM transforms https://github.com/Lightning-Universe/lightning-bolts/blob/5669578aba733bd9a7f0403e43dd6cfdcfd91aac/src/pl_bolts/transforms/self_supervised/amdim_transforms.py
+    transform1 = transforms.Compose(
+        [transforms.RandomHorizontalFlip(p=0.5),
+            transforms.RandomResizedCrop(size=224),
+            transforms.RandomApply([transforms.ColorJitter(0.4, 0.4, 0.4, 0.1)], p=0.8),
+            transforms.RandomGrayscale(p=0.25),
+            transforms.ToTensor(),
+            transforms.Normalize(mean=[0.485, 0.456, 0.406],    
+                                    std=[0.229, 0.224, 0.225])])
+            
+    #SimCLR transforms, pytorch lightning bolt 
+    transform2 = transforms.Compose(
+        [transforms.RandomResizedCrop(size=224),
+        transforms.RandomHorizontalFlip(),
+        transforms.RandomApply([transforms.ColorJitter()], 0.8),
+        transforms.RandomGrayscale(0.2),
+        transforms.RandomApply([transforms.GaussianBlur(kernel_size=23)], p=0.5),
+        transforms.transforms.ToTensor()])
     # Transform the image
-    transform1 = transforms.Compose([
+    """transform1 = transforms.Compose([
     transforms.RandomHorizontalFlip(p=0.5),
     transforms.RandomVerticalFlip(p=0.5),
     transforms.ToTensor(),])
@@ -228,13 +261,13 @@ def vis_transf(path):
         transforms.ToTensor(),
         transforms.Normalize(mean=[0.485, 0.456, 0.406],
                             std=[0.229, 0.224, 0.225])
-    ])
+    ])"""
     plt.figure(figsize=(15, 9))
-    plt.subplot(1, 5, 1)
+    plt.subplot(1, 4, 1)
     plt.imshow(img)
-    transform_list = [transform1, transform2, transform3, transform]
+    transform_list = [transform, transform1, transform2]
     for t in transform_list:
-        plt.subplot(1, 5, transform_list.index(t)+2)
+        plt.subplot(1, 4, transform_list.index(t)+2)
         im = t(img)
         im = np.array(im.permute(1, 2, 0))
         plt.imshow(im)
@@ -369,13 +402,13 @@ if __name__ == "__main__":
 
     #bar_plot(train, test, val)
     
-    width_height(train, test, val)
+    #width_height(train, test, val)
 
-    #p = '/home/labarvr4090/Documents/Axelle/cytomine/Data/train/janowczyk5_1/01_117238845_1502_393_250_250_2.png'
+    p = '/home/labarvr4090/Documents/Axelle/cytomine/Data/train/janowczyk5_1/01_117238845_1502_393_250_250_2.png'
     #p2 = '/home/labarvr4090/Documents/Axelle/cytomine/Data/train/janowczyk6_0/8863_idx5_x651_y1551_class0.png'
     #p3 = '/home/labarvr4090/Documents/Axelle/cytomine/Data/train/iciar18_micro_113351562/17_118316818_512_0_512_512.png'
     #paths = [p, p2, p3]
-    #vis_transf(p)
+    vis_transf(p)
 
     #resized_vis(paths)
 

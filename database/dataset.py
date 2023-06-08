@@ -1,6 +1,5 @@
 import time
 from PIL import Image
-from matplotlib import pyplot as plt
 import torch
 from torchvision import transforms
 from torch.utils.data import Dataset
@@ -11,7 +10,6 @@ from transformers import DeiTFeatureExtractor, ConvNextImageProcessor
 import torch.multiprocessing
 torch.multiprocessing.set_sharing_strategy('file_system')
 import kmeans
-import random
 #from pl_bolts.models.self_supervised.simclr import SimCLREvalDataTransform, SimCLRTrainDataTransform
 
 
@@ -120,14 +118,6 @@ class DRDataset(Dataset):
         p2 = os.path.join(self.root, self.rev_dict[im_class], im2)
         p3 = os.path.join(self.root, self.rev_dict[class3], im3)
         return [p1, p2, p3]
-        """if not self.pair:
-            return [p1, p2, p3]
-        else: 
-            # Make a negative pair
-            if idx % 2 != 0 and self.contrastive:
-                return [p1, p3]
-            else:
-                return [p1, p2]"""
 
     def _augmented_sample(self, idx):
         im, im_class = self.big_dict[idx]
@@ -138,14 +128,6 @@ class DRDataset(Dataset):
             im3 = np.random.choice(self.image_dict[self.rev_dict[class3]])
         p1 = os.path.join(self.root, self.rev_dict[im_class], im)
         p3 = os.path.join(self.root, self.rev_dict[class3], im3)
-        """if not self.pair:
-            return [p1, p1, p3]
-        else: 
-            # Make a negative pair
-            if idx % 2 != 0 and self.contrastive:
-                return [p1, p3]
-            else:
-                return [p1, p1]"""
         return [p1, p1, p3]
     def __len__(self):
         return self.num_elements

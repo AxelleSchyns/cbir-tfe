@@ -1,3 +1,4 @@
+import numpy as np
 import vgg, resnet
 import torch.nn as nn
 import torch
@@ -6,6 +7,7 @@ import torch.nn.functional as F
 #---------------------------------------------------------------------------------------------------------
 #                                          Implementation 1 
 #---------------------------------------------------------------------------------------------------------
+# Horizon2333, Github - https://github.com/Horizon2333/imagenet-autoencoder
 def load_pretrained(model):
     checkpoint = torch.load("/home/labarvr4090/Documents/Axelle/cytomine/cbir-tfe/weights_folder/imagenet-vgg16.pth")
     model_dict = model.state_dict()
@@ -23,9 +25,9 @@ def BuildAutoEncoder(model_name):
     elif model_name in ["resnet18", "resnet50"]:
         configs, bottleneck = resnet.get_configs(model_name)
         model = resnet.ResNetAutoEncoder(configs, bottleneck)
-    
-    if exp == 4: 
+    if exp != "3b":
         model = nn.DataParallel(model)
+    if exp == 4: 
         model = load_pretrained(model)
     return model, exp
 
@@ -148,8 +150,10 @@ def loss_function(recon_x, x, mu, logvar):
 
         if torch.isnan(BCE):
             print("HEY")
+            BCE = torch.tensor(np.finfo(np.float64).max)
         if torch.isnan(KLD):
             print("HEY")
+            KLD = torch.tensor(np.finfo(np.float64).max)
         return BCE + KLD
     elif exp == "2b" or exp == "2c":
         BCE = F.binary_cross_entropy(recon_x, x.view(-1, 224*224*3), reduction='sum')
@@ -225,16 +229,16 @@ class AutoEncoder(nn.Module):
         elif self.exp == 4 or self.exp == 5 or self.exp == 6:
             inp = inp.view(-1, 224*224*3)
 
-        """x_reshaped = self.flatten_layer(inp)
-        h1 = torch.sigmoid(self.dense1(x_reshaped))
-        h2 = torch.sigmoid(self.dense2(h1))
-        h3 = torch.sigmoid(self.bottleneck(h2))
-        h4 = torch.sigmoid(self.dense4(h3))
-        h5 = torch.sigmoid(self.dense5(h4))
-        #x = nn.functional.relu(self.dense6(x))
-        x = self.dense_final(h5)
         if self.exp == 0:
-            ws = None
+            x_reshaped = self.flatten_layer(inp)
+            h1 = torch.sigmoid(self.dense1(x_reshaped))
+            h2 = torch.sigmoid(self.dense2(h1))
+            h3 = torch.sigmoid(self.bottleneck(h2))
+            h4 = torch.sigmoid(self.dense4(h3))
+            h5 = torch.sigmoid(self.dense5(h4))
+            #x = nn.functional.relu(self.dense6(x))
+            x = self.dense_final(h5)
+            """ws = None
             for i in range(int(x.shape[0]/192)):
                 W = torch.matmul(torch.diag_embed(h1[i:i+192, :] * (1 - h1[i:i+192, :])), self.dense1.weight)
                 W = torch.matmul(self.dense2.weight, W)
@@ -245,18 +249,19 @@ class AutoEncoder(nn.Module):
                 if ws is None:
                     ws = W
                 else:
-                    ws = torch.cat((ws, W), axis=0)
-            return x, x_reshaped, h3, ws"""
-        #x_reshaped = inp #
-        x_reshaped = self.flatten_layer(inp)
-        x = nn.functional.relu(self.dense1(x_reshaped))
-        x = nn.functional.relu(self.dense2(x))
-        x = nn.functional.relu(self.bottleneck(x))
-        x_hid = x
-        x = nn.functional.relu(self.dense4(x))
-        x = nn.functional.relu(self.dense5(x))
-        #x = nn.functional.relu(self.dense6(x))
-        x = self.dense_final(x)
+                    ws = torch.cat((ws, W), axis=0)"""
+            return x, x_reshaped, h3, self.bottleneck.weight #ws
+        else:
+            #x_reshaped = inp #
+            x_reshaped = self.flatten_layer(inp)
+            x = nn.functional.relu(self.dense1(x_reshaped))
+            x = nn.functional.relu(self.dense2(x))
+            x = nn.functional.relu(self.bottleneck(x))
+            x_hid = x
+            x = nn.functional.relu(self.dense4(x))
+            x = nn.functional.relu(self.dense5(x))
+            #x = nn.functional.relu(self.dense6(x))
+            x = self.dense_final(x)
 
         return x, x_reshaped, x_hid, self.bottleneck.weight
 
@@ -281,9 +286,9 @@ def loss_auto(x, x_bar, h, W, model):
 def grad_auto(model, inputs):
     exp = 0
     if exp == 0 or exp == 1 or exp == 2 or exp == 3:
-        reconstruction, inputs_reshaped, hidden, _ = model(inputs.view(-1, 784))
+        reconstruction, inputs_reshaped, hidden, W = model(inputs.view(-1, 784))
     else:
-        reconstruction, inputs_reshaped, hidden, _ = model(inputs.view(-1, 224*224*3))
+        reconstruction, inputs_reshaped, hidden, W = model(inputs.view(-1, 224*224*3))
     loss_value = loss_auto(inputs_reshaped, reconstruction, hidden, W, model)
     return loss_value, inputs_reshaped, reconstruction
 

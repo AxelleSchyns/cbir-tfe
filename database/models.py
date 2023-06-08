@@ -22,8 +22,6 @@ import builder
 #from pl_bolts.models.self_supervised import SimCLR
 #import pytorch_lightning as pl
 
-#from info_nce import InfoNCE as InfoNCELoss
-
 class fully_connected(nn.Module):
 	"""docstring for BottleNeck"""
 	def __init__(self, model, num_ftrs, num_classes):
@@ -83,7 +81,6 @@ class Model(nn.Module):
         if model == 'densenet':
             self.forward_function = self.forward_model
             self.model = models.densenet121(weights='DenseNet121_Weights.DEFAULT').to(device=device)
-            #self.model = models.densenet121(weights=None).to(device=device)
         elif model == 'resnet':
             self.forward_function = self.forward_model
             if scratch:
@@ -147,10 +144,6 @@ class Model(nn.Module):
                 hidden_layer = 'avgpool',
             )
             self.model = learner.to(device)
-            """ elif model == 'simclr':
-                    weight_path = 'https://pl-bolts-weights.s3.us-east-2.amazonaws.com/simclr/bolts_simclr_imagenet/simclr_imagenet.ckpt'
-                    simclr = SimCLR.load_from_checkpoint(weight_path, strict=False)
-                    self.model = simclr.to(device)"""
         else:
             print("model entered is not supported")
             exit(-1)
@@ -196,12 +189,10 @@ class Model(nn.Module):
                     module.train = lambda _: None
         
         if eval == True:
-            #self.model = nn.DataParallel(self.model)
             if model in ['vgg16', 'vgg11', 'resnet18', 'resnet50']:
                 if exp != "3b":   
                     builder.load_dict(name, self.model)
-                    if exp == 4:
-                        self.model = self.model.module
+                    self.model = self.model.module
                 else:
                     self.load_state_dict(torch.load(name))
             else:
@@ -271,7 +262,7 @@ class Model(nn.Module):
                     labels = labels.to(device=self.device)
 
                     if self.model_name == "auto":
-                        loss, inputs_reshaped, reconstruction = ae.grad_auto_bis(self.model, images_gpu.view(-1, 3, 224, 224)) 
+                        loss, inputs_reshaped, reconstruction = ae.grad_auto(self.model, images_gpu.view(-1, 3, 224, 224)) 
 
                         optimizer.zero_grad(set_to_none=True)
                         loss.backward()
@@ -292,7 +283,7 @@ class Model(nn.Module):
 
                 print("epoch {}, loss = {}, time {}".format(epoch, np.mean(loss_list),
                                                             time.time() - start_time))
-                #print(len(loss_list)) 1 loss par batch 
+                
                 print("\n----------------------------------------------------------------\n")
                 loss_means.append(np.mean(loss_list))
                 if sched != None:
@@ -316,16 +307,6 @@ class Model(nn.Module):
             loader = torch.utils.data.DataLoader(data, batch_size=self.batch_size,
                                              shuffle=True, num_workers=16,
                                              pin_memory=True)
-        elif model == 'simclr':
-            train_data = dataset.TrainingDataset(dir, model, 2, generalise, load, need_val=1)
-            val_data = dataset.TrainingDataset(dir, model, 2, generalise, load, need_val=2)
-            print('Size of dataset', train_data.__len__(), 'and', val_data.__len__())
-            loader = torch.utils.data.DataLoader(train_data, batch_size=self.batch_size,
-                                                shuffle=True, num_workers=16,
-                                                pin_memory=True)
-            val_loader = torch.utils.data.DataLoader(val_data, batch_size=self.batch_size,
-                                                shuffle=True, num_workers=16,
-                                                pin_memory=True)
             
         optimizer = torch.optim.Adam(self.parameters(), lr=lr)
         if sched == 'exponential':
@@ -355,7 +336,6 @@ class Model(nn.Module):
 
                     print("epoch {}, loss = {}, time {}".format(epoch, np.mean(loss_list),
                                                                 time.time() - start_time))
-                    #print(len(loss_list)) 1 loss par batch 
                     print("\n----------------------------------------------------------------\n")
                     loss_means.append(np.mean(loss_list))
                     if sched != None:
@@ -368,17 +348,10 @@ class Model(nn.Module):
                     if self.parallel:
                         self.model = nn.DataParallel(self.model).to(self.device)
                 plt.plot(range(epochs),loss_means)
-                #plt.show()
                 plt.savefig(str(self.name[len(self.name)-7:])+"_loss.png")
         
             except KeyboardInterrupt:
                 print("Interrupted")
-        """elif model == 'simclr':
-            try:
-                trainer = pl.Trainer(accelerator='gpu', devices=2)
-                trainer.fit(self.model, train_dataloaders=loader, val_dataloaders=val_loader)
-            except KeyboardInterrupt:
-                print("Interrupted")"""
 
     def train_epochs(self, model, dir, epochs, sched, loss, generalise, load, lr, decay, beta_lr, gamma, lr_proxies):
         data = dataset.TrainingDataset(dir, model, 2, generalise, load)
@@ -416,11 +389,6 @@ class Model(nn.Module):
         elif loss == 'softtriple':
             # Official - paper implementation
             loss_function = SoftTriple(self.device)
-
-            # Direct from pytorch metric learning
-            # loss_function = losses.SoftTripleLoss(num_classes=len(data.classes), embedding_size=self.num_features)
-
-
             to_optim = [{"params": self.parameters(), "lr": 0.0001},
                                   {"params": loss_function.parameters(), "lr": 0.01}]
             optimizer = torch.optim.Adam(to_optim, eps=0.01, weight_decay=0.0001)
@@ -467,7 +435,6 @@ class Model(nn.Module):
 
                 print("epoch {}, loss = {}, time {}".format(epoch, np.mean(loss_list),
                                                             time.time() - start_time))
-                #print(len(loss_list)) 1 loss par batch 
                 print("\n----------------------------------------------------------------\n")
                 loss_means.append(np.mean(loss_list))
                 if sched != None:
@@ -504,13 +471,11 @@ class Model(nn.Module):
             loss_function = torch.nn.TripletMarginLoss()
         elif loss_name == 'BCE':
             loss_function = SimpleBCELoss()
-            #loss_function = SimpleBCELoss2()
         elif loss_name == 'contrastive':
             loss_function = ContrastiveLoss()
         elif loss_name == 'cosine':
             loss_function = torch.nn.CosineEmbeddingLoss()
         elif loss_name == 'infonce':
-            #loss_function = InfoNCELoss()
             loss_function = InfoNCE(contrastive)
         else:
             print('Unknown loss function')
@@ -586,10 +551,6 @@ class Model(nn.Module):
                 torch.save(self.state_dict(), self.name+str(epoch))
                 if self.parallel:
                     self.model = nn.DataParallel(self.model).to(self.device)
-                """if (epoch + 1) % 4:
-                    lr /= 2
-                    for param in optimizer.param_groups:
-                        param['lr'] = lr"""
             plt.plot(range(num_epochs),loss_means)
             plt.savefig(str(self.name[len(self.name)-9:])+"_loss.png")
         except KeyboardInterrupt:

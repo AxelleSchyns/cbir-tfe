@@ -106,7 +106,7 @@ def get_labels(list_img, kmeans):
             temp_labs = labs
             temp_batch = batch_data
 
-    pickle.dump(dic_labs, open("weights_folder/labels_kmeans_104.pkl","wb"))
+    pickle.dump(dic_labs, open("weights_folder/labels_kmeans_50.pkl","wb"))
     print("The silhouette score is: "+str(np.mean(silhouette_scores)))
     print("Labels predictions took: "+str(time.time() - t))
 
@@ -234,43 +234,45 @@ def analyse_clusters(cm_obj):
 
             if j == 4 and i == 2:
                 break
+        #plt.show()
+
+    for j in range(0, 1):
+        # subplots of the percentage of each class in each cluster
+        fig, axs = plt.subplots(2, 5, figsize=(16,16))
+        fig1, axs1 = plt.subplots(2, 5, figsize=(16,16))
+        axs = axs.ravel()
+        axs1 = axs1.ravel()
+        for i in range(0,10):
+            dist = cm_cluster[:,i+j*10]
+            
+            axs1[i].set_title("Boxplot of Cluster "+str(i+j*10))
+            nb_classes = np.count_nonzero(dist)
+            
+            print("Cluster "+str(i+j*10)+" has "+str(nb_classes)+" classes")
+            print("Cluster "+str(i+j*10)+" has the following distribution of classes: "+str(dist))
+
+            # get indexes of non zero elements
+            indexes = np.nonzero(dist)
+            # boxplot
+            axs1[i].boxplot(dist[indexes])
+
+            # histogram
+            axs[i].bar(range(0,67), dist)
+            axs[i].set_title("Cluster "+str(i+j*10))
+            axs[i].set_xlabel("Class")
+            axs[i].set_ylabel("Percentage")
+
+            # Other measures
+            print("Cluster "+str(i)+" has the following measures:")
+            print("Mean: "+str(np.mean(dist[indexes])))
+            print("Median: "+str(np.median(dist[indexes])))
+            print("Variance: "+str(np.var(dist[indexes])))
+            print("Max: "+str(np.max(dist[indexes])))
+            print("Min: "+str(np.min(dist[indexes])))
+
+            if i+j*10 == 66:
+                break
         plt.show()
-
-    # subplots of the percentage of each class in each cluster
-    fig, axs = plt.subplots(2, 5, figsize=(16,16))
-    fig1, axs1 = plt.subplots(2, 5, figsize=(16,16))
-    axs = axs.ravel()
-    axs1 = axs1.ravel()
-    for i in range(0,10):
-        dist = cm_cluster[:,i]
-        
-        axs1[i].set_title("Boxplot of Cluster "+str(i))
-        nb_classes = np.count_nonzero(dist)
-        
-        print("Cluster "+str(i)+" has "+str(nb_classes)+" classes")
-        print("Cluster "+str(i)+" has the following distribution of classes: "+str(dist))
-
-        # get indexes of non zero elements
-        indexes = np.nonzero(dist)
-        # boxplot
-        axs1[i].boxplot(dist[indexes])
-
-        # histogram
-        axs[i].bar(range(0,67), dist)
-        axs[i].set_title("Cluster "+str(i))
-        axs[i].set_xlabel("Class")
-        axs[i].set_ylabel("Percentage")
-
-        # Other measures
-        print("Cluster "+str(i)+" has the following measures:")
-        print("Mean: "+str(np.mean(dist[indexes])))
-        print("Median: "+str(np.median(dist[indexes])))
-        print("Variance: "+str(np.var(dist[indexes])))
-        print("Max: "+str(np.max(dist[indexes])))
-        print("Min: "+str(np.min(dist[indexes])))
-
-
-    plt.show()
 
 
 
@@ -279,7 +281,7 @@ def analyse_clusters(cm_obj):
 
 
 def execute_kmeans(load, list_img):
-    n_clusters = 67
+    n_clusters = 10
     classes = [i for i in range(0, n_clusters)]
     if load == "testing":
         elbow_plot(list_img)
@@ -290,13 +292,12 @@ def execute_kmeans(load, list_img):
             print(len(list_img))
             kmeans = train_kmeans(n_clusters, list_img)
         else:
-            kmeans = pickle.load(open("weights_folder/kmeans_104.pkl","rb"))   
+            kmeans = pickle.load(open("weights_folder/kmeans_50.pkl","rb"))   
         labels = get_labels(list_img, kmeans)
 
     #cm_obj = display_graph(labels, list_img)
 
     #analyse_clusters(cm_obj)
-    
     return kmeans, labels, classes
 
     

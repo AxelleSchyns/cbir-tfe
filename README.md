@@ -11,6 +11,11 @@ The code files are organized as follows:
 - The `cms` folder: Contains graphs generated for the models.
 - The `excel_results` folder: Contains the accuracies of the diverse methods tested in this work. 
 
+## Requirements
+
+The packages needed to run this code cna be installed using `requirements.txt`.
+- pip install -r requirements.txt
+- 
 ## Code Files
 
 Here is a quick description of each code file within the `database` folder:

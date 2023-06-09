@@ -15,7 +15,7 @@ The code files are organized as follows:
 
 The packages needed to run this code cna be installed using `requirements.txt`.
 - pip install -r requirements.txt
-- 
+
 ## Code Files
 
 Here is a quick description of each code file within the `database` folder:
@@ -126,4 +126,4 @@ This implementation is based on several other open-source implementations:
 - https://github.com/KevinMusgrave/pytorch-metric-learning
 - https://lightning-bolts.readthedocs.io/en/0.3.2/self_supervised_models.html?highlight=AMDIM
 - https://github.com/stephdef08/tfe2
-- 
+

@@ -17,7 +17,7 @@ def load_pretrained(model):
     return model
 
 def BuildAutoEncoder(model_name):
-    exp = "3b"
+    exp = 4
     if model_name in ["vgg11", "vgg16"]:
         configs = vgg.get_configs(model_name)
         model = vgg.VGGAutoEncoder(configs, exp)
@@ -176,7 +176,7 @@ def loss_function(recon_x, x, mu, logvar):
 class AutoEncoder(nn.Module):
     def __init__(self):
         super(AutoEncoder, self).__init__()
-        exp = 0
+        exp = 5
         self.flatten_layer = nn.Flatten()
 
         if exp == 0 or exp == 1:
@@ -266,7 +266,7 @@ class AutoEncoder(nn.Module):
         return x, x_reshaped, x_hid, self.bottleneck.weight
 
 def loss_auto(x, x_bar, h, W, model):
-    exp = 0
+    exp = 5
     if exp == 0:
         reconstruction_loss = nn.functional.mse_loss(x, x_bar, reduction='mean')
         contractive = torch.sum(W**2, axis=(1,2))
@@ -284,7 +284,7 @@ def loss_auto(x, x_bar, h, W, model):
     return total_loss
 
 def grad_auto(model, inputs):
-    exp = 0
+    exp = 5
     if exp == 0 or exp == 1 or exp == 2 or exp == 3:
         reconstruction, inputs_reshaped, hidden, W = model(inputs.view(-1, 784))
     else:

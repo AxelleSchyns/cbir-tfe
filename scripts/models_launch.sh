@@ -44,3 +44,13 @@ printf "33 auto \n"
 python database/add_images.py --path /home/labarvr4090/Documents/Axelle/cytomine/Data/test --extractor auto --weights weights_folder/82_auto --rewrite --num_features 3072
 python database/retrieve_images.py --path /home/labarvr4090/Documents/Axelle/cytomine/Data/validation --extractor auto  --weights weights_folder/82_auto --results_dir results/33_auto/all_classes --num_features 3072
 
+
+
+printf "38 auto \n"
+python database/add_images.py --path /home/labarvr4090/Documents/Axelle/cytomine/Data/test --extractor auto --weights weights_folder/71_auto --rewrite 
+python database/retrieve_images.py --path /home/labarvr4090/Documents/Axelle/cytomine/Data/validation --extractor auto  --weights weights_folder/71_auto --results_dir results/38_auto/all_classes
+
+
+printf "23 vgg16 \n"
+python database/add_images.py --path /home/labarvr4090/Documents/Axelle/cytomine/Data/test --extractor vgg16 --weights weights_folder/62_vgg16.pth --rewrite --num_features 25088
+python database/retrieve_images.py --path /home/labarvr4090/Documents/Axelle/cytomine/Data/validation --extractor vgg16  --weights weights_folder/62_vgg16.pth --results_dir results/23_vgg16/all_classes --num_features 25088

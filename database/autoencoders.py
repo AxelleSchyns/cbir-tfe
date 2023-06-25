@@ -4,7 +4,8 @@ import torch.nn as nn
 import torch
 import torch.nn.functional as F
 import os
-# This file contains 3 implementations of the autoencoder model
+import sys
+# This file contains 3 implementations of the autoencoder model 
 
 #---------------------------------------------------------------------------------------------------------
 #                                          Implementation 1 

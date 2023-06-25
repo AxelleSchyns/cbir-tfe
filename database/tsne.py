@@ -30,10 +30,9 @@ if __name__ == "__main__":
     index = faiss.read_index(args.db_name + '_labeled')
     r = redis.Redis(host='localhost', port='6379', db=0)
     # Retrieve the vectors from the index
-    print(index.ntotal)
     vectors = index.index.reconstruct_n(0, index.ntotal)
-    
-    labels = list(range(index.ntotal)) # WILL NOT WORK WHEN REMOVING IDS
+
+    labels = list(range(index.ntotal)) 
     names = []
     
     if args.generalise:
@@ -62,13 +61,12 @@ if __name__ == "__main__":
     t_fit = time.time() - t
     print(t_fit)
 
-    #sns.scatterplot(embeddings[:,0], embeddings[:,1], hue=names, size=0.5)
-    #plt.show()
+    sns.scatterplot(embeddings[:,0], embeddings[:,1], hue=names, size=0.5)
+    plt.savefig(args.namefig + '_sns.png')
     # Visualize the embeddings
     plt.scatter(embeddings[:,0], embeddings[:,1], c=int_names,cmap='viridis', s=1.5, linewidths=1.5, edgecolors='none')
     plt.colorbar()
-    plt.savefig(args.namefig + '.png',)
-    #plt.show()
+    plt.savefig(args.namefig + '.png')
 
     if args.generalise: 
         labs_k = list(set(labs))

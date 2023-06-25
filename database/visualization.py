@@ -9,11 +9,13 @@ from torchvision import transforms
 import utils
 import random
 
+# Makes a figure of samples of each class
 def summary_image(path):
     classes = os.listdir(path)
     classes.sort()
     plt.figure(figsize=(7, 10))
     for class_ in classes:
+        # Get images
         images = os.listdir(os.path.join(path, class_))
         idx = np.random.randint(0, len(images))
         img = Image.open(os.path.join(path, class_, images[idx])).convert('RGB')
@@ -21,6 +23,7 @@ def summary_image(path):
         # save image in subplot
         plt.subplot(10, 7, classes.index(class_)+1)
 
+        # Adjust position and label
         # For resized images: 
         img = transforms.RandomResizedCrop(224, scale=(.7,1))(img)
         # Remove scale and ticks
@@ -47,10 +50,12 @@ def summary_image(path):
     
     plt.show()
 
+# Count the number of images in a class
 def count_im_class(path, class_):
     images = os.listdir(os.path.join(path, class_))
     return len(images)
 
+# Count the number of images in Camelyon_16_0 and janowczyk6_0
 def count_maj(train, test, val):
     sets = [train, test, val]
     tot_cam = 0
@@ -76,7 +81,8 @@ def count_maj(train, test, val):
     print("For the whole database: janowczyk6_0 has "+ str(tot_jan) + " images, for a percentage of "+str(tot_jan/tot_im))
     print("For the whole database: the total number of images is "+str(tot_im) + " images")
     print("Together, the percentage is: "+str(tot_cam/tot_im +tot_jan/tot_im) + ", for a total of images together of " + str(tot_cam + tot_jan) + " images")
-        
+
+# Bar plot of the number of images per class  
 def bar_plot(train, test, val):
     sets = [train, test, val]
     i = 0
@@ -98,7 +104,6 @@ def bar_plot(train, test, val):
 
         # bar plot in subplots
         plt.subplot(3, 1, i)
-        #plt.bar(classes, nb_per_class)
         # Increasing bar widths
         plt.bar(classes, nb_per_class)
         # No ticks if not the last subplot
@@ -149,6 +154,7 @@ def bar_plot(train, test, val):
         plt.subplots_adjust(bottom=0.2)
     plt.show()
 
+# Compute the mean width and height for each class, alongside other statistics 
 def width_height(train, test, val):
     sets = [train, test, val]
     widths = np.zeros((67, 1))
@@ -181,29 +187,17 @@ def width_height(train, test, val):
         print(np.std(np.array(widths_l)))
         print(np.std(np.array(heights_l)))
 
-
-    """for s in range(len(sets)):
-        classes = os.listdir(sets[s])
-        classes.sort()
-        for c in range(len(classes)):
-            images = os.listdir(os.path.join(sets[s], classes[c]))
-            for im in images:
-                im = Image.open(os.path.join(sets[s], classes[c], im))
-                widths[c] += im.size[0]
-                heights[c] += im.size[1]
-                nb[c] += 1
-            print(c)"""
     widths = widths/nb
     heights = heights/nb
     
     print(np.mean(widths))
     print(np.mean(heights))
 
-
+# Visualize the transformation
 def vis_transf(path):
-    # Visualize the transformation
     # Load the image
     img = Image.open(path)
+    # Custom transforms
     transform = transforms.Compose(
                 [transforms.RandomVerticalFlip(.5),
                 transforms.RandomHorizontalFlip(.5),
@@ -219,7 +213,7 @@ def vis_transf(path):
                 )
                 ]
             )
-            # AMDIM transforms https://github.com/Lightning-Universe/lightning-bolts/blob/5669578aba733bd9a7f0403e43dd6cfdcfd91aac/src/pl_bolts/transforms/self_supervised/amdim_transforms.py
+    # AMDIM transforms https://github.com/Lightning-Universe/lightning-bolts/blob/5669578aba733bd9a7f0403e43dd6cfdcfd91aac/src/pl_bolts/transforms/self_supervised/amdim_transforms.py
     transform1 = transforms.Compose(
         [transforms.RandomHorizontalFlip(p=0.5),
             transforms.RandomResizedCrop(size=224),
@@ -237,7 +231,8 @@ def vis_transf(path):
         transforms.RandomGrayscale(0.2),
         transforms.RandomApply([transforms.GaussianBlur(kernel_size=23)], p=0.5),
         transforms.transforms.ToTensor()])
-    # Transform the image
+    
+    # Transform the image - one by one 
     """transform1 = transforms.Compose([
     transforms.RandomHorizontalFlip(p=0.5),
     transforms.RandomVerticalFlip(p=0.5),
@@ -262,6 +257,7 @@ def vis_transf(path):
         transforms.Normalize(mean=[0.485, 0.456, 0.406],
                             std=[0.229, 0.224, 0.225])
     ])"""
+    # Plot the images (parameters to be changed depending on the situation)
     plt.figure(figsize=(15, 9))
     plt.subplot(1, 4, 1)
     plt.imshow(img)
@@ -273,14 +269,11 @@ def vis_transf(path):
         plt.imshow(im)
 
     plt.show()
-
+# Compute the mean and std of the pixel values of the images
 def means_pixel(sets):
-    # Compute the mean and std of the pixel values of the images
-    # of the training set
     means = np.zeros((3,1))
     stds = np.zeros((3,1))
     tot = 0
-
     for s in sets:
         classes = os.listdir(s)
         classes.sort()
@@ -302,6 +295,7 @@ def means_pixel(sets):
     print("Mean of the pixel values: ", means/tot)
     print("Std of the pixel values: ", stds/tot)
 
+# visualize the impatcof the resizing on different images resolutions
 def resized_vis(paths):
     transformRes = transforms.Compose([
         transforms.RandomResizedCrop(224, scale=(0.8,1)),
@@ -309,11 +303,8 @@ def resized_vis(paths):
     fig, ax = plt.subplots(nrows=2, ncols=3, figsize=(15, 8), dpi=100, sharex=True, sharey=True)
     for p in paths:
         img = Image.open(p)
-
-        #plt.subplot(2, 3, paths.index(p)+4)
         im = transformRes(img)
         im = np.array(im.permute(1, 2, 0))
-        #plt.imshow(im)
         ax[1, paths.index(p)].imshow(im)
         
         ax[0, paths.index(p)].imshow(img)
@@ -340,16 +331,12 @@ def diversity():
     im3_cam = '/home/labarvr4090/Documents/Axelle/cytomine/Data/test/camelyon16_0/27671570_26880_79872_768_768.png'
     im4_cam = '/home/labarvr4090/Documents/Axelle/cytomine/Data/test/camelyon16_0/27698189_67584_69120_768_768.png'
     l1 = [im1_cam, im2_cam, im3_cam, im4_cam]
-    # 27707281_128256_24576_768_768.png
-    # 27707762_65280_26112_768_768.png
 
     im1_jan = '/home/labarvr4090/Documents/Axelle/cytomine/Data/test/janowczyk6_0/8918_idx5_x151_y751_class0.png'
     im2_jan = '/home/labarvr4090/Documents/Axelle/cytomine/Data/test/janowczyk6_0/8918_idx5_x251_y1401_class0.png'
     im3_jan = '/home/labarvr4090/Documents/Axelle/cytomine/Data/test/janowczyk6_0/9181_idx5_x251_y1901_class0.png'
     im4_jan = '/home/labarvr4090/Documents/Axelle/cytomine/Data/test/janowczyk6_0/14191_idx5_x2551_y601_class0.png'
     l2 = [im1_jan, im2_jan, im3_jan, im4_jan]
-    # 9254_idx5_x1801_y1451_class0.png
-    # 15515_idx5_x2501_y1701_class0.png
 
     im1_ici = '/home/labarvr4090/Documents/Axelle/cytomine/Data/test/iciar18_micro_113351608/108_118327654_512_512_512_512.png'
     im2_ici = '/home/labarvr4090/Documents/Axelle/cytomine/Data/test/iciar18_micro_113351608/111_118327082_0_512_512_512.png'
@@ -390,7 +377,7 @@ def diversity():
 
 
 
-
+# Run the wanted function
 if __name__ == "__main__":
     val = "/home/labarvr4090/Documents/Axelle/cytomine/Data/validation"
     train = "/home/labarvr4090/Documents/Axelle/cytomine/Data/train"

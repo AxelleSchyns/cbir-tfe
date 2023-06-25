@@ -3,6 +3,7 @@ from PIL import Image
 import torch 
 import os
 
+# given the filename, return the image object 
 def load_image(image_path):
     with Image.open(image_path) as image:
         image = image.convert('RGB')
@@ -16,6 +17,7 @@ def batch_image_paths(image_paths, batch_size):
     for i in range(0, len(image_paths), batch_size):
         yield image_paths[i:i+batch_size]
 
+# For the AE model, retrieve the latent representation of an image
 def encode(model, img):
     exp = 4
     if exp == 7:
@@ -30,6 +32,7 @@ def encode(model, img):
                 code = model.module.encoder(img).cpu()
     return code
 
+# Get the class of an image from its path
 # ! Only works when the path is in the form: /home/.../project/class/image_name
 def get_class(path):
     end_c = path.rfind("/")
@@ -38,6 +41,7 @@ def get_class(path):
         return -1
     return path[begin_c:end_c]
 
+# Get the project name from the path
 def get_proj(path):
     end_c = path.rfind("/")
     begin_c = path.rfind("/", 0, end_c) + 1

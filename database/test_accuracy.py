@@ -9,16 +9,13 @@ import os
 import numpy as np
 import sklearn
 import time
-import builder
 import seaborn as sn
 import matplotlib.pyplot as plt
 import sklearn.metrics
 import pandas as pd
-from openpyxl import load_workbook
-import builder
 import utils
 import pickle
-from transformers import DeiTFeatureExtractor, AutoImageProcessor, ConvNextImageProcessor
+from transformers import DeiTFeatureExtractor, ConvNextImageProcessor
 from torchvision import transforms
 
 # This function looks into the errors made with the old labels and the errors made with the new labels obtained through kmeans

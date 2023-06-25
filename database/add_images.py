@@ -1,9 +1,8 @@
 from db import Database
-from argparse import ArgumentParser, ArgumentTypeError
+from argparse import ArgumentParser
 import models
 import time
 import os
-import builder
 
 if __name__ == "__main__":
     parser = ArgumentParser()
@@ -81,15 +80,18 @@ if __name__ == "__main__":
         print("The path mentionned is not a folder")
         exit(-1)
     
-    
+
+    # Load the feature extractor 
     model = models.Model(model=args.extractor, use_dr=args.dr_model, num_features=args.num_features, name=args.weights,
                            device=device)
     if model is None:
         print("Unkown feature extractor")
         exit(-1)
+
+    # Initialize the database
     database = Database(args.db_name, model, load = not args.rewrite)
-    print(database.index_labeled.ntotal)
+
+    # Indexed the images in the database
     t = time.time()
     database.add_dataset(args.path, args.extractor, args.generalise, label = not args.unlabeled)
-    print(database.index_labeled.ntotal)
     print("T_indexing = "+str(time.time() - t))

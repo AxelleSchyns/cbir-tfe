@@ -42,21 +42,17 @@ def distanceweightedsampling(batch, labels, lower_cutoff=0.5, upper_cutoff=1.4, 
             anchors.append(i)
             if use_contr:
                 positives.append(i)
-                #Sample negatives at random
                 pos[i] = 0
                 negatives.append(np.random.choice(np.where(pos)[0]))
             else:
                 q_d_inv = inverse_sphere_distances(batch, distances[i], labels, labels[i])
-                #Sample positives randomly
                 pos[i] = 0
                 p = np.random.choice(2, p=[0.99,0.01])
                 if p==1:
                     negatives.append(np.random.choice(np.where(pos)[0]))
-                    #Sample negatives by distance
                     positives.append(np.random.choice(bs,p=q_d_inv))
                 else:
                     positives.append(np.random.choice(np.where(pos)[0]))
-                    #Sample negatives by distance
                     negatives.append(np.random.choice(bs,p=q_d_inv))
 
     sampled_triplets = [[a,p,n] for a,p,n in zip(list(range(bs)), positives, negatives)]

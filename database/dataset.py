@@ -1,4 +1,3 @@
-import time
 from PIL import Image
 import torch
 from torchvision import transforms
@@ -10,14 +9,19 @@ from transformers import DeiTFeatureExtractor, ConvNextImageProcessor
 import torch.multiprocessing
 torch.multiprocessing.set_sharing_strategy('file_system')
 import kmeans
-#from pl_bolts.models.self_supervised.simclr import SimCLREvalDataTransform, SimCLRTrainDataTransform
 
+#  This file contains functions to load the dataset for training and indexing. 
+
+
+# ----------------------------------- Training ----------------------------------- #
 
 # https://github.com/SathwikTejaswi/deep-ranking/blob/master/Code/data_utils.py
+# Class specific to the methods trained using contrastive learning or deep ranking 
 class DRDataset(Dataset):
 
     def __init__(self, root='image_folder', transform=None, pair = False, contrastive = True, appl = None):
-        if transform == None:
+        # Settings of the transfroms 
+        if transform == None: # Supervised models 
             transform = transforms.Compose(
                 [
                     transforms.RandomVerticalFlip(.5),
@@ -32,7 +36,8 @@ class DRDataset(Dataset):
                 ]
             )
             self.augmented = False
-        else:
+        else: #    Self-supervised models
+            # Custom transforms
             """transform = transforms.Compose(
                 [transforms.RandomVerticalFlip(.5),
                 transforms.RandomHorizontalFlip(.5),
@@ -67,8 +72,8 @@ class DRDataset(Dataset):
                 transforms.RandomApply([transforms.GaussianBlur(kernel_size=23)], p=0.5),
                 transforms.transforms.ToTensor()])"""
             self.augmented = True
-        self.contrastive = contrastive
-        self.appl = appl
+
+        self.appl = appl 
         if appl == 'Unique':
             self.transform_2 = transforms.Compose(
                 [
@@ -79,56 +84,57 @@ class DRDataset(Dataset):
                         std=[0.229, 0.224, 0.225])
                 ]
             )
-            
-
+        
+        self.contrastive = contrastive
         self.pair = pair
         self.root = root
         self.transform = transform
         self.rev_dict = {}
         self.image_dict = {}
         self.big_dict = {}
-        L = []
 
         self.num_classes = 0
 
         self.num_elements = 0
 
-        # i = count (of class) ; j = class name
-        for i, j in enumerate(os.listdir(os.path.join(root))):
-            self.rev_dict[i] = j
-            self.image_dict[j] = np.array(os.listdir(os.path.join(root, j)))
+        for index_class, class_name in enumerate(os.listdir(os.path.join(root))):
+            self.rev_dict[index_class] = class_name
+            self.image_dict[class_name] = np.array(os.listdir(os.path.join(root, class_name)))
 
-            # k = image name 
-            for k in os.listdir(os.path.join(root, j)):
-                self.big_dict[self.num_elements] = (k, i)
+            for image_name in os.listdir(os.path.join(root, class_name)):
+                self.big_dict[self.num_elements] = (image_name, index_class)
                 self.num_elements += 1 # total number of images 
 
             self.num_classes += 1
 
-    # retrieve 3 images: the one at idx potisition, a random one of same class and a random one of different class (random different class)
+    # retrieve 3 images: the one at idx position, a random one of same class and a random one of different class (random different class)
     def _sample(self, idx):
-        im, im_class = self.big_dict[idx]
-        im2 = np.random.choice(self.image_dict[self.rev_dict[im_class]])
+        im, im_class_ind = self.big_dict[idx]
+        im_class = self.rev_dict[im_class_ind]
+        im2 = np.random.choice(self.image_dict[im_class])
         while im2 == im:
-            im2 = np.random.choice(self.image_dict[self.rev_dict[im_class]])
-        numbers = list(range(im_class)) + list(range(im_class+1, self.num_classes))
+            im2 = np.random.choice(self.image_dict[im_class])
+        numbers = list(range(im_class_ind)) + list(range(im_class_ind+1, self.num_classes))
         class3 = np.random.choice(numbers)
         im3 = np.random.choice(self.image_dict[self.rev_dict[class3]])
-        p1 = os.path.join(self.root, self.rev_dict[im_class], im)
-        p2 = os.path.join(self.root, self.rev_dict[im_class], im2)
+        p1 = os.path.join(self.root, im_class, im)
+        p2 = os.path.join(self.root, im_class, im2)
         p3 = os.path.join(self.root, self.rev_dict[class3], im3)
         return [p1, p2, p3]
 
+    # Retrieve three images, two times the one at idx position and one random 
     def _augmented_sample(self, idx):
-        im, im_class = self.big_dict[idx]
+        im, im_class_ind = self.big_dict[idx]
         numbers = list(range(self.num_classes))
-        class3 = np.random.choice(numbers)
-        im3 = np.random.choice(self.image_dict[self.rev_dict[class3]])
+        neg_class_ind = np.random.choice(numbers)
+        neg_class = self.rev_dict[neg_class_ind]
+        im3 = np.random.choice(self.image_dict[neg_class])
         while im3 == im:
-            im3 = np.random.choice(self.image_dict[self.rev_dict[class3]])
-        p1 = os.path.join(self.root, self.rev_dict[im_class], im)
-        p3 = os.path.join(self.root, self.rev_dict[class3], im3)
+            im3 = np.random.choice(self.image_dict[neg_class])
+        p1 = os.path.join(self.root, self.rev_dict[im_class_ind], im)
+        p3 = os.path.join(self.root, neg_class, im3)
         return [p1, p1, p3]
+    
     def __len__(self):
         return self.num_elements
 
@@ -137,18 +143,20 @@ class DRDataset(Dataset):
             paths = self._sample(idx)
         else:
             paths = self._augmented_sample(idx)
+
         images = []
+        # AMDIM pipeline
         if self.appl is None:
             for i in paths:
                 tmp = Image.open(i).convert('RGB')
                 tmp = self.transform(tmp)
                 images.append(tmp)
-        elif self.appl == 'Unique':
+        elif self.appl == 'Unique': # Unique pipeline
             images.append(self.transform_2(Image.open(paths[0]).convert('RGB')))
             images.append(self.transform(Image.open(paths[1]).convert('RGB')))
             images.append(self.transform_2(Image.open(paths[2]).convert('RGB')))
 
-        elif self.appl == 'simclr':
+        elif self.appl == 'simclr': # SimCLR pipeline
             images.append(self.transform(Image.open(paths[0]).convert('RGB')))
             images.append(self.transform(Image.open(paths[1]).convert('RGB')))
             images.append(self.transform(Image.open(paths[2]).convert('RGB')))
@@ -161,18 +169,15 @@ class DRDataset(Dataset):
             else:
                 return (images[0], images[1], idx%2)
 
-
+# Class for the rest of the methods for training 
 class TrainingDataset(Dataset):
-    def __init__(self, root, name, samples_per_class, generalise, load, need_val=0):
+    def __init__(self, root, name, samples_per_class, generalise, load, need_val=0, self_sup = False):
 
         # 1. Load the dataset + generalise it if needed
         self.classes = os.listdir(root)
         self.classes.sort()
-        # Keep only half the classes
+        # Keep only half the classes (arbitrarly)
         if generalise == 1:
-            # Implementation:
-            #self.classes = self.classes[:len(self.classes) // 2 + 1]
-            # Report:
             list_classes = ['janowczyk2_0','janowczyk2_1', 'lbpstroma_113349434', 'lbpstroma_113349448', 'mitos2014_0', 'mitos2014_1', 'mitos2014_2', 
                             'patterns_no_aug_0', 'patterns_no_aug_1', 'tupac_mitosis_0', 'tupac_mitosis_1', 'ulg_lbtd_lba_406558', 'ulg_lbtd_lba_4762', 
                             'ulg_lbtd_lba_4763', 'ulg_lbtd_lba_4764', 'ulg_lbtd_lba_4765', 'ulg_lbtd_lba_4766', 'ulg_lbtd_lba_4767', 'ulg_lbtd_lba_4768', 
@@ -183,7 +188,7 @@ class TrainingDataset(Dataset):
             self.classes = list_classes
             self.classes.sort()
                     
-        # Keep haf the images by sleectioning (arbitrarly) the classes to keep
+        # Keep haf the images by selectioning (arbitrarly) the classes to keep
         elif generalise == 2: 
             new_classes = []
             for i in range(10):
@@ -191,6 +196,7 @@ class TrainingDataset(Dataset):
             for i in range(26):
                 new_classes.append(self.classes[21 + i])
             self.classes = new_classes
+
         # Create new classes from the data through kmeans
         elif generalise == 3:
             # Create list of image paths 
@@ -229,6 +235,7 @@ class TrainingDataset(Dataset):
 
         # 4. Create the transformation to apply to the images (depends on model)
         if name == 'deit' or name == 'cvt' or name == 'conv':
+            self.transformer = True
             self.transform = transforms.Compose(
                     [
                         transforms.RandomVerticalFlip(.5),
@@ -243,18 +250,11 @@ class TrainingDataset(Dataset):
                                                                           size=224, do_center_crop=False,
                                                                           image_mean=[0.485, 0.456, 0.406],
                                                                           image_std=[0.229, 0.224, 0.225])
-                self.transformer = True
                                                                           
-            elif name == 'cvt':
+            elif name == 'cvt' or name == 'conv':
                 self.feature_extractor = ConvNextImageProcessor.from_pretrained("microsoft/cvt-21", size=224, do_center_crop=False,
                                                                           image_mean=[0.485, 0.456, 0.406],
                                                                           image_std=[0.229, 0.224, 0.225])
-                self.transformer = True
-            elif name == 'conv':
-                self.feature_extractor = ConvNextImageProcessor.from_pretrained("facebook/convnext-tiny-224", size=224, do_center_crop=False,
-                                                                          image_mean=[0.485, 0.456, 0.406],
-                                                                          image_std=[0.229, 0.224, 0.225])
-                self.transformer = True
         else:
             self.transform = transforms.Compose(
                     [
@@ -280,6 +280,7 @@ class TrainingDataset(Dataset):
         self.model_name = name
         self.is_init = True
         self.needs_val = need_val
+        self.self_sup = self_sup
 
         # If we need to create a validation set
         if need_val != 0:
@@ -297,16 +298,9 @@ class TrainingDataset(Dataset):
 
     # https://github.com/Confusezius/Deep-Metric-Learning-Baselines/blob/60772745e28bc90077831bb4c9f07a233e602797/datasets.py#L428
     def __getitem__(self, idx):
-        if self.model_name == 'byol' or self.model_name == 'simclr':
-            if self.needs_val == 1:
-                img = Image.open(self.train_data[idx][0]).convert('RGB')
-                return self.train_data[idx][1], self.transform(img)
-            elif self.needs_val == 2:
-                img = Image.open(self.val_data[idx][0]).convert('RGB')
-                return self.val_data[idx][1], self.transform(img)
-            else:
-                img = Image.open(self.image_dict[idx][0]).convert('RGB')
-                return self.image_dict[idx][1], self.transform(img), 
+        if self.model_name == 'byol' or self.self_sup:
+            img = Image.open(self.image_dict[idx][0]).convert('RGB')
+            return self.image_dict[idx][1], self.transform(img), 
         else:
             # no image drawn and thus no class visited yet
             if self.is_init:
@@ -345,9 +339,11 @@ class TrainingDataset(Dataset):
             
             return class_nbr, self.transform(img)
 
+# ----------------------------------- Indexing ----------------------------------- #
 class AddDataset(Dataset):
     def __init__(self, root, model_name, generalise=0):
         self.root = root
+        self.model_name = model_name
         self.list_img = []
         self.transform = transforms.Compose(
             [
@@ -359,8 +355,6 @@ class AddDataset(Dataset):
                 )
             ]
         )
-
-        
     
         if model_name == 'deit':
             self.feature_extractor = DeiTFeatureExtractor.from_pretrained('facebook/deit-base-distilled-patch16-224',
@@ -368,14 +362,8 @@ class AddDataset(Dataset):
                                                                       image_mean=[0.485, 0.456, 0.406],
                                                                       image_std=[0.229, 0.224, 0.225])
             self.transformer = True
-        elif model_name == 'cvt':
+        elif model_name == 'cvt' or model_name == 'conv':
                 self.feature_extractor = ConvNextImageProcessor.from_pretrained("microsoft/cvt-21", size=224, do_center_crop=False,
-                                                                          image_mean=[0.485, 0.456, 0.406],
-                                                                          image_std=[0.229, 0.224, 0.225])
-                self.transformer = True
-                                                                      
-        elif model_name == 'conv':
-                self.feature_extractor = ConvNextImageProcessor.from_pretrained("facebook/convnext-tiny-224", size=224, do_center_crop=False,
                                                                           image_mean=[0.485, 0.456, 0.406],
                                                                           image_std=[0.229, 0.224, 0.225])
                 self.transformer = True
@@ -395,7 +383,6 @@ class AddDataset(Dataset):
             for c in self.classes[:]:
                 if c in list_classes:
                     self.classes.remove(c)
-            #self.classes = self.classes[len(self.classes) // 2:]
 
         elif generalise == 2:
             list_classes = ['camelyon16_0', 'camelyon16_1', 'iciar18_micro_113351562', 'iciar18_micro_113351588', 'iciar18_micro_113351608',
@@ -419,96 +406,10 @@ class AddDataset(Dataset):
     def __getitem__(self, idx):
         img = Image.open(self.list_img[idx]).convert('RGB')
 
-        if not self.transformer:
+        if self.model_name == 'deit' or self.model_name == 'cvt' or self.model_name == 'conv':
+            return self.feature_extractor(images=img, return_tensors='pt')['pixel_values'], self.list_img[idx]
+        
+        else:
             return self.transform(img), self.list_img[idx]
 
-        return self.feature_extractor(images=img, return_tensors='pt')['pixel_values'], self.list_img[idx]
-
-class AddDatasetList(Dataset):
-    def __init__(self, id, name_list, model_name, server_name=''):
-        self.list_img = []
-        self.transform = transforms.Compose(
-            [
-                transforms.Resize((224, 224)),
-                transforms.ToTensor(),
-                transforms.Normalize(
-                    mean=[0.485, 0.456, 0.406],
-                    std=[0.229, 0.224, 0.225]
-                )
-            ]
-        )
-
-        
-
-        if model_name == 'deit':
-            self.feature_extractor = DeiTFeatureExtractor.from_pretrained('facebook/deit-base-distilled-patch16-224',
-                                                                      size=224, do_center_crop=False,
-                                                                      image_mean=[0.485, 0.456, 0.406],
-                                                                      image_std=[0.229, 0.224, 0.225])
-            self.transformer = True
-        elif model_name == 'cvt':
-            self.feature_extractor = ConvNextImageProcessor.from_pretrained("microsoft/cvt-21", size=224, do_center_crop=False,
-                                                                          image_mean=[0.485, 0.456, 0.406],
-                                                                          image_std=[0.229, 0.224, 0.225])
-            self.transformer = True
-        elif model_name == 'conv':
-                self.feature_extractor = ConvNextImageProcessor.from_pretrained("facebook/convnext-tiny-224", size=224, do_center_crop=False,
-                                                                          image_mean=[0.485, 0.456, 0.406],
-                                                                          image_std=[0.229, 0.224, 0.225])
-                self.transformer = True
-        else:
-            self.transformer = False
-
-        self.server_name = server_name
-        self.id = id
-
-        for n in name_list:
-            self.list_img.append(n[0])
-
-    def __len__(self):
-        return len(self.list_img)
-
-    def __getitem__(self, idx):
-        # Images names are enough alone to retrieve the image file
-        if self.server_name == '':
-            img = Image.open(os.path.join(self.list_img[idx], str(idx+self.id) + '.png')).convert('RGB')
-            if not self.transformer:
-                return self.transform(img), os.path.join(self.list_img[idx], str(idx+self.id)  + '.png')
-            return self.feature_extractor(images=img, return_tensors='pt')['pixel_values'], os.path.join(
-                self.list_img[idx], str(idx+self.id)  + '.png')
-        # Images names need to be appended to the server name to retrieve the files 
-        img = Image.open(os.path.join(self.list_img[idx], self.server_name + '_' + str(idx+self.id) + '.png')).convert('RGB')
-        if not self.transformer:
-            return self.transform(img), os.path.join(self.list_img[idx],
-                                                     self.server_name + '_' + str(idx+self.id)  + '.png')
-        return self.feature_extractor(images=img, return_tensors='pt')['pixel_values'], os.path.join(
-            self.list_img[idx], self.server_name + '_' + str(idx+self.id)  + '.png')
-
-class AddSlide(Dataset):
-    def __init__(self, patches, slide):
-        self.patches = patches
-        self.slide = slide
-        self.transform = transforms.Compose(
-            [
-                transforms.Resize((224, 224)),
-                transforms.ToTensor(),
-                transforms.Normalize(
-                    mean=[0.485, 0.456, 0.406],
-                    std=[0.229, 0.224, 0.225]
-                )
-            ]
-        )
-
-    def __len__(self):
-        if self.slide.level_count > 1:
-            return self.patches.shape[0] * 2
-        else:
-            return self.patches.shape[0]
-
-    def __getitem__(self, key):
-        if key < self.patches.shape[0]:
-            return self.transform(self.slide.read_region((self.patches[key, 1] * 224, self.patches[key, 0] * 224), 0,
-                                                         (224, 224)).convert('RGB'))
-        else:
-            return self.transform(self.slide.read_region((self.patches[key-self.patches.shape[0], 1] * 224, self.patches[key-self.patches.shape[0], 0] * 224), 1,
-                                                         (224, 224)).convert('RGB'))
+   

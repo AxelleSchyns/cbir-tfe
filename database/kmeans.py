@@ -9,7 +9,9 @@ from sklearn.cluster import MiniBatchKMeans
 from sklearn.metrics import confusion_matrix, silhouette_score
 import utils
 import time
+# This file contains the functions to train and load the kmeans model
 
+# gather the images of the dataset in one single shuffled list
 def make_list_images(classes, root):
     list_img = []
     for c in classes:
@@ -19,6 +21,7 @@ def make_list_images(classes, root):
                 list_img.append(img)
     random.shuffle(list_img)
     return list_img
+
 
 def load_kmeans(list_img):
     labels = []
@@ -31,6 +34,7 @@ def load_kmeans(list_img):
             labels.append(kmeans.predict(np.array([utils.load_image(im)]))[0])
     return kmeans, labels
 
+# train the kmeans model
 def train_kmeans(n_clusters, list_img):
     print("Start of kmeans training")
     t = time.time()
@@ -44,6 +48,7 @@ def train_kmeans(n_clusters, list_img):
 
     return kmeans
 
+# Find the optimal number of clusters using the elbow method
 def elbow_plot(list_img):
     print("Start of Elbow plot")
     ks = [1, 5, 10, 15, 20, 25, 30, 35, 40, 45, 50, 55, 60, 65, 67]
@@ -66,6 +71,7 @@ def elbow_plot(list_img):
 
     exit(0)
 
+# Retrieve the new labels of the images in list_img
 def get_labels(list_img, kmeans):
     labels = []
 
@@ -112,6 +118,7 @@ def get_labels(list_img, kmeans):
 
     return labels
 
+# Plot the histogram of the labels
 def histo(labels):
     labels_u, counts = np.unique(labels, return_counts = True)
     plt.bar(labels_u, counts, align = "center")
@@ -119,6 +126,7 @@ def histo(labels):
         plt.text(label_u, count, str(count), ha = 'center', va = 'bottom')
     plt.show()
 
+# Plot the confusion matrix
 def cm(list_img, labels):
 
     # Retrieval of old labels - conversion to int
@@ -279,7 +287,7 @@ def analyse_clusters(cm_obj):
 
 
 
-
+# Train or load the K-means model
 def execute_kmeans(load, list_img):
     n_clusters = 10
     classes = [i for i in range(0, n_clusters)]

@@ -3,11 +3,15 @@ import vgg, resnet
 import torch.nn as nn
 import torch
 import torch.nn.functional as F
+import os
+# This file contains 3 implementations of the autoencoder model
 
 #---------------------------------------------------------------------------------------------------------
 #                                          Implementation 1 
 #---------------------------------------------------------------------------------------------------------
 # Horizon2333, Github - https://github.com/Horizon2333/imagenet-autoencoder
+
+# function to load the weights of the model pretrained on ImageNet (exp 4)
 def load_pretrained(model):
     checkpoint = torch.load("/home/labarvr4090/Documents/Axelle/cytomine/cbir-tfe/weights_folder/imagenet-vgg16.pth")
     model_dict = model.state_dict()
@@ -16,8 +20,21 @@ def load_pretrained(model):
     del checkpoint
     return model
 
+# function to load the weights of the model pretrained previsouly 
+def load_dict(resume_path, model):
+    if os.path.isfile(resume_path):
+        checkpoint = torch.load(resume_path)
+        model_dict = model.state_dict()
+        model_dict.update(checkpoint['state_dict'])
+        model.load_state_dict(model_dict)
+        del checkpoint
+    else:
+        sys.exit("=> No checkpoint found at '{}'".format(resume_path))
+    return model
+
+# function to build the autoencoder model
 def BuildAutoEncoder(model_name):
-    exp = 4
+    exp = 4 # set the experiment number 
     if model_name in ["vgg11", "vgg16"]:
         configs = vgg.get_configs(model_name)
         model = vgg.VGGAutoEncoder(configs, exp)
@@ -36,6 +53,8 @@ def BuildAutoEncoder(model_name):
 #                                          Implementation 2
 #---------------------------------------------------------------------------------------------------------
 # Pytorch example - VAE - https://github.com/pytorch/examples/blob/main/vae/main.py
+
+# function to build the autoencoder model
 class VAE(nn.Module):
     def __init__(self):
         super(VAE, self).__init__()
@@ -137,7 +156,6 @@ class VAE(nn.Module):
         # 784 -> 400 -> 200 -> 200 -> 400 -> 784
     
 
-# Pytorch exampe VAE
 # Reconstruction + KL divergence losses summed over all elements and batch
 def loss_function(recon_x, x, mu, logvar):
     exp = "2a"
@@ -171,12 +189,13 @@ def loss_function(recon_x, x, mu, logvar):
 #----------------------------------------------------------------------------------------------------
 #                                    Implementation 3
 #----------------------------------------------------------------------------------------------------
-
 # From Geek For geek - https://www.geeksforgeeks.org/contractive-autoencoder-cae/?ref=rp
+
+# Building the model
 class AutoEncoder(nn.Module):
     def __init__(self):
         super(AutoEncoder, self).__init__()
-        exp = 5
+        exp = 5 # set the experiment number
         self.flatten_layer = nn.Flatten()
 
         if exp == 0 or exp == 1:
@@ -236,9 +255,10 @@ class AutoEncoder(nn.Module):
             h3 = torch.sigmoid(self.bottleneck(h2))
             h4 = torch.sigmoid(self.dense4(h3))
             h5 = torch.sigmoid(self.dense5(h4))
-            #x = nn.functional.relu(self.dense6(x))
             x = self.dense_final(h5)
-            """ws = None
+
+            # Compute the weight matrix for the loss function 
+            ws = None
             for i in range(int(x.shape[0]/192)):
                 W = torch.matmul(torch.diag_embed(h1[i:i+192, :] * (1 - h1[i:i+192, :])), self.dense1.weight)
                 W = torch.matmul(self.dense2.weight, W)
@@ -249,8 +269,8 @@ class AutoEncoder(nn.Module):
                 if ws is None:
                     ws = W
                 else:
-                    ws = torch.cat((ws, W), axis=0)"""
-            return x, x_reshaped, h3, self.bottleneck.weight #ws
+                    ws = torch.cat((ws, W), axis=0)
+            return x, x_reshaped, h3, ws
         else:
             #x_reshaped = inp #
             x_reshaped = self.flatten_layer(inp)
@@ -265,6 +285,7 @@ class AutoEncoder(nn.Module):
 
         return x, x_reshaped, x_hid, self.bottleneck.weight
 
+# Loss function (part 1)
 def loss_auto(x, x_bar, h, W, model):
     exp = 5
     if exp == 0:
@@ -283,6 +304,7 @@ def loss_auto(x, x_bar, h, W, model):
         total_loss = reconstruction_loss + contractive.mean()
     return total_loss
 
+# Loss function (part 2) 
 def grad_auto(model, inputs):
     exp = 5
     if exp == 0 or exp == 1 or exp == 2 or exp == 3:

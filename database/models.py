@@ -1,7 +1,6 @@
 import torchvision.models as models
 import torch
 import torch.nn as nn
-import torch.optim as optim
 from torchvision import transforms
 from transformers import DeiTForImageClassification
 import dataset
@@ -9,21 +8,16 @@ import numpy as np
 import time
 from loss import MarginLoss, ProxyNCA_prob, NormSoftmax, SimpleBCELoss, ContrastiveLoss, SoftTriple, InfoNCE
 from efficientnet_pytorch import EfficientNet as EffNet
-from transformers import CvtForImageClassification, ConvNextForImageClassification, AutoImageProcessor, ConvNextFeatureExtractor
+from transformers import CvtForImageClassification, ConvNextForImageClassification
 from torchvision import transforms
-from argparse import ArgumentParser, ArgumentTypeError
+from argparse import ArgumentParser
 import os
 import matplotlib.pyplot as plt
-from pytorch_metric_learning import losses
-from fastai.vision.all import *
 import autoencoders as ae
 from byol_pytorch import BYOL
-import builder
-#from pl_bolts.models.self_supervised import SimCLR
-#import pytorch_lightning as pl
 
+# From Kimia Lab implementation 
 class fully_connected(nn.Module):
-	"""docstring for BottleNeck"""
 	def __init__(self, model, num_ftrs, num_classes):
 		super(fully_connected, self).__init__()
 		self.model = model
@@ -191,7 +185,7 @@ class Model(nn.Module):
         if eval == True:
             if model in ['vgg16', 'vgg11', 'resnet18', 'resnet50']:
                 if exp != "3b":   
-                    builder.load_dict(name, self.model)
+                    ae.load_dict(name, self.model)
                     self.model = self.model.module
                 else:
                     self.load_state_dict(torch.load(name))
@@ -232,8 +226,8 @@ class Model(nn.Module):
         return self.forward_function(input)
     
     # Inspired by pytorch example - VAE
-    def train_ae(self, model, dir, epochs, generalise, sched, lr, decay, beta_lr, gamma, lr_proxies):
-        data = dataset.TrainingDataset( root = dir, name = model, samples_per_class= 2,  generalise = generalise, load = None)
+    def train_ae(self, model, dir, epochs, generalise, sched, lr, decay, gamma):
+        data = dataset.TrainingDataset( root = dir, name = model, samples_per_class= 2,  generalise = generalise, load = None, self_sup=True)
         print('Size of dataset', data.__len__())
 
         to_optim = [{'params':self.parameters(),'lr':lr,'weight_decay':decay}]
@@ -263,20 +257,14 @@ class Model(nn.Module):
 
                     if self.model_name == "auto":
                         loss, inputs_reshaped, reconstruction = ae.grad_auto(self.model, images_gpu.view(-1, 3, 224, 224)) 
-
-                        optimizer.zero_grad(set_to_none=True)
-                        loss.backward()
                     elif self.model_name == "vae":
                         recon_batch, mu, logvar = self.model(images_gpu)
                         loss = ae.loss_function(recon_batch, images_gpu.view(-1, 3, 224, 224), mu, logvar)
-                        optimizer.zero_grad(set_to_none=True)
-                        loss.backward()
                     else: 
                         out = self.model(images_gpu)
                         loss = nn.functional.mse_loss(images_gpu, out, reduction='mean')
-                        optimizer.zero_grad(set_to_none=True)
-                        loss.backward()
-
+                    optimizer.zero_grad(set_to_none=True)
+                    loss.backward()
                     optimizer.step()
 
                     loss_list.append(loss.item())
@@ -296,62 +284,61 @@ class Model(nn.Module):
                 if self.parallel:
                     self.model = nn.DataParallel(self.model)
             plt.plot(range(epochs),loss_means)
-            plt.savefig(str(self.name[len(self.name)-9:])+"_loss.png")
+            plt.savefig(self.model_name+"_loss.png")
         except KeyboardInterrupt:
             print("Interrupted")
 
-    def train_selfsup(self, model, dir, epochs, sched, loss, generalise, load, lr, decay, beta_lr, gamma, lr_proxies):
-        if model == 'byol':
-            data = dataset.TrainingDataset(dir, model, 2, generalise, load, need_val=0)
-            print('Size of dataset', data.__len__())
-            loader = torch.utils.data.DataLoader(data, batch_size=self.batch_size,
-                                             shuffle=True, num_workers=16,
-                                             pin_memory=True)
+    def train_selfsup(self, model, dir, epochs, sched, generalise, lr, decay, gamma):
+        data = dataset.TrainingDataset(dir, model, 2, generalise, need_val=0)
+        print('Size of dataset', data.__len__())
+        loader = torch.utils.data.DataLoader(data, batch_size=self.batch_size,
+                                            shuffle=True, num_workers=16,
+                                            pin_memory=True)
             
-        optimizer = torch.optim.Adam(self.parameters(), lr=lr)
+        to_optim = [{'params':self.parameters(),'lr':lr,'weight_decay':decay}]
+        optimizer = torch.optim.Adam(to_optim)
         if sched == 'exponential':
             scheduler = torch.optim.lr_scheduler.ExponentialLR(optimizer, gamma=gamma)
         elif sched == 'step':
             scheduler = torch.optim.lr_scheduler.MultiStepLR(optimizer, milestones=[epochs//2, epochs],
                                                             gamma=gamma)
-        if model == 'byol':
-            loss_list = []
-            loss_means = []
-            try:
-                for epoch in range(epochs):
-                    start_time = time.time()
-                    loss_list = []
-                    for i, (labels, images) in enumerate(loader):
-                        if i%1000 == 0:
-                            print(i)
-                        images_gpu = images.to(device=self.device)
+        loss_list = []
+        loss_means = []
+        try:
+            for epoch in range(epochs):
+                start_time = time.time()
+                loss_list = []
+                for i, (labels, images) in enumerate(loader):
+                    if i%1000 == 0:
+                        print(i)
+                    images_gpu = images.to(device=self.device)
 
-                        loss = self.model(images_gpu)
-                        optimizer.zero_grad(set_to_none=True)
-                        loss.backward()
-                        optimizer.step()
-                        self.model.update_moving_average() # update moving average of target encoder
+                    loss = self.model(images_gpu)
+                    optimizer.zero_grad(set_to_none=True)
+                    loss.backward()
+                    optimizer.step()
+                    self.model.update_moving_average() # update moving average of target encoder
 
-                        loss_list.append(loss.item())
+                    loss_list.append(loss.item())
 
-                    print("epoch {}, loss = {}, time {}".format(epoch, np.mean(loss_list),
-                                                                time.time() - start_time))
-                    print("\n----------------------------------------------------------------\n")
-                    loss_means.append(np.mean(loss_list))
-                    if sched != None:
-                        scheduler.step()
-                    try:
-                        self.model = self.model.module
-                    except AttributeError:
-                        self.model = self.model
-                    torch.save(self.state_dict(), self.name)
-                    if self.parallel:
-                        self.model = nn.DataParallel(self.model).to(self.device)
-                plt.plot(range(epochs),loss_means)
-                plt.savefig(str(self.name[len(self.name)-7:])+"_loss.png")
-        
-            except KeyboardInterrupt:
-                print("Interrupted")
+                print("epoch {}, loss = {}, time {}".format(epoch, np.mean(loss_list),
+                                                            time.time() - start_time))
+                print("\n----------------------------------------------------------------\n")
+                loss_means.append(np.mean(loss_list))
+                if sched != None:
+                    scheduler.step()
+                try:
+                    self.model = self.model.module
+                except AttributeError:
+                    self.model = self.model
+                torch.save(self.state_dict(), self.name)
+                if self.parallel:
+                    self.model = nn.DataParallel(self.model).to(self.device)
+            plt.plot(range(epochs),loss_means)
+            plt.savefig(self.model_name+"_loss.png")
+    
+        except KeyboardInterrupt:
+            print("Interrupted")
 
     def train_epochs(self, model, dir, epochs, sched, loss, generalise, load, lr, decay, beta_lr, gamma, lr_proxies):
         data = dataset.TrainingDataset(dir, model, 2, generalise, load)
@@ -447,8 +434,7 @@ class Model(nn.Module):
                 if self.parallel:
                     self.model = nn.DataParallel(self.model).to(self.device)
             plt.plot(range(epochs),loss_means)
-            #plt.show()
-            plt.savefig(str(self.name[len(self.name)-9:])+"_loss.png")
+            plt.savefig(self.model_name+"_loss.png")
         except KeyboardInterrupt:
             print("Interrupted")
         
@@ -552,7 +538,7 @@ class Model(nn.Module):
                 if self.parallel:
                     self.model = nn.DataParallel(self.model).to(self.device)
             plt.plot(range(num_epochs),loss_means)
-            plt.savefig(str(self.name[len(self.name)-9:])+"_loss.png")
+            plt.savefig(self.model_name+"_loss.png")
         except KeyboardInterrupt:
             print("Interrupted")
 
@@ -705,11 +691,11 @@ if __name__ == "__main__":
 
     siamese_losses = ['triplet', 'contrastive', 'BCE', 'cosine', 'infonce']
     if args.loss in siamese_losses:
-        m.train_dr(args.training_data, args.num_epochs, args.lr, loss_name = args.loss, augmented=args.augmented, contrastive = not args.non_contrastive, sched= args.scheduler, gamma= args.gamma)
+        m.train_dr(data = args.training_data, num_epochs = args.num_epochs, lr = args.lr, loss_name = args.loss, augmented=args.augmented, contrastive = not args.non_contrastive, sched= args.scheduler, gamma= args.gamma)
     elif args.model == 'vae' or args.model == 'auto' or args.model in ['vgg16', 'vgg11', 'resnet18', 'resnet50']:
-        m.train_ae(args.model, args.training_data, args.num_epochs, args.generalise, args.scheduler, args.lr, args.decay, args.beta_lr, args.gamma, args.lr_proxies)
-    elif args.model == 'byol' or args.model == 'simclr':
-        m.train_selfsup(args.model, args.training_data, args.num_epochs, args.scheduler, args.loss, args.generalise, args.load, args.lr, args.decay, args.beta_lr, args.gamma, args.lr_proxies)
+        m.train_ae(model = args.model, dir =  args.training_data, epochs = args.num_epochs, generalise = args.generalise, sched = args.scheduler, lr = args.lr, decay = args.decay, gamma = args.gamma)
+    elif args.model == 'byol':
+        m.train_selfsup(model = args.model, dir = args.training_data, epochs = args.num_epochs, sched = args.scheduler, generalise = args.generalise, lr = args.lr, decay = args.decay, gamma = args.gamma)
     else:
-        m.train_epochs(args.model, args.training_data, args.num_epochs, args.scheduler, args.loss, args.generalise, args.load,
-                       args.lr, args.decay, args.beta_lr, args.gamma, args.lr_proxies)
+        m.train_epochs(model = args.model, dir = args.training_data, epochs = args.num_epochs, sched = args.scheduler, loss = args.loss, generalise = args.generalise, load = args.load,
+                       lr = args.lr, decay = args.decay, beta_lr = args.beta_lr, gamma = args.gamma, lr_proxies = args.lr_proxies)

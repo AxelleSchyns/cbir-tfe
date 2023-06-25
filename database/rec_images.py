@@ -6,7 +6,7 @@ from matplotlib import pyplot as plt
 from PIL import Image
 import models
 from torchvision import transforms
-
+# file that allows to visualize the reconstructed images of the AE 
 
 
 if __name__ == "__main__":
@@ -68,7 +68,7 @@ if __name__ == "__main__":
     img = Image.open(args.path).convert('RGB')
     transform = transforms.Compose(
                 [
-                    transforms.RandomResizedCrop(224, scale=(.8,1)), # Create a patch (random method)
+                    transforms.RandomResizedCrop(224, scale=(.8,1)), 
                     transforms.ToTensor(),
                 ]
             )

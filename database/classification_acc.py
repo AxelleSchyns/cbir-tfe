@@ -1,5 +1,4 @@
 import os
-import sys
 from argparse import ArgumentParser
 from collections import defaultdict
 
@@ -19,6 +18,9 @@ from torch.utils.data import Dataset
 from torchvision import transforms
 from transformers import DeiTFeatureExtractor, ConvNextImageProcessor
 
+# This file contains functions to compute the accuracy of the classification task 
+
+# computes the accuracy on each class of the dataset separately
 def test_each_class(model, dataset, extractor, measure, name, excel_path):
     classes = sorted(os.listdir(dataset))
     res = np.zeros((len(classes), 12))

@@ -26,7 +26,7 @@ class Database:
 
         # A database was previously constructed
         if load == True:
-            self.index = faiss.read_index(filename + '_labeled')
+            self.index = faiss.read_index(filename )
             self.r = redis.Redis(host='localhost', port='6379', db=0)
         else:
             # No database to load, has to build it 
@@ -61,7 +61,7 @@ class Database:
     def add(self, x, names, labels=None, generalise=0):
         last_id = int(self.r.get('last_id').decode('utf-8'))
         # Add x.shape ids and images to the current list of ids of Faiss. 
-        self.index_labeled.add_with_ids(x, np.arange(last_id, last_id + x.shape[0])) 
+        self.index.add_with_ids(x, np.arange(last_id, last_id + x.shape[0])) 
 
         # Zip() Creates a list of tuples, with one element of names and one of x (=> allows to iterate on both list at the same time) 
         if generalise == 3:
@@ -178,7 +178,11 @@ class Database:
         t_search = time.time()
 
         # Récupère l'index des nrt_neigh images les plus proches de x
-        distance, labels = self.index.search(out.numpy(), nrt_neigh) 
+        print(self.index.ntotal)
+        out = out.numpy()
+        print(out.shape)
+        print(self.num_features)
+        distance, labels = self.index.search(out, nrt_neigh) 
         labels = [l for l in list(labels[0]) if l != -1]
         # retrieves the names of the images based on their index
         values = []
@@ -310,5 +314,5 @@ if __name__ == "__main__":
     database = Database(args.db_name, model, load=True)
 
     # Train the index
-    database.train_labeled(args.generalise)
+    database.train_index(args.generalise)
     database.save()

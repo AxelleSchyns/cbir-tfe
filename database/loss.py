@@ -199,7 +199,7 @@ class ProxyNCA_prob(torch.nn.Module):
         # in the paper T = 1/9, therefore, scale = sart(1/(1/9)) = sqrt(9) = 3
         #  we need to apply sqrt because the pairwise distance is calculated as norm^2
 
-        P = self.scale * F.normalize(P, p = 2, dim = -1) # Not so required? even harmful? TO CHECK 
+        P = self.scale * F.normalize(P, p = 2, dim = -1) 
         X = self.scale * F.normalize(X, p = 2, dim = -1)
 
         D = pairwise_distance(
@@ -293,7 +293,7 @@ class NormSoftmax(torch.nn.Module):
 
 
 # https://pchanda.github.io/Siamese_plots_torch/
-class SimpleBCELoss(torch.nn.Module): # Exist other implementations where the 2 embeddddings are concat and pass through a sigmoid
+class SimpleBCELoss(torch.nn.Module): 
     def __init__(self):
         super(SimpleBCELoss,self).__init__()
         self.bce_loss = torch.nn.BCELoss()

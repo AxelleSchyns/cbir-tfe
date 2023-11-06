@@ -294,9 +294,9 @@ class Model(nn.Module):
         loader = torch.utils.data.DataLoader(data, batch_size=self.batch_size,
                                             shuffle=True, num_workers=16,
                                             pin_memory=True)
-            
-        to_optim = [{'params':self.parameters(),'lr':lr,'weight_decay':decay}]
-        optimizer = torch.optim.Adam(to_optim)
+        print(self.parameters())
+        to_optim = [{'params':self.parameters(),'lr':3e-4}]
+        optimizer = torch.optim.Adam(to_optim) # A CHANGER !!
         if sched == 'exponential':
             scheduler = torch.optim.lr_scheduler.ExponentialLR(optimizer, gamma=gamma)
         elif sched == 'step':
@@ -314,7 +314,7 @@ class Model(nn.Module):
                     images_gpu = images.to(device=self.device)
 
                     loss = self.model(images_gpu)
-                    optimizer.zero_grad(set_to_none=True)
+                    optimizer.zero_grad()#set_to_none=True
                     loss.backward()
                     optimizer.step()
                     self.model.update_moving_average() # update moving average of target encoder

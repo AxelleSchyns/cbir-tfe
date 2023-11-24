@@ -107,12 +107,12 @@ if __name__ == "__main__":
                 std=[0.229, 0.224, 0.225]
             )])
     retriever = ImageRetriever(args.db_name, model)
-    if os.path.isfile(args.path):
+    if os.path.isfile(args.path): # one single image as query 
         # Retrieve the most similar images
         ret_values = retriever.retrieve(feat_extract(Image.open(args.path).convert('RGB')), args.extractor, args.nrt_neigh, args.generalise)
         dir = args.results_dir
 
-        if args.generalise == 3:
+        if args.generalise == 3: # Kmeans
             names = ret_values[0][0]
         else:
             names = ret_values[0]

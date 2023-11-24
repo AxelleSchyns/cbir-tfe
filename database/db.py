@@ -116,8 +116,7 @@ class Database:
             else:
                 t = time.time()
                 out = self.model(images)
-                t_im = time.time() - t
-                
+                t_im = time.time() - t   
             t = time.time()
             out = out.cpu()
             t_transfer = t_transfer + time.time() - t
@@ -178,10 +177,8 @@ class Database:
         t_search = time.time()
 
         # Récupère l'index des nrt_neigh images les plus proches de x
-        print(self.index.ntotal)
+        
         out = out.numpy()
-        print(out.shape)
-        print(self.num_features)
         distance, labels = self.index.search(out, nrt_neigh) 
         labels = [l for l in list(labels[0]) if l != -1]
         # retrieves the names of the images based on their index

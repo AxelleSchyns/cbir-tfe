@@ -502,7 +502,7 @@ def test(model, dataset, db_name, extractor, measure, generalise, project_name, 
             print(i)
         # Search for the 5 most similar images in the database
         t = time.time()
-        names, _, t_model_tmp, t_search_tmp, t_transfer_tmp = database.search(image, extractor, retrieve_class=label, generalise=generalise)
+        names, _, t_model_tmp, t_search_tmp, t_transfer_tmp = database.search(image, extractor, generalise=generalise)
         image = filename
         t_tot += time.time() - t
         t_model += t_model_tmp

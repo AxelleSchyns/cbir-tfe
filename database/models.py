@@ -16,6 +16,14 @@ import matplotlib.pyplot as plt
 import autoencoders as ae
 from byol_pytorch import BYOL
 
+from pytorch_lightning import LightningModule
+from torch import Tensor
+from torch.nn import Identity
+from lightly.models.modules import BYOLPredictionHead, BYOLProjectionHead
+import copy
+from lightly.utils.benchmarking import OnlineLinearClassifier
+from lightly.loss import NegativeCosineSimilarity
+
 # From Kimia Lab implementation 
 class fully_connected(nn.Module):
 	def __init__(self, model, num_ftrs, num_classes):
@@ -29,6 +37,27 @@ class fully_connected(nn.Module):
 		out_3 = self.fc_4(x)
 		return  out_3
 
+class BYOL(LightningModule):
+    def __init__(self, batch_size_per_device: int, num_classes: int) -> None:
+        super().__init__()
+        self.save_hyperparameters()
+        self.batch_size_per_device = batch_size_per_device
+
+        resnet = models.resnet50()
+        resnet.fc = Identity()  # Ignore classification head
+        self.backbone = resnet
+        self.projection_head = BYOLProjectionHead()
+        self.student_backbone = copy.deepcopy(self.backbone)
+        self.student_projection_head = BYOLProjectionHead()
+        self.student_prediction_head = BYOLPredictionHead()
+        self.criterion = NegativeCosineSimilarity()
+
+        self.online_classifier = OnlineLinearClassifier(num_classes=num_classes)
+
+    def forward(self, x: Tensor) -> Tensor:
+        x = self.backbone(x)
+        return self.projection_head(x)
+
 class Model(nn.Module):
     def __init__(self, model='densenet', eval=True, batch_size=32, num_features=128,
                  name='weights', use_dr=True, device='cuda:0', freeze=False, classification = False, parallel = True, scratch = False):
@@ -36,19 +65,20 @@ class Model(nn.Module):
         self.parallel = parallel
         self.num_features = num_features
         self.norm = nn.functional.normalize
-	
+        self.name = name
+        self.device = device
+        self.model_name = model
+        self.classification = classification
+
         if model == 'deit' or model == 'vision' or model == 'swin' or model == 'cvt' or model == 'conv':
             self.transformer = True
         else:
             self.transformer = False
 
-        self.name = name
         if model == "knet" and device=='cuda:1':
              os.environ["CUDA_VISIBLE_DEVICES"] = "1" # Data parallel module takes by default first gpu available -> so set only available to 1 and reindex it
              device = 'cuda:0'
-        self.device = device
-        self.model_name = model
-        self.classification = classification
+        
         #--------------------------------------------------------------------------------------------------------------
         #                              Settings of deep ranking
         #--------------------------------------------------------------------------------------------------------------
@@ -138,6 +168,9 @@ class Model(nn.Module):
                 hidden_layer = 'avgpool',
             )
             self.model = learner.to(device)
+        elif model == "byol2":
+            self.model = BYOL(64, 67).to(device)
+            
         else:
             print("model entered is not supported")
             exit(-1)
@@ -189,6 +222,9 @@ class Model(nn.Module):
                     self.model = self.model.module
                 else:
                     self.load_state_dict(torch.load(name))
+            elif model == 'byol2':
+                self.model.load_state_dict(torch.load(name)["state_dict"])
+                self.forward_function = self.model.forward
             else:
                 self.load_state_dict(torch.load(name))
             self.eval()

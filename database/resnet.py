@@ -19,7 +19,7 @@ class ResNetAutoEncoder(nn.Module):
     def __init__(self, configs, bottleneck, exp=0):
 
         super(ResNetAutoEncoder, self).__init__()
-        exp = 3
+        exp = 0
         self.exp = exp
         self.encoder = ResNetEncoder(configs=configs,       bottleneck=bottleneck)
         self.decoder = ResNetDecoder(configs=configs[::-1], bottleneck=bottleneck)

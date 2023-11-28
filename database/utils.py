@@ -19,7 +19,7 @@ def batch_image_paths(image_paths, batch_size):
 
 # For the AE model, retrieve the latent representation of an image
 def encode(model, img):
-    exp = 4
+    exp = 0
     if exp == 7:
         code = model.module.encode_7(img).cpu()
     else:
@@ -92,4 +92,30 @@ def get_new_name(class_name, path=None):
             cpt_c += 1
     
     return -1 
+
+def create_weights_folder(model_name):
+    try:
+            os.mkdir("weights_folder/"+model_name)
+    except FileExistsError:
+        pass
+    versions = []
+    for file in os.listdir("weights_folder/"+model_name):
+        id_ = file.find("_")
+        if id_ != 7:
+            continue
+        versions.append(int(file[8:]))
+    versions.sort()
+    
+    count = 0
+    for nb in versions:
+        if nb != count:
+            break
+        count += 1
+    weight_path = "weights_folder/"+model_name+"/version_"+str(count)
+    try:
+        os.mkdir(weight_path)
+    except FileExistsError:
+        print("Issue with the creation of the folder, risk of overwriting existing files.")
+    
+    return weight_path
     

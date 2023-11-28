@@ -160,14 +160,13 @@ class MarginLoss(torch.nn.Module):
 
             d_ap.append(pos_dist)
             d_an.append(neg_dist)
-        d_ap, d_an = torch.stack(d_ap), torch.stack(d_an)
+        d_ap, d_an = torch.stack(d_ap).to(device=self.device), torch.stack(d_an).to(device=self.device)
 
         #Group betas together by anchor class in sampled triplets (as each beta belongs to one class).
         if self.beta_constant:
             beta = self.beta.to(device = self.device)
         else:
             beta = torch.stack([self.beta[labels[triplet[0]]].to(device=self.device) for triplet in sampled_triplets]).type(torch.cuda.FloatTensor)
-        
         #Compute actual margin postive and margin negative loss
         pos_loss = torch.nn.functional.relu(d_ap-beta+self.margin)
         neg_loss = torch.nn.functional.relu(beta-d_an+self.margin)

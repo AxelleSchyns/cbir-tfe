@@ -35,7 +35,7 @@ def load_dict(resume_path, model):
 
 # function to build the autoencoder model
 def BuildAutoEncoder(model_name):
-    exp = 4 # set the experiment number 
+    exp = 0 # set the experiment number 
     if model_name in ["vgg11", "vgg16"]:
         configs = vgg.get_configs(model_name)
         model = vgg.VGGAutoEncoder(configs, exp)
@@ -43,7 +43,7 @@ def BuildAutoEncoder(model_name):
     elif model_name in ["resnet18", "resnet50"]:
         configs, bottleneck = resnet.get_configs(model_name)
         model = resnet.ResNetAutoEncoder(configs, bottleneck)
-    if exp != "3b":
+    if exp != "3b" :
         model = nn.DataParallel(model)
     if exp == 4: 
         model = load_pretrained(model)

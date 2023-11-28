@@ -7,65 +7,39 @@ import dataset
 import numpy as np
 import time
 from loss import MarginLoss, ProxyNCA_prob, NormSoftmax, SimpleBCELoss, ContrastiveLoss, SoftTriple, InfoNCE
-from efficientnet_pytorch import EfficientNet as EffNet
-from transformers import CvtForImageClassification, ConvNextForImageClassification
+from efficientnet_pytorch import EfficientNet as EffNet # TODO: test pytorch efficient net to have only one library
+from transformers import CvtForImageClassification, ConvNextForImageClassification, CvtConfig, CvtModel
 from torchvision import transforms
 from argparse import ArgumentParser
 import os
 import matplotlib.pyplot as plt
 import autoencoders as ae
-from byol_pytorch import BYOL
+from byol_pytorch import BYOL as BYOL_pytorch
+from arch import BYOL, fully_connected
+from utils import create_weights_folder
 
-from pytorch_lightning import LightningModule
-from torch import Tensor
-from torch.nn import Identity
-from lightly.models.modules import BYOLPredictionHead, BYOLProjectionHead
-import copy
-from lightly.utils.benchmarking import OnlineLinearClassifier
-from lightly.loss import NegativeCosineSimilarity
+# TODO: test unweighted archs
+#archs = { "resnet": models.resnet50(), "densenet": models.densenet121(), "effnet":EffNet().from_name('efficientnet-b0'), "knet": models.densenet121(), 
+#         "vision": models.vit_b_16(), "cvt": CvtModel(CvtConfig()), "deit": DeiTForImageClassification.base_model, 
+#         "vae": ae.VAE(), "auto":ae.AutoEncoder(), "resnet50": ae.BuildAutoEncoder("resnet50"), 
+#         "byol": models.resnet50(), "byol2": BYOL(64,67)}
+archs_weighted = {"resnet": models.resnet50(weights='ResNet50_Weights.DEFAULT'), "densenet": models.densenet121(weights='DenseNet121_Weights.DEFAULT'),
+                  "effnet":EffNet.from_pretrained('efficientnet-b0'), "knet": models.densenet121(weights='DenseNet121_Weights.DEFAULT'),
+                  "vision": models.vit_b_16(weights = 'ViT_B_16_Weights.DEFAULT'), "cvt":ConvNextForImageClassification.from_pretrained('facebook/convnext-tiny-224'),
+                  "deit": DeiTForImageClassification.from_pretrained('facebook/deit-base-distilled-patch16-224'), 
+                  "vae": ae.VAE(), "auto":ae.AutoEncoder(), "resnet50": ae.BuildAutoEncoder("resnet50"),
+                  "byol": models.resnet50(weights='ResNet50_Weights.DEFAULT'), "byol2": BYOL(64,67)}
 
-# From Kimia Lab implementation 
-class fully_connected(nn.Module):
-	def __init__(self, model, num_ftrs, num_classes):
-		super(fully_connected, self).__init__()
-		self.model = model
-		self.fc_4 = nn.Linear(num_ftrs,num_classes)
-
-	def forward(self, x):
-		x = self.model(x)
-		x = torch.flatten(x, 1)
-		out_3 = self.fc_4(x)
-		return  out_3
-
-class BYOL(LightningModule):
-    def __init__(self, batch_size_per_device: int, num_classes: int) -> None:
-        super().__init__()
-        self.save_hyperparameters()
-        self.batch_size_per_device = batch_size_per_device
-
-        resnet = models.resnet50()
-        resnet.fc = Identity()  # Ignore classification head
-        self.backbone = resnet
-        self.projection_head = BYOLProjectionHead()
-        self.student_backbone = copy.deepcopy(self.backbone)
-        self.student_projection_head = BYOLProjectionHead()
-        self.student_prediction_head = BYOLPredictionHead()
-        self.criterion = NegativeCosineSimilarity()
-
-        self.online_classifier = OnlineLinearClassifier(num_classes=num_classes)
-
-    def forward(self, x: Tensor) -> Tensor:
-        x = self.backbone(x)
-        return self.projection_head(x)
 
 class Model(nn.Module):
     def __init__(self, model='densenet', eval=True, batch_size=32, num_features=128,
-                 name='weights', use_dr=True, device='cuda:0', freeze=False, classification = False, parallel = True, scratch = False):
+                 weight='weights', use_dr=True, device='cuda:0', freeze=False, classification = False, parallel = True, scratch = False):
         super(Model, self).__init__()
         self.parallel = parallel
         self.num_features = num_features
         self.norm = nn.functional.normalize
-        self.name = name
+        self.weight = weight
+        self.model_name = model
         self.device = device
         self.model_name = model
         self.classification = classification
@@ -75,7 +49,7 @@ class Model(nn.Module):
         else:
             self.transformer = False
 
-        if model == "knet" and device=='cuda:1':
+        if model == "knet"  and device=='cuda:1':
              os.environ["CUDA_VISIBLE_DEVICES"] = "1" # Data parallel module takes by default first gpu available -> so set only available to 1 and reindex it
              device = 'cuda:0'
         
@@ -99,81 +73,46 @@ class Model(nn.Module):
             out_features = num_features
             self.use_dr = False
         
-        #----------------------------------------------------------------------------------------------------------------
-        #                              Download of pretrained models
-        #----------------------------------------------------------------------------------------------------------------
-        if model == 'densenet':
+        #--------------------------------------------------------------------------------------------------------------
+        #                              Settings of the model
+        #--------------------------------------------------------------------------------------------------------------
+        if model in ['resnet', 'densenet', 'effnet', 'knet', 'vision', 'cvt', 'deit']:
             self.forward_function = self.forward_model
-            self.model = models.densenet121(weights='DenseNet121_Weights.DEFAULT').to(device=device)
-        elif model == 'resnet':
-            self.forward_function = self.forward_model
-            if scratch:
-                self.model = models.resnet50(weights=None).to(device=device)
-            else:
-                self.model = models.resnet50(weights='ResNet50_Weights.DEFAULT').to(device=device)
-        elif model == "vgg":
-            self.forward_function = self.forward_model
-            self.model = models.vgg19(weights="VGG19_Weights.DEFAULT").to(device=device)
-        elif model == "inception":
-            self.forward_function = self.forward_model
-            self.model = models.inception_v3(weights="Inception_V3_Weights.DEFAULT").to(device=device)
-        elif model == "effnet":
-            self.forward_function = self.forward_model
-            self.model = EffNet.from_pretrained('efficientnet-b0').to(device=device)
-        elif model == "knet":
-            model_k = models.densenet121(weights='DenseNet121_Weights.DEFAULT')
-            for param in model_k.parameters():
+
+        if scratch is False:
+            self.model = archs_weighted[model]
+        else:
+            self.model = archs_weighted[model].to(device=device) # TODO: change when archs are tested
+
+        
+        if model == "knet":
+            for param in self.model.parameters():
                 param.requires_grad = False
-            model_k.features = nn.Sequential(model_k.features , nn.AdaptiveAvgPool2d(output_size= (1,1)))
-            model_k = model_k.to(device=device)
-            num_ftrs = model_k.classifier.in_features
-            model_final = fully_connected(model_k.features, num_ftrs, 30)
-            model_final = model_final.to(device=device)
-            model_final = nn.DataParallel(model_final)
-            model_final.load_state_dict(torch.load('database/KimiaNet_Weights/weights/KimiaNetPyTorchWeights.pth'))
-            self.model = model_final
-            self.forward_function = self.forward_model
-            model = 'knet'
-        elif model == "swin":
-            self.forward_function = self.forward_model
-            self.model = models.swin_v2_b(weights='Swin_V2_B_Weights.DEFAULT').to(device=device)
-        elif model == 'vision':
-            self.forward_function = self.forward_model
-            self.model = models.vit_b_16(weights = 'ViT_B_16_Weights.DEFAULT').to(device=device)
-        elif model == "conv":
-            self.model = ConvNextForImageClassification.from_pretrained('facebook/convnext-tiny-224').to(device=device)
-            self.forward_function = self.forward_model
-        elif model == "cvt":
-            self.model =  CvtForImageClassification.from_pretrained('microsoft/cvt-21').to(device=device)
-            self.forward_function = self.forward_model
-        elif model == 'deit':
-            self.forward_function = self.forward_model
-            self.model = DeiTForImageClassification.from_pretrained('facebook/deit-base-distilled-patch16-224').to(device=device)
+            self.model.features = nn.Sequential(self.model.features , nn.AdaptiveAvgPool2d(output_size= (1,1)))
+            self.model = self.model.to(device=device)
+            num_ftrs = self.model.classifier.in_features
+            self.model = fully_connected(self.model.features, num_ftrs, 30)
+            self.model = self.model.to(device=device)
+            self.model = nn.DataParallel(self.model)
+            self.model.load_state_dict(torch.load('database/KimiaNet_Weights/weights/KimiaNetPyTorchWeights.pth'))
         elif model == 'vae':
-            self.model = ae.VAE().to(device)
             self.encode = self.model.encode
             self.reparameterize = self.model.reparameterize
             self.decode = self.model.decode
-        elif model == "auto":
-            self.model = ae.AutoEncoder().to(device)
-        elif model in ['vgg16', 'vgg11', 'resnet18', 'resnet50']:
-            ae_model, exp = ae.BuildAutoEncoder(model)
-            self.model = ae_model.to(device)
-
+        elif model == 'resnet50':
+            exp = self.model[1]
+            if exp !=4 and exp != "3b":
+                self.model = self.model[0].module
+            else:
+                self.model = self.model[0]
         elif model == 'byol':
-            resnet = models.resnet50(pretrained=True)
-            learner = BYOL(
-                resnet, 
+            learner = BYOL_pytorch(
+                self.model, 
                 image_size = 224,
                 hidden_layer = 'avgpool',
             )
-            self.model = learner.to(device)
-        elif model == "byol2":
-            self.model = BYOL(64, 67).to(device)
-            
-        else:
-            print("model entered is not supported")
-            exit(-1)
+            self.model = learner
+        self.model = self.model.to(device=device)
         #----------------------------------------------------------------------------------------------------------------
         #                                  Freeze of model parameters
         #----------------------------------------------------------------------------------------------------------------
@@ -195,20 +134,13 @@ class Model(nn.Module):
             self.model.classifier = nn.Linear(self.model.classifier.in_features, out_features).to(device=device)
         elif model == 'resnet':
             self.model.fc = nn.Linear(self.model.fc.in_features, out_features).to(device=device)
-        elif model == 'inception':
-            self.model.fc = nn.Linear(self.model.fc.in_features, out_features).to(device=device)
-            self.model.aux_logits = False
-        elif model == "vgg":
-            self.model.classifier[6] = nn.Linear(self.model.classifier[6].in_features, out_features).to(device=device)
         elif model == "effnet":
             self.model._fc = nn.Linear(self.model._fc.in_features, out_features).to(device=device)
         elif model == "knet":
             self.model.module.fc_4 = nn.Linear(self.model.module.fc_4.in_features, out_features).to(device=device)
-        elif model == "swin":
-            self.model.head = nn.Linear(self.model.head.in_features, out_features).to(device=device)
         elif model == 'vision':
             self.model.heads.head = nn.Linear(self.model.heads.head.in_features, out_features).to(device=device)
-        elif model == 'deit' or model == 'conv' or model == 'cvt':
+        elif model == 'deit' or model == 'cvt':
             self.model.classifier = torch.nn.Linear(self.model.classifier.in_features, num_features).to(device=device)
             if freeze: 
                 for module in filter(lambda m: type(m) == nn.LayerNorm, self.model.modules()):
@@ -216,21 +148,21 @@ class Model(nn.Module):
                     module.train = lambda _: None
         
         if eval == True:
-            if model in ['vgg16', 'vgg11', 'resnet18', 'resnet50']:
+            if model ==  'resnet50':
                 if exp != "3b":   
-                    ae.load_dict(name, self.model)
+                    ae.load_dict(weight, self.model)
                     self.model = self.model.module
                 else:
-                    self.load_state_dict(torch.load(name))
+                    self.load_state_dict(torch.load(weight))
             elif model == 'byol2':
-                self.model.load_state_dict(torch.load(name)["state_dict"])
+                self.model.load_state_dict(torch.load(weight)["state_dict"])
                 self.forward_function = self.model.forward
             else:
-                self.load_state_dict(torch.load(name))
+                self.load_state_dict(torch.load(weight))
             self.eval()
             self.eval = True
         else:
-            if parallel and model != 'simclr':
+            if parallel:
                 self.model = nn.DataParallel(self.model)
             self.train()
             self.eval = False
@@ -238,7 +170,7 @@ class Model(nn.Module):
 
     def forward_model(self, input):
         tensor1 = self.model(input)
-        if self.model_name == 'deit' or self.model_name == 'conv' or self.model_name == 'cvt':
+        if self.model_name == 'deit' or self.model_name == 'cvt':
             tensor1 = tensor1.logits
         tensor1 = self.norm(tensor1)
 
@@ -261,124 +193,8 @@ class Model(nn.Module):
     def forward(self, input):
         return self.forward_function(input)
     
-    # Inspired by pytorch example - VAE
-    def train_ae(self, model, dir, epochs, generalise, sched, lr, decay, gamma):
-        data = dataset.TrainingDataset( root = dir, name = model, samples_per_class= 2,  generalise = generalise, load = None, self_sup=True)
-        print('Size of dataset', data.__len__())
+    def get_optim(self, data, loss, lr, decay, beta_lr, lr_proxies):
 
-        to_optim = [{'params':self.parameters(),'lr':lr,'weight_decay':decay}]
-        optimizer = torch.optim.Adam(to_optim)
-
-        if sched == 'exponential':
-            scheduler = torch.optim.lr_scheduler.ExponentialLR(optimizer, gamma=gamma)
-        elif sched == 'step':
-            scheduler = torch.optim.lr_scheduler.MultiStepLR(optimizer, milestones=[epochs//2, epochs],
-                                                            gamma=gamma)
-
-        loader = torch.utils.data.DataLoader(data, batch_size=self.batch_size,
-                                             shuffle=True, num_workers=16,
-                                             pin_memory=True)
-        loss_list = []
-        loss_means = []
-        try:
-            for epoch in range(epochs):
-                start_time = time.time()
-                loss_list = []
-                for i, (labels, images) in enumerate(loader):
-                    if i%1000 == 0:
-                        print(i)
-
-                    images_gpu = images.to(device=self.device)
-                    labels = labels.to(device=self.device)
-
-                    if self.model_name == "auto":
-                        loss, inputs_reshaped, reconstruction = ae.grad_auto(self.model, images_gpu.view(-1, 3, 224, 224)) 
-                    elif self.model_name == "vae":
-                        recon_batch, mu, logvar = self.model(images_gpu)
-                        loss = ae.loss_function(recon_batch, images_gpu.view(-1, 3, 224, 224), mu, logvar)
-                    else: 
-                        out = self.model(images_gpu)
-                        loss = nn.functional.mse_loss(images_gpu, out, reduction='mean')
-                    optimizer.zero_grad(set_to_none=True)
-                    loss.backward()
-                    optimizer.step()
-
-                    loss_list.append(loss.item())
-
-                print("epoch {}, loss = {}, time {}".format(epoch, np.mean(loss_list),
-                                                            time.time() - start_time))
-                
-                print("\n----------------------------------------------------------------\n")
-                loss_means.append(np.mean(loss_list))
-                if sched != None:
-                    scheduler.step()
-                try:
-                    self.model = self.model.module
-                except AttributeError:
-                    self.model = self.model
-                torch.save(self.state_dict(), self.name)
-                if self.parallel:
-                    self.model = nn.DataParallel(self.model)
-            plt.plot(range(epochs),loss_means)
-            plt.savefig(self.model_name+"_loss.png")
-        except KeyboardInterrupt:
-            print("Interrupted")
-
-    def train_selfsup(self, model, dir, epochs, sched, generalise, lr, decay, gamma):
-        data = dataset.TrainingDataset(dir, model, 2, generalise, need_val=0)
-        print('Size of dataset', data.__len__())
-        loader = torch.utils.data.DataLoader(data, batch_size=self.batch_size,
-                                            shuffle=True, num_workers=16,
-                                            pin_memory=True)
-        print(self.parameters())
-        to_optim = [{'params':self.parameters(),'lr':3e-4}]
-        optimizer = torch.optim.Adam(to_optim) # A CHANGER !!
-        if sched == 'exponential':
-            scheduler = torch.optim.lr_scheduler.ExponentialLR(optimizer, gamma=gamma)
-        elif sched == 'step':
-            scheduler = torch.optim.lr_scheduler.MultiStepLR(optimizer, milestones=[epochs//2, epochs],
-                                                            gamma=gamma)
-        loss_list = []
-        loss_means = []
-        try:
-            for epoch in range(epochs):
-                start_time = time.time()
-                loss_list = []
-                for i, (labels, images) in enumerate(loader):
-                    if i%1000 == 0:
-                        print(i)
-                    images_gpu = images.to(device=self.device)
-
-                    loss = self.model(images_gpu)
-                    optimizer.zero_grad()#set_to_none=True
-                    loss.backward()
-                    optimizer.step()
-                    self.model.update_moving_average() # update moving average of target encoder
-
-                    loss_list.append(loss.item())
-
-                print("epoch {}, loss = {}, time {}".format(epoch, np.mean(loss_list),
-                                                            time.time() - start_time))
-                print("\n----------------------------------------------------------------\n")
-                loss_means.append(np.mean(loss_list))
-                if sched != None:
-                    scheduler.step()
-                try:
-                    self.model = self.model.module
-                except AttributeError:
-                    self.model = self.model
-                torch.save(self.state_dict(), self.name)
-                if self.parallel:
-                    self.model = nn.DataParallel(self.model).to(self.device)
-            plt.plot(range(epochs),loss_means)
-            plt.savefig(self.model_name+"_loss.png")
-    
-        except KeyboardInterrupt:
-            print("Interrupted")
-
-    def train_epochs(self, model, dir, epochs, sched, loss, generalise, load, lr, decay, beta_lr, gamma, lr_proxies):
-        data = dataset.TrainingDataset(dir, model, 2, generalise, load)
-        print('Size of dataset', data.__len__())
         if self.classification:
             loss_function = nn.CrossEntropyLoss() 
             to_optim = [{'params':self.parameters(),'lr':lr,'weight_decay':decay}]
@@ -413,25 +229,36 @@ class Model(nn.Module):
             # Official - paper implementation
             loss_function = SoftTriple(self.device)
             to_optim = [{"params": self.parameters(), "lr": 0.0001},
-                                  {"params": loss_function.parameters(), "lr": 0.01}]
+                                  {"params": loss_function.parameters(), "lr": 0.01}] 
             optimizer = torch.optim.Adam(to_optim, eps=0.01, weight_decay=0.0001)
         else:
-            print('Unknown loss function')
-            return
+            to_optim = [{'params':self.parameters(),'lr':lr,'weight_decay':decay}] # For byol: lr = 3e-4
+            optimizer = torch.optim.Adam(to_optim)
+            loss_function = None
+        return optimizer, loss_function
 
+    def train_model(self, loss, epochs, training_dir, lr, decay, beta_lr, lr_proxies, sched, gamma, informative_samp = True, generalise = 0, load_kmeans = None):
+        data = dataset.TrainingDataset(root = training_dir, model_name = self.model_name, samples_per_class= 2, generalise = generalise, load_kmeans = load_kmeans, informative_samp = informative_samp)
+        print('Size of dataset', data.__len__())
+
+        loader = torch.utils.data.DataLoader(data, batch_size=self.batch_size,
+                                             shuffle=True, num_workers=16,
+                                             pin_memory=True)
+        
+        optimizer, loss_function = self.get_optim(data, loss, lr, decay, beta_lr, lr_proxies)
 
         if sched == 'exponential':
             scheduler = torch.optim.lr_scheduler.ExponentialLR(optimizer, gamma=gamma)
         elif sched == 'step':
             scheduler = torch.optim.lr_scheduler.MultiStepLR(optimizer, milestones=[epochs//2, epochs],
                                                             gamma=gamma)
+        
+        loss_stds = []
+        loss_mean = []
 
-        loader = torch.utils.data.DataLoader(data, batch_size=self.batch_size,
-                                             shuffle=True, num_workers=16,
-                                             pin_memory=True)
+        # Creation of the folder to save the weight
+        weight_path = create_weights_folder(self.model_name)
 
-        loss_list = []
-        loss_means = []
         try:
             for epoch in range(epochs):
                 start_time = time.time()
@@ -439,43 +266,76 @@ class Model(nn.Module):
                 for i, (labels, images) in enumerate(loader):
                     if i%1000 == 0:
                         print(i)
-                        
-                    if model == 'inception': # Inception needs images of size at least 299 by 299
-                        images = transforms.Resize((299,299))(images)
-                    images_gpu = images.to(device=self.device)
-                    labels = labels.to(device=self.device)
+                    
+                    images_gpu = images.to(self.device)
+                    labels_gpu = labels.to(self.device)
 
-                    if not self.transformer:
-                        out = self.forward(images_gpu)
+                    # Autoencoders training
+                    if self.model_name == "auto":
+                        loss, _, _ = ae.grad_auto(self.model, images_gpu.view(-1, 3, 224, 224)) 
+                    elif self.model_name == "vae":
+                        recon_batch, mu, logvar = self.model(images_gpu)
+                        loss = ae.loss_function(recon_batch, images_gpu.view(-1, 3, 224, 224), mu, logvar)
+                    elif self.model_name == "resnet50":
+                        out = self.model(images_gpu)
+                        loss = nn.functional.mse_loss(images_gpu, out, reduction='mean') 
+                    
+                    # Byol training
+                    elif self.model_name == "byol":
+                        loss = self.model(images_gpu)
+                    
+                    # Supervised training
                     else:
-                        out = self.forward(images_gpu.view(-1, 3, 224, 224))
-                    loss = loss_function(out, labels)
+                        if self.transformer:
+                            out = self.forward(images_gpu.view(-1, 3, 224, 224))
+                        else:
+                            out = self.forward(images_gpu)
+                        if loss_function is None:
+                            print("This model requires a specific loss. Please specifiy one. ")
+                            exit(-1)
+                        loss = loss_function(out, labels_gpu)
+                    
+                    # Update
                     optimizer.zero_grad(set_to_none=True)
                     loss.backward()
                     optimizer.step()
 
-                    loss_list.append(loss.item())
+                    if self.model_name == "byol":
+                        self.model.update_moving_average()
 
+                    loss_list.append(loss.item())
+                
                 print("epoch {}, loss = {}, time {}".format(epoch, np.mean(loss_list),
                                                             time.time() - start_time))
+                
                 print("\n----------------------------------------------------------------\n")
-                loss_means.append(np.mean(loss_list))
+                loss_mean.append(np.mean(loss_list))
+                loss_stds.append(np.std(loss_list))
                 if sched != None:
                     scheduler.step()
+
+                # Remove data parallel to save model
                 try:
                     self.model = self.model.module
                 except AttributeError:
                     self.model = self.model
-                torch.save(self.state_dict(), self.name)
-                if self.parallel:
-                    self.model = nn.DataParallel(self.model).to(self.device)
-            plt.plot(range(epochs),loss_means)
-            plt.savefig(self.model_name+"_loss.png")
+
+                torch.save(self.state_dict(), weight_path + "/epoch_"+str(epoch))
+                if self.parallel or self.model_name == "knet": # Knet is by default parallel 
+                    self.model = nn.DataParallel(self.model)
+
+            plt.errorbar(range(epochs), loss_mean, yerr=loss_stds, fmt='o--k',
+                         ecolor='lightblue', elinewidth=3)
+            plt.savefig(weight_path+"/training_loss.png")
+                    
+        
         except KeyboardInterrupt:
             print("Interrupted")
         
 
     def train_dr(self, data, num_epochs, lr, loss_name, augmented, contrastive, sched, gamma):
+        
+        # Loading of the data
         if loss_name == 'triplet' or (loss_name == 'infonce' and contrastive):
             pair = False
         else:
@@ -489,6 +349,8 @@ class Model(nn.Module):
         loader = torch.utils.data.DataLoader(data, batch_size=self.batch_size,
                                              shuffle=True, num_workers=12,
                                              pin_memory=True)
+        
+        # Setting of the loss
         if loss_name == 'triplet':
             loss_function = torch.nn.TripletMarginLoss()
         elif loss_name == 'BCE':
@@ -502,70 +364,61 @@ class Model(nn.Module):
         else:
             print('Unknown loss function')
             return
+        
+        # setting of the optimizer & scheduler
         optimizer = torch.optim.Adam(self.parameters(), lr=lr)
         if sched == 'exponential':
             scheduler = torch.optim.lr_scheduler.ExponentialLR(optimizer, gamma=gamma)
         elif sched == 'step':
             scheduler = torch.optim.lr_scheduler.MultiStepLR(optimizer, milestones=[num_epochs//2, num_epochs],
                                                             gamma=gamma)
-        loss_list = []
+            
+        # training loo
+        loss_stds = []
         loss_means = []
         try:
             for epoch in range(num_epochs):
                 start_time = time.time()
-                if not pair:
-                    for i, (image0, image1, image2) in enumerate(loader):
-                        if i%1000 == 0:
-                            print("at batch:"+str(i)+" on "+str(int(data.__len__()/self.batch_size)))
-                        image0 = image0.to(device=self.device)
-                        image1 = image1.to(device=self.device)
+                loss_list = []
+                for i, (image0, image1, image2) in enumerate(loader):
+                    if i%1000 == 0:
+                        print("at batch:"+str(i)+" on "+str(int(data.__len__()/self.batch_size)))
+
+                    image0 = image0.to(device=self.device)
+                    image1 = image1.to(device=self.device)
+
+                    out0 = self.forward(image0).cpu()
+                    out1 = self.forward(image1).cpu()
+
+                    if not pair:
                         image2 = image2.to(device=self.device)
-
-                        out0 = self.forward(image0).cpu()
-                        out1 = self.forward(image1).cpu()
                         out2 = self.forward(image2).cpu()
+                    else:
+                        out2 = image2 
+                        if loss_name == 'cosine':
+                            out2[out2 == 1] = -1
+                            out2[out2 == 0] = 1
 
-                        loss = loss_function(out0, out1, out2)
+                    loss = loss_function(out0, out1, out2)
 
-                        optimizer.zero_grad(set_to_none=True)
-                        loss.backward()
-                        optimizer.step()
+                    optimizer.zero_grad(set_to_none=True)
+                    loss.backward()
+                    optimizer.step()
 
-                        loss_list.append(loss.item())
-                else:
-                    for i, (image0, image1, label) in enumerate(loader):
-                        if i%100 == 0:
-                            print("at batch "+str(i)+" on "+str(int(data.__len__()/ self.batch_size)))
-                        image0 = image0.to(device=self.device)
-                        image1 = image1.to(device=self.device)
-
-                        out0 = self.forward(image0).cpu()
-                        out1 = self.forward(image1).cpu()
-
-                        if loss_name == 'cosine': # Cosine uses -1 for negative labels and 1 for positive
-                            label[label == 1] = -1
-                            label[label == 0] = 1
-
-                        loss = loss_function(out0, out1, label)
-
-                        optimizer.zero_grad(set_to_none=True)
-                        loss.backward()
-                        optimizer.step()
-
-                        loss_list.append(loss.item())
-
-                print("epoch {}, batch {}, loss = {}".format(epoch, i,
-                                                             np.mean(loss_list)))
+                    loss_list.append(loss.item())
+                    
+                print("epoch {}, batch {}, loss = {}, time = {}".format(epoch, i,
+                                                             np.mean(loss_list), time.time() - start_time))
                 loss_means.append(np.mean(loss_list))
+                loss_stds.append(np.std(loss_list)) 
 
                 if sched != None:
                     scheduler.step()
-                if (epoch + 1) % 4:
+                elif (epoch + 1) % 4:
                     lr /= 2
                     for param in optimizer.param_groups:
                         param['lr'] = lr
-                loss_list.clear()
-                print("time for epoch {}".format(time.time()- start_time))
+
                 try:
                     self.model = self.model.module
                 except AttributeError:
@@ -573,7 +426,9 @@ class Model(nn.Module):
                 torch.save(self.state_dict(), self.name+str(epoch))
                 if self.parallel:
                     self.model = nn.DataParallel(self.model).to(self.device)
-            plt.plot(range(num_epochs),loss_means)
+
+            plt.errorbar(range(num_epochs), loss_means, yerr=loss_stds, fmt='o--k',
+                         ecolor='lightblue', elinewidth=3)
             plt.savefig(self.model_name+"_loss.png")
         except KeyboardInterrupt:
             print("Interrupted")
@@ -617,12 +472,12 @@ if __name__ == "__main__":
     parser.add_argument(
         '--num_epochs',
         type=int,
-        default=5
+        default=10
     )
 
     parser.add_argument(
         '--scheduler',
-        default=None,
+        default='exponential',
         help='<exponential, step>'
     )
 
@@ -634,8 +489,8 @@ if __name__ == "__main__":
 
     parser.add_argument(
         '--loss',
-        default='margin',
-        help='<margin, proxy_nca_pp, softmax, triplet, contrastive, BCE, cosine>'
+        default=None,
+        help='<margin, proxy_nca_pp, softmax, softtriple, triplet, contrastive, BCE, cosine>'
     )
 
     parser.add_argument(
@@ -711,6 +566,14 @@ if __name__ == "__main__":
         action = 'store_true'
     )
 
+    parser.add_argument(
+        '--i_sampling',
+        default = None,
+        help='whether or not ot use informative (label-based) sampling',
+        action='store_true'
+    )
+
+
 
     args = parser.parse_args()
 
@@ -721,17 +584,20 @@ if __name__ == "__main__":
     if args.generalise != 3 and args.load is True:
         print("Load cannot be used if the 3rd mode is not activated for generalize")
         exit(-1)
+    if args.i_sampling is None:
+        if args.model in ['auto', 'vae', 'resnet50', 'byol', 'byol2']:
+            args.i_sampling = False
+        else:
+            args.i_sampling = True
+
     m = Model(model=args.model, eval=False, batch_size=args.batch_size,
-              num_features=args.num_features, name=args.weights,
+              num_features=args.num_features, weight=args.weights,
               use_dr=args.dr_model, device=device, freeze=args.freeze, classification = args.classification, parallel=args.parallel, scratch=args.scratch)
 
     siamese_losses = ['triplet', 'contrastive', 'BCE', 'cosine', 'infonce']
     if args.loss in siamese_losses:
         m.train_dr(data = args.training_data, num_epochs = args.num_epochs, lr = args.lr, loss_name = args.loss, augmented=args.augmented, contrastive = not args.non_contrastive, sched= args.scheduler, gamma= args.gamma)
-    elif args.model == 'vae' or args.model == 'auto' or args.model in ['vgg16', 'vgg11', 'resnet18', 'resnet50']:
-        m.train_ae(model = args.model, dir =  args.training_data, epochs = args.num_epochs, generalise = args.generalise, sched = args.scheduler, lr = args.lr, decay = args.decay, gamma = args.gamma)
-    elif args.model == 'byol':
-        m.train_selfsup(model = args.model, dir = args.training_data, epochs = args.num_epochs, sched = args.scheduler, generalise = args.generalise, lr = args.lr, decay = args.decay, gamma = args.gamma)
-    else:
-        m.train_epochs(model = args.model, dir = args.training_data, epochs = args.num_epochs, sched = args.scheduler, loss = args.loss, generalise = args.generalise, load = args.load,
-                       lr = args.lr, decay = args.decay, beta_lr = args.beta_lr, gamma = args.gamma, lr_proxies = args.lr_proxies)
+    else: 
+        m.train_model(loss = args.loss, epochs = args.num_epochs, training_dir=args.training_data, sched = args.scheduler, lr = args.lr, decay = args.decay, gamma = args.gamma, beta_lr = args.beta_lr, lr_proxies = args.lr_proxies, informative_samp = args.i_sampling, generalise = args.generalise, load_kmeans = args.load)
+    
+    

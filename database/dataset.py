@@ -171,7 +171,7 @@ class DRDataset(Dataset):
 
 # Class for the rest of the methods for training 
 class TrainingDataset(Dataset):
-    def __init__(self, root, name, samples_per_class, generalise, load, need_val=0, self_sup = False):
+    def __init__(self, root, model_name, samples_per_class, generalise, load_kmeans, need_val=0, informative_samp = True):
 
         # 1. Load the dataset + generalise it if needed
         self.classes = os.listdir(root)
@@ -202,7 +202,7 @@ class TrainingDataset(Dataset):
             # Create list of image paths 
             list_img = kmeans.make_list_images(self.classes, root)
             # Execute kmeans
-            self.kmeans, self.labels, self.classes = kmeans.execute_kmeans(load, list_img)
+            self.kmeans, self.labels, self.classes = kmeans.execute_kmeans(load_kmeans, list_img)
         
 
         # 2. Create a dictionary to convert class name to number and vice versa
@@ -234,7 +234,7 @@ class TrainingDataset(Dataset):
         
 
         # 4. Create the transformation to apply to the images (depends on model)
-        if name == 'deit' or name == 'cvt' or name == 'conv':
+        if model_name == 'deit' or model_name == 'cvt' or model_name == 'conv':
             self.transformer = True
             self.transform = transforms.Compose(
                     [
@@ -245,13 +245,13 @@ class TrainingDataset(Dataset):
                         transforms.ToTensor()
                     ]
                 )
-            if name == 'deit':
+            if model_name == 'deit':
                 self.feature_extractor = DeiTFeatureExtractor.from_pretrained('facebook/deit-base-distilled-patch16-224',
                                                                           size=224, do_center_crop=False,
                                                                           image_mean=[0.485, 0.456, 0.406],
                                                                           image_std=[0.229, 0.224, 0.225])
                                                                           
-            elif name == 'cvt' or name == 'conv':
+            elif model_name == 'cvt' or model_name == 'conv':
                 self.feature_extractor = ConvNextImageProcessor.from_pretrained("microsoft/cvt-21", size=224, do_center_crop=False,
                                                                           image_mean=[0.485, 0.456, 0.406],
                                                                           image_std=[0.229, 0.224, 0.225])
@@ -277,10 +277,10 @@ class TrainingDataset(Dataset):
         self.current_class = np.random.choice(self.classes)
         self.classes_visited = [self.current_class, self.current_class] 
         self.n_samples_drawn = 0
-        self.model_name = name
+        self.model_name = model_name
         self.is_init = True
         self.needs_val = need_val
-        self.self_sup = self_sup
+        self.informative_samp = informative_samp
 
         # If we need to create a validation set
         if need_val != 0:
@@ -298,7 +298,7 @@ class TrainingDataset(Dataset):
 
     # https://github.com/Confusezius/Deep-Metric-Learning-Baselines/blob/60772745e28bc90077831bb4c9f07a233e602797/datasets.py#L428
     def __getitem__(self, idx):
-        if self.model_name == 'byol' or self.self_sup:
+        if not self.informative_samp:
             img = Image.open(self.image_dict[idx][0]).convert('RGB')
             return self.image_dict[idx][1], self.transform(img), 
         else:

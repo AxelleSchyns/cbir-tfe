@@ -1,5 +1,6 @@
 # ignore folders
 weights_folder/
+weights_folder_tfe/
 results/
 
 # ignore database files

@@ -237,7 +237,7 @@ class Model(nn.Module):
             loss_function = None
         return optimizer, loss_function
 
-    def train_model(self, loss, epochs, training_dir, lr, decay, beta_lr, lr_proxies, sched, gamma, informative_samp = True, generalise = 0, load_kmeans = None):
+    def train_model(self, loss, epochs, training_dir, lr, decay, beta_lr, lr_proxies, sched, gamma, informative_samp = True, generalise = 0, load_kmeans = None, starting_weights = None):
         data = dataset.TrainingDataset(root = training_dir, model_name = self.model_name, samples_per_class= 2, generalise = generalise, load_kmeans = load_kmeans, informative_samp = informative_samp)
         print('Size of dataset', data.__len__())
 
@@ -246,21 +246,35 @@ class Model(nn.Module):
                                              pin_memory=True)
         
         optimizer, loss_function = self.get_optim(data, loss, lr, decay, beta_lr, lr_proxies)
+        starting_epoch = 0
 
         if sched == 'exponential':
             scheduler = torch.optim.lr_scheduler.ExponentialLR(optimizer, gamma=gamma)
         elif sched == 'step':
             scheduler = torch.optim.lr_scheduler.MultiStepLR(optimizer, milestones=[epochs//2, epochs],
                                                             gamma=gamma)
+                
+        if starting_weights is not None:
+            checkpoint = torch.load(starting_weights)
+            if self.parallel:
+                self.model.module.load_state_dict(checkpoint['model_state_dict'])
+            else:
+                self.model.load_state_dict(checkpoint['model_state_dict'])
+            optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
+            starting_epoch = checkpoint['epoch'] + 1
+            loss = checkpoint['loss']
+            loss_function = checkpoint['loss_function']
+            scheduler.load_state_dict(checkpoint['scheduler_state_dict'])
+
         
         loss_stds = []
         loss_mean = []
 
         # Creation of the folder to save the weight
-        weight_path = create_weights_folder(self.model_name)
+        weight_path = create_weights_folder(self.model_name, starting_weights)
 
         try:
-            for epoch in range(epochs):
+            for epoch in range(starting_epoch, epochs):
                 start_time = time.time()
                 loss_list = []
                 for i, (labels, images) in enumerate(loader):
@@ -320,7 +334,15 @@ class Model(nn.Module):
                 except AttributeError:
                     self.model = self.model
 
-                torch.save(self.state_dict(), weight_path + "/epoch_"+str(epoch))
+                torch.save({
+                'epoch': epoch,
+                'model_state_dict': self.model.state_dict(),
+                'optimizer_state_dict': optimizer.state_dict(),
+                'scheduler_state_dict': scheduler.state_dict(),
+                'loss': loss,
+                'loss_function': loss_function,
+                }, weight_path + "/epoch_"+str(epoch))
+                #torch.save(self.state_dict(), weight_path + "/epoch_"+str(epoch))
                 if self.parallel or self.model_name == "knet": # Knet is by default parallel 
                     self.model = nn.DataParallel(self.model)
 
@@ -333,7 +355,7 @@ class Model(nn.Module):
             print("Interrupted")
         
 
-    def train_dr(self, data, num_epochs, lr, loss_name, augmented, contrastive, sched, gamma):
+    def train_dr(self, data, num_epochs, lr, loss_name, augmented, contrastive, sched, gamma, starting_weights = None):
         
         # Loading of the data
         if loss_name == 'triplet' or (loss_name == 'infonce' and contrastive):
@@ -373,6 +395,21 @@ class Model(nn.Module):
             scheduler = torch.optim.lr_scheduler.MultiStepLR(optimizer, milestones=[num_epochs//2, num_epochs],
                                                             gamma=gamma)
             
+        if starting_weights is not None:
+            checkpoint = torch.load(starting_weights)
+            if self.parallel:
+                self.model.module.load_state_dict(checkpoint['model_state_dict'])
+            else:
+                self.model.load_state_dict(checkpoint['model_state_dict'])
+            optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
+            starting_epoch = checkpoint['epoch'] + 1
+            loss = checkpoint['loss']
+            loss_function = checkpoint['loss_function']
+            scheduler.load_state_dict(checkpoint['scheduler_state_dict'])
+        
+        # Creation of the folder to save the weight
+        weight_path = create_weights_folder(self.model_name)
+
         # training loo
         loss_stds = []
         loss_means = []
@@ -423,13 +460,22 @@ class Model(nn.Module):
                     self.model = self.model.module
                 except AttributeError:
                     self.model = self.model
-                torch.save(self.state_dict(), self.name+str(epoch))
-                if self.parallel:
-                    self.model = nn.DataParallel(self.model).to(self.device)
+
+                torch.save({
+                'epoch': epoch,
+                'model_state_dict': self.model.state_dict(),
+                'optimizer_state_dict': optimizer.state_dict(),
+                'scheduler_state_dict': scheduler.state_dict(),
+                'loss': loss,
+                'loss_function': loss_function,
+                }, weight_path + "/epoch_"+str(epoch))
+                #torch.save(self.state_dict(), weight_path + "/epoch_"+str(epoch))
+                if self.parallel or self.model_name == "knet": # Knet is by default parallel 
+                    self.model = nn.DataParallel(self.model)
 
             plt.errorbar(range(num_epochs), loss_means, yerr=loss_stds, fmt='o--k',
                          ecolor='lightblue', elinewidth=3)
-            plt.savefig(self.model_name+"_loss.png")
+            plt.savefig(weight_path+"/training_loss.png")
         except KeyboardInterrupt:
             print("Interrupted")
 
@@ -491,6 +537,12 @@ if __name__ == "__main__":
         '--loss',
         default=None,
         help='<margin, proxy_nca_pp, softmax, softtriple, triplet, contrastive, BCE, cosine>'
+    )
+
+    parser.add_argument(
+        '--starting_weights',
+        default=None,
+        help='path to the weights of the model to continue the training with'
     )
 
     parser.add_argument(
@@ -596,8 +648,8 @@ if __name__ == "__main__":
 
     siamese_losses = ['triplet', 'contrastive', 'BCE', 'cosine', 'infonce']
     if args.loss in siamese_losses:
-        m.train_dr(data = args.training_data, num_epochs = args.num_epochs, lr = args.lr, loss_name = args.loss, augmented=args.augmented, contrastive = not args.non_contrastive, sched= args.scheduler, gamma= args.gamma)
+        m.train_dr(data = args.training_data, num_epochs = args.num_epochs, lr = args.lr, loss_name = args.loss, augmented=args.augmented, contrastive = not args.non_contrastive, sched= args.scheduler, gamma= args.gamma, starting_weights=args.starting_weights)
     else: 
-        m.train_model(loss = args.loss, epochs = args.num_epochs, training_dir=args.training_data, sched = args.scheduler, lr = args.lr, decay = args.decay, gamma = args.gamma, beta_lr = args.beta_lr, lr_proxies = args.lr_proxies, informative_samp = args.i_sampling, generalise = args.generalise, load_kmeans = args.load)
+        m.train_model(loss = args.loss, epochs = args.num_epochs, training_dir=args.training_data, sched = args.scheduler, lr = args.lr, decay = args.decay, gamma = args.gamma, beta_lr = args.beta_lr, lr_proxies = args.lr_proxies, informative_samp = args.i_sampling, generalise = args.generalise, load_kmeans = args.load, starting_weights=args.starting_weights)
     
     

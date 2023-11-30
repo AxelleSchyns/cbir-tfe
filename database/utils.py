@@ -93,29 +93,41 @@ def get_new_name(class_name, path=None):
     
     return -1 
 
-def create_weights_folder(model_name):
+def create_weights_folder(model_name, starting_weights = None):
     try:
-            os.mkdir("weights_folder/"+model_name)
+        os.mkdir("weights_folder")
     except FileExistsError:
         pass
-    versions = []
-    for file in os.listdir("weights_folder/"+model_name):
-        id_ = file.find("_")
-        if id_ != 7:
-            continue
-        versions.append(int(file[8:]))
-    versions.sort()
-    
-    count = 0
-    for nb in versions:
-        if nb != count:
-            break
-        count += 1
-    weight_path = "weights_folder/"+model_name+"/version_"+str(count)
     try:
-        os.mkdir(weight_path)
+        os.mkdir("weights_folder/"+model_name)
     except FileExistsError:
-        print("Issue with the creation of the folder, risk of overwriting existing files.")
+        pass
+    if starting_weights != None:
+        id_start = starting_weights.rfind("version")
+        if id_start == -1:
+            print("Issue with the format of the folder containing the weight, please check that it is in the form: weights_folder/model_name/version_x")
+            exit(-1)
+        id_end = starting_weights[id_start:].rfind("/") + id_start
+        weight_path = starting_weights[0:id_end]
+    else:
+        versions = []
+        for file in os.listdir("weights_folder/"+model_name):
+            id_ = file.find("_")
+            if id_ != 7:
+                continue
+            versions.append(int(file[8:]))
+        versions.sort()
+        
+        count = 0
+        for nb in versions:
+            if nb != count:
+                break
+            count += 1
+        weight_path = "weights_folder/"+model_name+"/version_"+str(count)
+        try:
+            os.mkdir(weight_path)
+        except FileExistsError:
+            print("Issue with the creation of the folder, risk of overwriting existing files.")
     
     return weight_path
     

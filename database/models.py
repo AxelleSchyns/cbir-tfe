@@ -370,6 +370,7 @@ class Model(nn.Module):
                                              shuffle=True, num_workers=12,
                                              pin_memory=True)
         
+        starting_epoch = 0
         # Setting of the loss
         if loss_name == 'triplet':
             loss_function = torch.nn.TripletMarginLoss()
@@ -406,13 +407,13 @@ class Model(nn.Module):
             scheduler.load_state_dict(checkpoint['scheduler_state_dict'])
         
         # Creation of the folder to save the weight
-        weight_path = create_weights_folder(self.model_name)
+        weight_path = create_weights_folder(self.model_name, starting_weights)
 
         # training loo
         loss_stds = []
         loss_means = []
         try:
-            for epoch in range(num_epochs):
+            for epoch in range(starting_epoch,num_epochs):
                 start_time = time.time()
                 loss_list = []
                 for i, (image0, image1, image2) in enumerate(loader):

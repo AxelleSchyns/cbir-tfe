@@ -15,7 +15,7 @@ import os
 import matplotlib.pyplot as plt
 import autoencoders as ae
 from byol_pytorch import BYOL as BYOL_pytorch
-from arch import BYOL, fully_connected
+from arch import  fully_connected
 from utils import create_weights_folder
 
 # TODO: test unweighted archs
@@ -27,8 +27,8 @@ archs_weighted = {"resnet": models.resnet50(weights='ResNet50_Weights.DEFAULT'),
                   "effnet":EffNet.from_pretrained('efficientnet-b0'), "knet": models.densenet121(weights='DenseNet121_Weights.DEFAULT'),
                   "vision": models.vit_b_16(weights = 'ViT_B_16_Weights.DEFAULT'), "cvt":ConvNextForImageClassification.from_pretrained('facebook/convnext-tiny-224'),
                   "deit": DeiTForImageClassification.from_pretrained('facebook/deit-base-distilled-patch16-224'), 
-                  "vae": ae.VAE(), "auto":ae.AutoEncoder(), "resnet50": ae.BuildAutoEncoder("resnet50"),
-                  "byol": models.resnet50(weights='ResNet50_Weights.DEFAULT'), "byol2": BYOL(64,67)}
+                  "vae": ae.VAE(), "auto":ae.AutoEncoder(), "resnet50": ae.BuildAutoEncoder("resnet50")}
+                  #"byol": models.resnet50(weights='ResNet50_Weights.DEFAULT'), "byol2": BYOL(64,67)}
 
 
 class Model(nn.Module):
@@ -242,11 +242,9 @@ class Model(nn.Module):
         print('Size of dataset', data.__len__())
 
         loader = torch.utils.data.DataLoader(data, batch_size=self.batch_size,
-                                             shuffle=True, num_workers=16,
+                                             shuffle=True, num_workers=12,
                                              pin_memory=True)
-        
         optimizer, loss_function = self.get_optim(data, loss, lr, decay, beta_lr, lr_proxies)
-
         if sched == 'exponential':
             scheduler = torch.optim.lr_scheduler.ExponentialLR(optimizer, gamma=gamma)
         elif sched == 'step':
@@ -255,17 +253,15 @@ class Model(nn.Module):
         
         loss_stds = []
         loss_mean = []
-
         # Creation of the folder to save the weight
         weight_path = create_weights_folder(self.model_name)
-
         try:
             for epoch in range(epochs):
                 start_time = time.time()
                 loss_list = []
                 for i, (labels, images) in enumerate(loader):
                     if i%1000 == 0:
-                        print(i)
+                        print(i, flush=True)
                     
                     images_gpu = images.to(self.device)
                     labels_gpu = labels.to(self.device)
@@ -589,11 +585,10 @@ if __name__ == "__main__":
             args.i_sampling = False
         else:
             args.i_sampling = True
-
     m = Model(model=args.model, eval=False, batch_size=args.batch_size,
               num_features=args.num_features, weight=args.weights,
               use_dr=args.dr_model, device=device, freeze=args.freeze, classification = args.classification, parallel=args.parallel, scratch=args.scratch)
-
+    
     siamese_losses = ['triplet', 'contrastive', 'BCE', 'cosine', 'infonce']
     if args.loss in siamese_losses:
         m.train_dr(data = args.training_data, num_epochs = args.num_epochs, lr = args.lr, loss_name = args.loss, augmented=args.augmented, contrastive = not args.non_contrastive, sched= args.scheduler, gamma= args.gamma)

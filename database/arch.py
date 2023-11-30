@@ -7,10 +7,10 @@ from torch import Tensor
 from torch.nn import Identity
 
 
-from pytorch_lightning import LightningModule
+"""from pytorch_lightning import LightningModule
 from lightly.models.modules import BYOLPredictionHead, BYOLProjectionHead
 from lightly.utils.benchmarking import OnlineLinearClassifier
-from lightly.loss import NegativeCosineSimilarity
+from lightly.loss import NegativeCosineSimilarity"""
 
 # From Kimia Lab implementation 
 class fully_connected(nn.Module):
@@ -25,7 +25,7 @@ class fully_connected(nn.Module):
 		out_3 = self.fc_4(x)
 		return  out_3
 
-class BYOL(LightningModule):
+"""class BYOL(LightningModule):
     def __init__(self, batch_size_per_device: int, num_classes: int) -> None:
         super().__init__()
         self.save_hyperparameters()
@@ -44,4 +44,4 @@ class BYOL(LightningModule):
 
     def forward(self, x: Tensor) -> Tensor:
         x = self.backbone(x)
-        return self.projection_head(x)
+        return self.projection_head(x)"""

@@ -1,22 +1,20 @@
 import torchvision.models as models
 import torch
 import torch.nn as nn
-from torchvision import transforms
 from transformers import DeiTForImageClassification
 import dataset
 import numpy as np
 import time
 from loss import MarginLoss, ProxyNCA_prob, NormSoftmax, SimpleBCELoss, ContrastiveLoss, SoftTriple, InfoNCE
 from efficientnet_pytorch import EfficientNet as EffNet # TODO: test pytorch efficient net to have only one library
-from transformers import CvtForImageClassification, ConvNextForImageClassification, CvtConfig, CvtModel
-from torchvision import transforms
+from transformers import ConvNextForImageClassification
 from argparse import ArgumentParser
 import os
 import matplotlib.pyplot as plt
 import autoencoders as ae
 from byol_pytorch import BYOL as BYOL_pytorch
 from arch import  fully_connected
-from utils import create_weights_folder
+from utils import create_weights_folder, model_saving
 
 # TODO: test unweighted archs
 #archs = { "resnet": models.resnet50(), "densenet": models.densenet121(), "effnet":EffNet().from_name('efficientnet-b0'), "knet": models.densenet121(), 
@@ -237,14 +235,27 @@ class Model(nn.Module):
             loss_function = None
         return optimizer, loss_function
 
-    def train_model(self, loss, epochs, training_dir, lr, decay, beta_lr, lr_proxies, sched, gamma, informative_samp = True, generalise = 0, load_kmeans = None, starting_weights = None):
-        data = dataset.TrainingDataset(root = training_dir, model_name = self.model_name, samples_per_class= 2, generalise = generalise, load_kmeans = load_kmeans, informative_samp = informative_samp)
-        print('Size of dataset', data.__len__())
-
-        loader = torch.utils.data.DataLoader(data, batch_size=self.batch_size,
-                                             shuffle=True, num_workers=12,
-                                             pin_memory=True)
-        optimizer, loss_function = self.get_optim(data, loss, lr, decay, beta_lr, lr_proxies)
+    def train_model(self, loss_name, epochs, training_dir, lr, decay, beta_lr, lr_proxies, sched, gamma, informative_samp = True, generalise = 0, load_kmeans = None, starting_weights = None, epoch_freq = 20, need_val = True):
+        if need_val:
+            data = dataset.TrainingDataset(root = training_dir, model_name = self.model_name, samples_per_class= 2, generalise = generalise, load_kmeans = load_kmeans, informative_samp = informative_samp, need_val=2)
+            data_val = dataset.TrainingDataset(root = training_dir, model_name = self.model_name, samples_per_class= 2, generalise = generalise, load_kmeans = load_kmeans, informative_samp = informative_samp, need_val=1)
+            loader = torch.utils.data.DataLoader(data, batch_size=self.batch_size,
+                                                shuffle=True, num_workers=12,
+                                                pin_memory=True)
+            loader_val = torch.utils.data.DataLoader(data_val, batch_size=self.batch_size,
+                                                shuffle=True, num_workers=12,
+                                                pin_memory=True)
+            loaders = [loader, loader_val]
+            loss_means_val = []
+            loss_stds_val = []
+            print('Size of the training dataset:', data.__len__(), '|  Size of the validation dataset: ', data_val.__len__() )
+        else:   
+            data = dataset.TrainingDataset(root = training_dir, model_name = self.model_name, samples_per_class= 2, generalise = generalise, load_kmeans = load_kmeans, informative_samp = informative_samp, need_val=0)
+            print('Size of dataset', data.__len__())
+            loaders = [torch.utils.data.DataLoader(data, batch_size=self.batch_size,
+                                                shuffle=True, num_workers=12,
+                                                pin_memory=True)]
+        optimizer, loss_function = self.get_optim(data, loss_name, lr, decay, beta_lr, lr_proxies)
         starting_epoch = 0
 
         if sched == 'exponential':
@@ -274,76 +285,82 @@ class Model(nn.Module):
         try:
             for epoch in range(starting_epoch, epochs):
                 start_time = time.time()
-                loss_list = []
-                for i, (labels, images) in enumerate(loader):
-                    if i%1000 == 0:
-                        print(i, flush=True)
-                    
-                    images_gpu = images.to(self.device)
-                    labels_gpu = labels.to(self.device)
+                if need_val:
+                    loss_list_val = []
+                    loss_list = []
+                    loss_lists = [loss_list, loss_list_val]
+                else:
+                    loss_list = []
+                    loss_lists = [loss_list]
+                for j in range(len(loaders)):
+                    loader = loaders[j]
+                    for i, (labels, images) in enumerate(loader):
+                        if i%1000 == 0 and j ==0:
+                            print(i, flush=True)
+                        
+                        images_gpu = images.to(self.device)
+                        labels_gpu = labels.to(self.device)
 
-                    # Autoencoders training
-                    if self.model_name == "auto":
-                        loss, _, _ = ae.grad_auto(self.model, images_gpu.view(-1, 3, 224, 224)) 
-                    elif self.model_name == "vae":
-                        recon_batch, mu, logvar = self.model(images_gpu)
-                        loss = ae.loss_function(recon_batch, images_gpu.view(-1, 3, 224, 224), mu, logvar)
-                    elif self.model_name == "resnet50":
-                        out = self.model(images_gpu)
-                        loss = nn.functional.mse_loss(images_gpu, out, reduction='mean') 
+                        # Autoencoders training
+                        if self.model_name == "auto":
+                            loss, _, _ = ae.grad_auto(self.model, images_gpu.view(-1, 3, 224, 224)) 
+                        elif self.model_name == "vae":
+                            recon_batch, mu, logvar = self.model(images_gpu)
+                            loss = ae.loss_function(recon_batch, images_gpu.view(-1, 3, 224, 224), mu, logvar)
+                        elif self.model_name == "resnet50":
+                            out = self.model(images_gpu)
+                            loss = nn.functional.mse_loss(images_gpu, out, reduction='mean') 
+                        
+                        # Byol training
+                        elif self.model_name == "byol":
+                            loss = self.model(images_gpu)
                     
-                    # Byol training
-                    elif self.model_name == "byol":
-                        loss = self.model(images_gpu)
-                    
-                    # Supervised training
-                    else:
-                        if self.transformer:
-                            out = self.forward(images_gpu.view(-1, 3, 224, 224))
+                        # Supervised training
                         else:
-                            out = self.forward(images_gpu)
-                        if loss_function is None:
-                            print("This model requires a specific loss. Please specifiy one. ")
-                            exit(-1)
-                        loss = loss_function(out, labels_gpu)
-                    
-                    # Update
-                    optimizer.zero_grad(set_to_none=True)
-                    loss.backward()
-                    optimizer.step()
+                            if self.transformer:
+                                out = self.forward(images_gpu.view(-1, 3, 224, 224))
+                            else:
+                                out = self.forward(images_gpu)
+                            if loss_function is None:
+                                print("This model requires a specific loss. Please specifiy one. ")
+                                exit(-1)
+                            loss = loss_function(out, labels_gpu)
+                        
+                        if j == 0:
+                            # Update
+                            optimizer.zero_grad(set_to_none=True)
+                            loss.backward()
+                            optimizer.step()
 
-                    if self.model_name == "byol":
-                        self.model.update_moving_average()
+                            if self.model_name == "byol":
+                                self.model.update_moving_average()
 
-                    loss_list.append(loss.item())
+                        loss_lists[j].append(loss.item())
                 
-                print("epoch {}, loss = {}, time {}".format(epoch, np.mean(loss_list),
+                if need_val:
+                    print("epoch {}, loss = {}, loss_val = {}, time {}".format(epoch, np.mean(loss_lists[0]),
+                                                            np.mean(loss_lists[1]), time.time() - start_time))
+                    loss_means_val.append(np.mean(loss_lists[1]))
+                    loss_stds_val.append(np.std(loss_lists[1]))
+                else:
+                    print("epoch {}, loss = {}, time {}".format(epoch, np.mean(loss_lists[0]),
                                                             time.time() - start_time))
                 
                 print("\n----------------------------------------------------------------\n")
-                loss_mean.append(np.mean(loss_list))
-                loss_stds.append(np.std(loss_list))
+                loss_mean.append(np.mean(loss_lists[0]))
+                loss_stds.append(np.std(loss_lists[0]))
                 if sched != None:
                     scheduler.step()
 
-                # Remove data parallel to save model
-                try:
-                    self.model = self.model.module
-                except AttributeError:
-                    self.model = self.model
+                # Saving of the model
+                model_saving(self.model, epoch, epochs, epoch_freq, weight_path, optimizer, scheduler, loss, loss_function, loss_list, loss_mean, loss_stds)
 
-                torch.save({
-                'epoch': epoch,
-                'model_state_dict': self.model.state_dict(),
-                'optimizer_state_dict': optimizer.state_dict(),
-                'scheduler_state_dict': scheduler.state_dict(),
-                'loss': loss,
-                'loss_function': loss_function,
-                }, weight_path + "/epoch_"+str(epoch))
-                #torch.save(self.state_dict(), weight_path + "/epoch_"+str(epoch))
-                if self.parallel or self.model_name == "knet": # Knet is by default parallel 
-                    self.model = nn.DataParallel(self.model)
-
+            if need_val:
+                plt.figure()
+                plt.errorbar(range(epochs), loss_means_val, yerr=loss_stds_val, fmt='o--k',
+                         ecolor='lightblue', elinewidth=3)
+                plt.savefig(weight_path+"/validation_loss.png")
+            plt.figure()
             plt.errorbar(range(epochs), loss_mean, yerr=loss_stds, fmt='o--k',
                          ecolor='lightblue', elinewidth=3)
             plt.savefig(weight_path+"/training_loss.png")
@@ -352,23 +369,38 @@ class Model(nn.Module):
         except KeyboardInterrupt:
             print("Interrupted")
         
-
-    def train_dr(self, data, num_epochs, lr, loss_name, augmented, contrastive, sched, gamma, starting_weights = None):
+    def train_dr(self, loss_name, epochs, training_dir,  lr, augmented, contrastive, sched, gamma, starting_weights = None, epoch_freq = 20, need_val = True):
         
         # Loading of the data
-        if loss_name == 'triplet' or (loss_name == 'infonce' and contrastive):
-            pair = False
-        else:
+        if loss_name == 'triplet' or (loss_name == 'infonce' and contrastive):                                                        
+            pair = False                            
+        else:                                                                              
             pair = True
         if not augmented:
             augmented = None
 
-        data = dataset.DRDataset(data, pair = pair, transform = augmented, contrastive=contrastive, appl=None)
-        print('Size of dataset', data.__len__())
+        if need_val:
+            data = dataset.DRDataset(training_dir, pair = pair, transform = augmented, contrastive=contrastive, appl=None, need_val = 2)
+            data_val = dataset.DRDataset(training_dir, pair = pair, transform = augmented, contrastive=contrastive, appl=None, need_val = 1)
+            print('Size of the training dataset:', data.__len__(), "| Size of the validation dataset:", data_val.__len__())
 
-        loader = torch.utils.data.DataLoader(data, batch_size=self.batch_size,
+            loader = torch.utils.data.DataLoader(data, batch_size=self.batch_size,
                                              shuffle=True, num_workers=12,
                                              pin_memory=True)
+            loader_val = torch.utils.data.DataLoader(data_val, batch_size=self.batch_size,
+                                             shuffle=True, num_workers=12,
+                                             pin_memory=True)
+            loaders = [loader, loader_val]
+
+            loss_means_val = []
+            loss_stds_val = []
+        else: 
+            data = dataset.DRDataset(training_dir, pair = pair, transform = augmented, contrastive=contrastive, appl=None, need_val = 0)
+            print('Size of dataset', data.__len__())
+
+            loaders = [torch.utils.data.DataLoader(data, batch_size=self.batch_size,
+                                             shuffle=True, num_workers=12,
+                                             pin_memory=True)]
         
         starting_epoch = 0
         # Setting of the loss
@@ -391,7 +423,7 @@ class Model(nn.Module):
         if sched == 'exponential':
             scheduler = torch.optim.lr_scheduler.ExponentialLR(optimizer, gamma=gamma)
         elif sched == 'step':
-            scheduler = torch.optim.lr_scheduler.MultiStepLR(optimizer, milestones=[num_epochs//2, num_epochs],
+            scheduler = torch.optim.lr_scheduler.MultiStepLR(optimizer, milestones=[epochs//2, epochs],
                                                             gamma=gamma)
             
         if starting_weights is not None:
@@ -413,40 +445,49 @@ class Model(nn.Module):
         loss_stds = []
         loss_means = []
         try:
-            for epoch in range(starting_epoch,num_epochs):
+            for epoch in range(starting_epoch,epochs):
                 start_time = time.time()
-                loss_list = []
-                for i, (image0, image1, image2) in enumerate(loader):
-                    if i%1000 == 0:
-                        print("at batch:"+str(i)+" on "+str(int(data.__len__()/self.batch_size)))
+                loss_lists = [[],[]]
+                for j in range(len(loaders)):
+                    loader = loaders[j]
+                    for i, (image0, image1, image2) in enumerate(loader):
+                        if i%1000 == 0:
+                            print("at batch:"+str(i)+" on "+str(int(data.__len__()/self.batch_size)))
 
-                    image0 = image0.to(device=self.device)
-                    image1 = image1.to(device=self.device)
+                        image0 = image0.to(device=self.device)
+                        image1 = image1.to(device=self.device)
 
-                    out0 = self.forward(image0).cpu()
-                    out1 = self.forward(image1).cpu()
+                        out0 = self.forward(image0).cpu()
+                        out1 = self.forward(image1).cpu()
 
-                    if not pair:
-                        image2 = image2.to(device=self.device)
-                        out2 = self.forward(image2).cpu()
-                    else:
-                        out2 = image2 
-                        if loss_name == 'cosine':
-                            out2[out2 == 1] = -1
-                            out2[out2 == 0] = 1
+                        if not pair:
+                            image2 = image2.to(device=self.device)
+                            out2 = self.forward(image2).cpu()
+                        else:
+                            out2 = image2 
+                            if loss_name == 'cosine':
+                                out2[out2 == 1] = -1
+                                out2[out2 == 0] = 1
 
-                    loss = loss_function(out0, out1, out2)
+                        loss = loss_function(out0, out1, out2)
 
-                    optimizer.zero_grad(set_to_none=True)
-                    loss.backward()
-                    optimizer.step()
+                        if j == 0:
+                            optimizer.zero_grad(set_to_none=True)
+                            loss.backward()
+                            optimizer.step()
 
-                    loss_list.append(loss.item())
-                    
-                print("epoch {}, batch {}, loss = {}, time = {}".format(epoch, i,
-                                                             np.mean(loss_list), time.time() - start_time))
-                loss_means.append(np.mean(loss_list))
-                loss_stds.append(np.std(loss_list)) 
+                        loss_lists[j].append(loss.item())
+                        
+                if need_val:
+                    loss_means_val.append(np.mean(loss_lists[1]))
+                    loss_stds_val.append(np.std(loss_lists[1]))
+                    print("epoch {}, batch {}, loss = {}, val_loss = {}, time = {}".format(epoch, i,
+                                                            np.mean(loss_lists[0]), np.mean(loss_lists[1]), time.time() - start_time))
+                else:
+                    print("epoch {}, batch {}, loss = {}, time = {}".format(epoch, i,
+                                                            np.mean(loss_lists[0]), time.time() - start_time))
+                loss_means.append(np.mean(loss_lists[0]))
+                loss_stds.append(np.std(loss_lists[0])) 
 
                 if sched != None:
                     scheduler.step()
@@ -455,24 +496,19 @@ class Model(nn.Module):
                     for param in optimizer.param_groups:
                         param['lr'] = lr
 
-                try:
-                    self.model = self.model.module
-                except AttributeError:
-                    self.model = self.model
+                # Saving of the model
+                model_saving(self.model, epoch, epochs, epoch_freq, weight_path, optimizer, scheduler, loss, loss_function, loss_lists[0], loss_means, loss_stds)
 
-                torch.save({
-                'epoch': epoch,
-                'model_state_dict': self.model.state_dict(),
-                'optimizer_state_dict': optimizer.state_dict(),
-                'scheduler_state_dict': scheduler.state_dict(),
-                'loss': loss,
-                'loss_function': loss_function,
-                }, weight_path + "/epoch_"+str(epoch))
-                #torch.save(self.state_dict(), weight_path + "/epoch_"+str(epoch))
-                if self.parallel or self.model_name == "knet": # Knet is by default parallel 
-                    self.model = nn.DataParallel(self.model)
-
-            plt.errorbar(range(num_epochs), loss_means, yerr=loss_stds, fmt='o--k',
+            if need_val:
+                plt.figure()
+                plt.title("Validation loss")
+                plt.xlabel("Epoch")
+                plt.ylabel("Loss")
+                plt.errorbar(range(epochs), loss_means_val, yerr=loss_stds_val, fmt='o--k',
+                         ecolor='lightblue', elinewidth=3)
+                plt.savefig(weight_path+"/validation_loss.png")
+            plt.figure()
+            plt.errorbar(range(epochs), loss_means, yerr=loss_stds, fmt='o--k',
                          ecolor='lightblue', elinewidth=3)
             plt.savefig(weight_path+"/training_loss.png")
         except KeyboardInterrupt:
@@ -621,13 +657,23 @@ if __name__ == "__main__":
         '--i_sampling',
         default = None,
         help='whether or not ot use informative (label-based) sampling',
-        action='store_true'
+    )
+    parser.add_argument(
+        '--epoch_freq',
+        default = 20,
+        type = int,
+        help='frequency of saving the model'
+    )
+
+    parser.add_argument(
+        '--remove_val',
+        action='store_true',
+        help='whether or not to use validation set'
     )
 
 
 
     args = parser.parse_args()
-
     if args.gpu_id >= 0:
         device = 'cuda:' + str(args.gpu_id)
     else:
@@ -646,8 +692,8 @@ if __name__ == "__main__":
     
     siamese_losses = ['triplet', 'contrastive', 'BCE', 'cosine', 'infonce']
     if args.loss in siamese_losses:
-        m.train_dr(data = args.training_data, num_epochs = args.num_epochs, lr = args.lr, loss_name = args.loss, augmented=args.augmented, contrastive = not args.non_contrastive, sched= args.scheduler, gamma= args.gamma, starting_weights=args.starting_weights)
+        m.train_dr(loss_name = args.loss, training_dir = args.training_data, epochs = args.num_epochs, lr = args.lr,  augmented=args.augmented, contrastive = not args.non_contrastive, sched= args.scheduler, gamma= args.gamma, starting_weights=args.starting_weights, epoch_freq = args.epoch_freq, need_val=not args.remove_val)
     else: 
-        m.train_model(loss = args.loss, epochs = args.num_epochs, training_dir=args.training_data, sched = args.scheduler, lr = args.lr, decay = args.decay, gamma = args.gamma, beta_lr = args.beta_lr, lr_proxies = args.lr_proxies, informative_samp = args.i_sampling, generalise = args.generalise, load_kmeans = args.load, starting_weights=args.starting_weights)
+        m.train_model(loss_name = args.loss, epochs = args.num_epochs, training_dir=args.training_data, sched = args.scheduler, lr = args.lr, decay = args.decay, gamma = args.gamma, beta_lr = args.beta_lr, lr_proxies = args.lr_proxies, informative_samp = args.i_sampling, generalise = args.generalise, load_kmeans = args.load, starting_weights=args.starting_weights, epoch_freq = args.epoch_freq, need_val = not args.remove_val)
     
     

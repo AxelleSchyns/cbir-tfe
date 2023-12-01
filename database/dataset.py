@@ -17,10 +17,10 @@ import kmeans
 
 # https://github.com/SathwikTejaswi/deep-ranking/blob/master/Code/data_utils.py
 # Class specific to the methods trained using contrastive learning or deep ranking 
-class DRDataset(Dataset):
+class DRDataset(Dataset): # TODO: test validation protocol
 
-    def __init__(self, root='image_folder', transform=None, pair = False, contrastive = True, appl = None):
-        # Settings of the transfroms 
+    def __init__(self, root='image_folder', transform=None, pair = False, contrastive = True, appl = None, need_val = 0):
+        # Settings of the transforms 
         if transform == None: # Supervised models 
             transform = transforms.Compose(
                 [
@@ -100,10 +100,20 @@ class DRDataset(Dataset):
         for index_class, class_name in enumerate(os.listdir(os.path.join(root))):
             self.rev_dict[index_class] = class_name
             self.image_dict[class_name] = np.array(os.listdir(os.path.join(root, class_name)))
-
-            for image_name in os.listdir(os.path.join(root, class_name)):
-                self.big_dict[self.num_elements] = (image_name, index_class)
-                self.num_elements += 1 # total number of images 
+            images = os.listdir(os.path.join(root, class_name))                                                                     
+            cpt_c = 0
+            nb_im_c = len(images)
+            print(nb_im_c)
+            for image_name in images:
+                if need_val != 1:
+                    if need_val == 0 or cpt_c < nb_im_c * 0.85:
+                        self.big_dict[self.num_elements] = (image_name, index_class)
+                        self.num_elements += 1 # total number of images 
+                else:
+                    if cpt_c >= nb_im_c * 0.85:
+                        self.big_dict[self.num_elements] = (image_name, index_class)
+                        self.num_elements += 1
+                cpt_c += 1
 
             self.num_classes += 1
 
@@ -211,6 +221,7 @@ class TrainingDataset(Dataset):
         self.image_dict = {}
         self.image_list = defaultdict(list)
 
+
         print("================================")
         print("Loading dataset")
         print("================================")
@@ -225,14 +236,26 @@ class TrainingDataset(Dataset):
         else:
             for c in self.classes:
                 for dir, subdirs, files in os.walk(os.path.join(root, c)):
+                    nb_im_c = len(files)
+                    cpt_c = 0
+                    files.sort()
                     for file in files:
-                        img = os.path.join(dir, file)
-                        cls = dir[dir.rfind("/") + 1:]
-                        self.image_dict[i] = (img, self.conversion[cls])
-                        self.image_list[self.conversion[cls]].append(img)
-                        i += 1
+                        if need_val != 1:
+                            if need_val == 0 or cpt_c <= 0.85 * nb_im_c:
+                                img = os.path.join(dir, file)
+                                cls = dir[dir.rfind("/") + 1:]
+                                self.image_dict[i] = (img, self.conversion[cls])
+                                self.image_list[self.conversion[cls]].append(img)
+                                i += 1
+                        else:
+                            if cpt_c > 0.85 * nb_im_c:
+                                img = os.path.join(dir, file)
+                                cls = dir[dir.rfind("/") + 1:]
+                                self.image_dict[i] = (img, self.conversion[cls])
+                                self.image_list[self.conversion[cls]].append(img)
+                                i += 1
+                        cpt_c += 1
         
-
         # 4. Create the transformation to apply to the images (depends on model)
         if model_name == 'deit' or model_name == 'cvt' or model_name == 'conv':
             self.transformer = True
@@ -282,23 +305,14 @@ class TrainingDataset(Dataset):
         self.needs_val = need_val
         self.informative_samp = informative_samp
 
-        # If we need to create a validation set
-        if need_val != 0:
-            self.train_data = list(self.image_dict.values())[:int(len(self.image_dict) * 0.8)]
-            self.val_data =  list(self.image_dict.values())[int(len(self.image_dict) * 0.8):]
 
 
     def __len__(self):
-        if self.needs_val == 1:
-            return len(self.train_data)
-        elif self.needs_val == 2:
-            return len(self.val_data)
-        else:
-            return len(self.image_dict)
+        return len(self.image_dict)
 
     # https://github.com/Confusezius/Deep-Metric-Learning-Baselines/blob/60772745e28bc90077831bb4c9f07a233e602797/datasets.py#L428
     def __getitem__(self, idx):
-        if not self.informative_samp:
+        if self.informative_samp == "False" or self.needs_val == 2:
             img = Image.open(self.image_dict[idx][0]).convert('RGB')
             return self.image_dict[idx][1], self.transform(img), 
         else:

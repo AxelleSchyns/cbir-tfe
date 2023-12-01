@@ -2,6 +2,7 @@ import numpy as np
 from PIL import Image
 import torch 
 import os
+import matplotlib.pyplot as plt
 
 # given the filename, return the image object 
 def load_image(image_path):
@@ -131,3 +132,39 @@ def create_weights_folder(model_name, starting_weights = None):
     
     return weight_path
     
+def model_saving(model, epoch, epochs,  epoch_freq, weight_path, optimizer, scheduler, loss, loss_function, loss_list, loss_mean, loss_stds):
+    try:
+        model = model.module
+    except AttributeError:
+        pass
+
+    state = np.isnan(loss_list).any()
+    # Save the last epoch (overwrite the file)
+    if state == False:
+        # Save separate file every epoch_freq epoch
+        if epoch == 0 or (epoch+1) % epoch_freq == 0:
+            torch.save({
+            'epoch': epoch,
+            'model_state_dict': model.state_dict(),
+            'optimizer_state_dict': optimizer.state_dict(),
+            'scheduler_state_dict': scheduler.state_dict(),
+            'loss': loss,
+            'loss_function': loss_function,
+            }, weight_path + "/epoch_"+str(epoch))
+            #torch.save(self.state_dict(), weight_path + "/epoch_"+str(epoch))
+        
+        torch.save({
+        'epoch': epoch,
+        'model_state_dict': model.state_dict(),
+        'optimizer_state_dict': optimizer.state_dict(),
+        'scheduler_state_dict': scheduler.state_dict(),
+        'loss': loss,
+        'loss_function': loss_function,
+        }, weight_path + "/last_epoch")
+    else:
+        print(np.isnan(loss_list).any())
+        print("Loss is nan, not saving the model and stopping the training")
+        plt.errorbar(range(epoch-1), loss_mean[:-1], yerr=loss_stds[:-1], fmt='o--k',
+                ecolor='lightblue', elinewidth=3)
+        plt.savefig(weight_path+"/training_loss.png")
+        exit(-1)

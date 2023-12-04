@@ -236,6 +236,8 @@ class Model(nn.Module):
         return optimizer, loss_function
 
     def train_model(self, loss_name, epochs, training_dir, lr, decay, beta_lr, lr_proxies, sched, gamma, informative_samp = True, generalise = 0, load_kmeans = None, starting_weights = None, epoch_freq = 20, need_val = True):
+        
+        # download the dataset
         if need_val:
             data = dataset.TrainingDataset(root = training_dir, model_name = self.model_name, samples_per_class= 2, generalise = generalise, load_kmeans = load_kmeans, informative_samp = informative_samp, need_val=2)
             data_val = dataset.TrainingDataset(root = training_dir, model_name = self.model_name, samples_per_class= 2, generalise = generalise, load_kmeans = load_kmeans, informative_samp = informative_samp, need_val=1)
@@ -246,24 +248,34 @@ class Model(nn.Module):
                                                 shuffle=True, num_workers=12,
                                                 pin_memory=True)
             loaders = [loader, loader_val]
-            loss_means_val = []
-            loss_stds_val = []
             print('Size of the training dataset:', data.__len__(), '|  Size of the validation dataset: ', data_val.__len__() )
+
+            losses_mean = [[],[]]
+            losses_std = [[],[]]
         else:   
             data = dataset.TrainingDataset(root = training_dir, model_name = self.model_name, samples_per_class= 2, generalise = generalise, load_kmeans = load_kmeans, informative_samp = informative_samp, need_val=0)
             print('Size of dataset', data.__len__())
             loaders = [torch.utils.data.DataLoader(data, batch_size=self.batch_size,
                                                 shuffle=True, num_workers=12,
                                                 pin_memory=True)]
+            losses_mean = [[]]
+            losses_std = [[]]
+        
+        # Creation of the optimizer and the scheduler
         optimizer, loss_function = self.get_optim(data, loss_name, lr, decay, beta_lr, lr_proxies)
         starting_epoch = 0
-
         if sched == 'exponential':
             scheduler = torch.optim.lr_scheduler.ExponentialLR(optimizer, gamma=gamma)
         elif sched == 'step':
             scheduler = torch.optim.lr_scheduler.MultiStepLR(optimizer, milestones=[epochs//2, epochs],
                                                             gamma=gamma)
-                
+        
+        range_plot = range(epochs)
+
+        # Creation of the folder to save the weight
+        weight_path = create_weights_folder(self.model_name, starting_weights)
+
+        # Downloading of the pretrained weights and parameters 
         if starting_weights is not None:
             checkpoint = torch.load(starting_weights)
             if self.parallel:
@@ -275,12 +287,15 @@ class Model(nn.Module):
             loss = checkpoint['loss']
             loss_function = checkpoint['loss_function']
             scheduler.load_state_dict(checkpoint['scheduler_state_dict'])
+            try:
+                checkpoint_loss = torch.load(weight_path + '/loss')
+                losses_mean = checkpoint_loss['loss_means']
+                losses_std = checkpoint_loss['loss_stds']
 
-        
-        loss_stds = []
-        loss_mean = []
-        # Creation of the folder to save the weight
-        weight_path = create_weights_folder(self.model_name, starting_weights)
+            except:
+                print("Issue with the loss file, it will be started from scratch")
+                range_plot = range(starting_epoch, epochs)
+
 
         try:
             for epoch in range(starting_epoch, epochs):
@@ -340,28 +355,28 @@ class Model(nn.Module):
                 if need_val:
                     print("epoch {}, loss = {}, loss_val = {}, time {}".format(epoch, np.mean(loss_lists[0]),
                                                             np.mean(loss_lists[1]), time.time() - start_time))
-                    loss_means_val.append(np.mean(loss_lists[1]))
-                    loss_stds_val.append(np.std(loss_lists[1]))
+                    losses_mean[1].append(np.mean(loss_lists[1]))
+                    losses_std[1].append(np.std(loss_lists[1]))
                 else:
                     print("epoch {}, loss = {}, time {}".format(epoch, np.mean(loss_lists[0]),
                                                             time.time() - start_time))
                 
                 print("\n----------------------------------------------------------------\n")
-                loss_mean.append(np.mean(loss_lists[0]))
-                loss_stds.append(np.std(loss_lists[0]))
+                losses_mean[0].append(np.mean(loss_lists[0]))
+                losses_std[0].append(np.std(loss_lists[0]))
                 if sched != None:
                     scheduler.step()
 
                 # Saving of the model
-                model_saving(self.model, epoch, epochs, epoch_freq, weight_path, optimizer, scheduler, loss, loss_function, loss_list, loss_mean, loss_stds)
+                model_saving(self.model, epoch, epochs, epoch_freq, weight_path, optimizer, scheduler, loss, loss_function, loss_list, losses_mean, losses_std)
 
             if need_val:
                 plt.figure()
-                plt.errorbar(range(epochs), loss_means_val, yerr=loss_stds_val, fmt='o--k',
+                plt.errorbar(range_plot, losses_mean[1], yerr=losses_std[1], fmt='o--k',
                          ecolor='lightblue', elinewidth=3)
                 plt.savefig(weight_path+"/validation_loss.png")
             plt.figure()
-            plt.errorbar(range(epochs), loss_mean, yerr=loss_stds, fmt='o--k',
+            plt.errorbar(range_plot, losses_mean[0], yerr=losses_std[0], fmt='o--k',
                          ecolor='lightblue', elinewidth=3)
             plt.savefig(weight_path+"/training_loss.png")
                     
@@ -392,8 +407,8 @@ class Model(nn.Module):
                                              pin_memory=True)
             loaders = [loader, loader_val]
 
-            loss_means_val = []
-            loss_stds_val = []
+            losses_mean = [[],[]]
+            losses_std = [[],[]]
         else: 
             data = dataset.DRDataset(training_dir, pair = pair, transform = augmented, contrastive=contrastive, appl=None, need_val = 0)
             print('Size of dataset', data.__len__())
@@ -401,6 +416,8 @@ class Model(nn.Module):
             loaders = [torch.utils.data.DataLoader(data, batch_size=self.batch_size,
                                              shuffle=True, num_workers=12,
                                              pin_memory=True)]
+            losses_mean = [[]]
+            losses_std = [[]]
         
         starting_epoch = 0
         # Setting of the loss
@@ -425,6 +442,7 @@ class Model(nn.Module):
         elif sched == 'step':
             scheduler = torch.optim.lr_scheduler.MultiStepLR(optimizer, milestones=[epochs//2, epochs],
                                                             gamma=gamma)
+        range_plot = range(epochs)
             
         if starting_weights is not None:
             checkpoint = torch.load(starting_weights)
@@ -437,13 +455,18 @@ class Model(nn.Module):
             loss = checkpoint['loss']
             loss_function = checkpoint['loss_function']
             scheduler.load_state_dict(checkpoint['scheduler_state_dict'])
+            try:
+                checkpoint_loss = torch.load(weight_path + '/loss')
+                losses_mean = checkpoint_loss['loss_means']
+                losses_std = checkpoint_loss['loss_stds']
+            except:
+                print("Issue with the loss file, it will be started from scratch")
+                range_plot = range(starting_epoch, epochs)
         
         # Creation of the folder to save the weight
         weight_path = create_weights_folder(self.model_name, starting_weights)
 
-        # training loo
-        loss_stds = []
-        loss_means = []
+        # training loop
         try:
             for epoch in range(starting_epoch,epochs):
                 start_time = time.time()
@@ -479,15 +502,15 @@ class Model(nn.Module):
                         loss_lists[j].append(loss.item())
                         
                 if need_val:
-                    loss_means_val.append(np.mean(loss_lists[1]))
-                    loss_stds_val.append(np.std(loss_lists[1]))
+                    losses_mean[1].append(np.mean(loss_lists[1]))
+                    losses_std[1].append(np.std(loss_lists[1]))
                     print("epoch {}, batch {}, loss = {}, val_loss = {}, time = {}".format(epoch, i,
                                                             np.mean(loss_lists[0]), np.mean(loss_lists[1]), time.time() - start_time))
                 else:
                     print("epoch {}, batch {}, loss = {}, time = {}".format(epoch, i,
                                                             np.mean(loss_lists[0]), time.time() - start_time))
-                loss_means.append(np.mean(loss_lists[0]))
-                loss_stds.append(np.std(loss_lists[0])) 
+                losses_mean[0].append(np.mean(loss_lists[0]))
+                losses_std[0].append(np.std(loss_lists[0])) 
 
                 if sched != None:
                     scheduler.step()
@@ -497,18 +520,15 @@ class Model(nn.Module):
                         param['lr'] = lr
 
                 # Saving of the model
-                model_saving(self.model, epoch, epochs, epoch_freq, weight_path, optimizer, scheduler, loss, loss_function, loss_lists[0], loss_means, loss_stds)
+                model_saving(self.model, epoch, epochs, epoch_freq, weight_path, optimizer, scheduler, loss, loss_function, loss_lists[0], losses_mean, losses_std)
 
             if need_val:
                 plt.figure()
-                plt.title("Validation loss")
-                plt.xlabel("Epoch")
-                plt.ylabel("Loss")
-                plt.errorbar(range(epochs), loss_means_val, yerr=loss_stds_val, fmt='o--k',
+                plt.errorbar(range_plot, losses_mean[1], yerr=losses_std[1], fmt='o--k',
                          ecolor='lightblue', elinewidth=3)
                 plt.savefig(weight_path+"/validation_loss.png")
             plt.figure()
-            plt.errorbar(range(epochs), loss_means, yerr=loss_stds, fmt='o--k',
+            plt.errorbar(range_plot, losses_mean[0], yerr=losses_std[0], fmt='o--k',
                          ecolor='lightblue', elinewidth=3)
             plt.savefig(weight_path+"/training_loss.png")
         except KeyboardInterrupt:

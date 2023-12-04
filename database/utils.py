@@ -138,8 +138,8 @@ def model_saving(model, epoch, epochs,  epoch_freq, weight_path, optimizer, sche
     except AttributeError:
         pass
 
-    state = np.isnan(loss_list).any()
-    # Save the last epoch (overwrite the file)
+    state = np.isnan(loss_list).any() # Indicate if the model has diverged
+
     if state == False:
         # Save separate file every epoch_freq epoch
         if epoch == 0 or (epoch+1) % epoch_freq == 0:
@@ -151,8 +151,8 @@ def model_saving(model, epoch, epochs,  epoch_freq, weight_path, optimizer, sche
             'loss': loss,
             'loss_function': loss_function,
             }, weight_path + "/epoch_"+str(epoch))
-            #torch.save(self.state_dict(), weight_path + "/epoch_"+str(epoch))
         
+        # Save the last epoch (overwrite the file)
         torch.save({
         'epoch': epoch,
         'model_state_dict': model.state_dict(),
@@ -161,8 +161,27 @@ def model_saving(model, epoch, epochs,  epoch_freq, weight_path, optimizer, sche
         'loss': loss,
         'loss_function': loss_function,
         }, weight_path + "/last_epoch")
+
+        # Save the loss (overwrite the file)
+        torch.save({
+            'loss_means': loss_mean,
+            'loss_stds': loss_stds,
+            }, weight_path + "/loss")
+        
+        # Save the model corresponding to the lowest validation loss
+        if len(loss_mean) > 1:
+            if len(loss_mean[1]) == 1 or loss_mean[1][-1] < min(loss_mean[1][:-1]):
+                if len(loss_mean[1]) > 1:
+                    print("Loss mean: ", loss_mean[1][-1], " min: ", min(loss_mean[1][:-1]))
+                torch.save({
+                'epoch': epoch,
+                'model_state_dict': model.state_dict(),
+                'optimizer_state_dict': optimizer.state_dict(),
+                'scheduler_state_dict': scheduler.state_dict(),
+                'loss': loss,
+                'loss_function': loss_function,
+                }, weight_path + "/best_model")
     else:
-        print(np.isnan(loss_list).any())
         print("Loss is nan, not saving the model and stopping the training")
         plt.errorbar(range(epoch-1), loss_mean[:-1], yerr=loss_stds[:-1], fmt='o--k',
                 ecolor='lightblue', elinewidth=3)

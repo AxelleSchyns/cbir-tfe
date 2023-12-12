@@ -13,7 +13,7 @@ import os
 import matplotlib.pyplot as plt
 import autoencoders as ae
 from byol_pytorch import BYOL as BYOL_pytorch
-from arch import  fully_connected
+from arch import  fully_connected, DINO
 from utils import create_weights_folder, model_saving
 
 # TODO: test unweighted archs
@@ -25,7 +25,8 @@ archs_weighted = {"resnet": models.resnet50(weights='ResNet50_Weights.DEFAULT'),
                   "effnet":EffNet.from_pretrained('efficientnet-b0'), "knet": models.densenet121(weights='DenseNet121_Weights.DEFAULT'),
                   "vision": models.vit_b_16(weights = 'ViT_B_16_Weights.DEFAULT'), "cvt":ConvNextForImageClassification.from_pretrained('facebook/convnext-tiny-224'),
                   "deit": DeiTForImageClassification.from_pretrained('facebook/deit-base-distilled-patch16-224'), 
-                  "vae": ae.VAE(), "auto":ae.AutoEncoder(), "resnet50": ae.BuildAutoEncoder("resnet50")}
+                  "vae": ae.VAE(), "auto":ae.AutoEncoder(), "resnet50": ae.BuildAutoEncoder("resnet50"),
+                  "dino_vit": DINO("vit_small"), "dino_resnet": DINO("resnet50")} # 'vit_tiny', 'vit_small', 'vit_base', n'importe lequel des CNNs de torchvision
                   #"byol": models.resnet50(weights='ResNet50_Weights.DEFAULT'), "byol2": BYOL(64,67)}
 
 
@@ -154,6 +155,10 @@ class Model(nn.Module):
                     self.load_state_dict(torch.load(weight))
             elif model == 'byol2':
                 self.model.load_state_dict(torch.load(weight)["state_dict"])
+                self.forward_function = self.model.forward
+            elif model == 'dino_vit' or model == 'dino_resnet':
+                self.model.load_weights(weight)
+                self.model = self.model.model
                 self.forward_function = self.model.forward
             else:
                 self.load_state_dict(torch.load(weight))

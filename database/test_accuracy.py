@@ -716,7 +716,7 @@ if __name__ == "__main__":
         print("Class name does not exist")
         exit(-1)
     
-    model = Model(num_features=args.num_features, name=args.weights, model=args.extractor,
+    model = Model(num_features=args.num_features, weight=args.weights, model=args.extractor,
                   use_dr=args.dr_model, device=device, parallel=args.parallel) # eval est par defaut true
         
     # Compute results per class and save them in given excel file 

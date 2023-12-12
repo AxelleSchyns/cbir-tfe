@@ -82,7 +82,7 @@ if __name__ == "__main__":
     
 
     # Load the feature extractor 
-    model = models.Model(model=args.extractor, use_dr=args.dr_model, num_features=args.num_features, name=args.weights,
+    model = models.Model(model=args.extractor, use_dr=args.dr_model, num_features=args.num_features, weight=args.weights,
                            device=device)
     if model is None:
         print("Unkown feature extractor")

@@ -128,6 +128,9 @@ class Database:
                 labels = kmeans.predict(batch_data)
                 self.add(out.numpy(), list(filenames), labels, generalise)
             else:
+                # check if out contains nan
+                if np.isnan(out.numpy()).any():
+                    print("Nan in output")
                 self.add(out.numpy(), list(filenames),  generalise  = generalise)
 
             t_im_ind = time.time() - t

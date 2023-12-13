@@ -161,7 +161,16 @@ class Model(nn.Module):
                 self.model = self.model.model
                 self.forward_function = self.model.forward
             else:
-                self.load_state_dict(torch.load(weight))
+                try:
+                    self.load_state_dict(torch.load(weight))
+                except:
+                    try:
+                        checkpoint = torch.load(weight)
+                        self.model.load_state_dict(checkpoint['model_state_dict'])
+                    except Exception as e:
+                        print("Error with the loading of the model's weights: ", e) 
+                        print("Exiting...")
+                        exit(-1)
             self.eval()
             self.eval = True
         else:

@@ -1,0 +1,132 @@
+-----------------------------------------------------------------------------------------------
+------------------------------------- Model 9 --------------------------------------------------
+-----------------------------------------------------------------------------------------------
+Weights: /home/labarvr4090/Documents/Axelle/cytomine/cbir-tfe/weights_folder/Dino/Resnet_scratch/checkpoint_res.pth
+Indexing
+Loaded pretrained weights for efficientnet-b0
+Pretrained weights found at /home/labarvr4090/Documents/Axelle/cytomine/cbir-tfe/weights_folder/Dino/Resnet_scratch/checkpoint_res.pth and loaded with msg: <All keys matched successfully>
+Time of the model: 3.41544246673584
+Time of the transfer: 46.42900586128235
+Time of the indexing: 4.246057987213135
+T_indexing = 65.43030714988708
+stat
+Loaded pretrained weights for efficientnet-b0
+Pretrained weights found at /home/labarvr4090/Documents/Axelle/cytomine/cbir-tfe/weights_folder/Dino/Resnet_scratch/checkpoint_res.pth and loaded with msg: <All keys matched successfully>
+Top 1 accuracy:  0.6390196078431373  +-  0.014273378537375214
+Top 5 accuracy:  0.8140196078431373  +-  0.006778899573749987
+Maj accuracy:  0.6184313725490196  +-  0.012614717730562225
+Top 1 accuracy on project:  0.9363725490196078  +-  0.004523636076493838
+Top 5 accuracy on project:  0.9548039215686274  +-  0.002753837628468295
+Maj accuracy on project:  0.9364705882352942  +-  0.004401949866792857
+Top 1 accuracy on sim:  0.9369607843137254  +-  0.004229344041200572
+Top 5 accuracy on sim:  0.9549019607843137  +-  0.002807415894760102
+Maj accuracy on sim:  0.9369607843137254  +-  0.004206556461357816
+t_tot: 0.043192219009586405 +- 0.0004881672800002042
+t_model: 0.0026901392375721653 +- 0.0001851114346948774
+t_transfer: 0.0002794178093180937 +- 1.6830380790549697e-06
+t model complet: 0.0029695570468902593 +- 0.00018602831908657953
+t_search: 0.04004519616856294 +- 0.00047905204784845924
+all
+Loaded pretrained weights for efficientnet-b0
+Pretrained weights found at /home/labarvr4090/Documents/Axelle/cytomine/cbir-tfe/weights_folder/Dino/Resnet_scratch/checkpoint_res.pth and loaded with msg: <All keys matched successfully>
+top-1 accuracy :  [0.77650782]
+top-5 accuracy :  [0.89555098]
+top-1 accuracy proj :  [0.94387192]
+top-5 accuracy proj :  [0.95366727]
+top-1 accuracy sim :  [0.94418421]
+top-5 accuracy sim :  [0.95404201]
+maj accuracy class :  [0.78653218]
+maj accuracy proj :  [0.94345554]
+maj accuracy sim :  [0.94391356]
+t_tot: 4209.441399097443
+t_model: 245.76773643493652
+t_transfer: 28.43304681777954
+t_search: 3918.703450202942
+weighted
+Loaded pretrained weights for efficientnet-b0
+Pretrained weights found at /home/labarvr4090/Documents/Axelle/cytomine/cbir-tfe/weights_folder/Dino/Resnet_scratch/checkpoint_res.pth and loaded with msg: <All keys matched successfully>
+top-1 accuracy :  [0.64599518]
+top-5 accuracy :  [0.80553582]
+top-1 accuracy proj :  [0.94276669]
+top-5 accuracy proj :  [0.96042858]
+top-1 accuracy sim :  [0.94317249]
+top-5 accuracy sim :  [0.96068069]
+maj accuracy class :  [0.61422943]
+maj accuracy proj :  [0.93878016]
+maj accuracy sim :  [0.93913184]
+t_tot: 4191.34593629837
+t_model: 244.91067028045654
+t_transfer: 28.934680461883545
+t_search: 3900.817484855652
+-----------------------------------------------------------------------------------------------
+------------------------------------- Model 10 --------------------------------------------------
+-----------------------------------------------------------------------------------------------
+Weights: /home/labarvr4090/Documents/Axelle/cytomine/cbir-tfe/weights_folder/Dino/Vit_scratch/checkpoint0099_scratch.pth
+Indexing
+Loaded pretrained weights for efficientnet-b0
+Pretrained weights found at /home/labarvr4090/Documents/Axelle/cytomine/cbir-tfe/weights_folder/Dino/Vit_scratch/checkpoint0099_scratch.pth and loaded with msg: <All keys matched successfully>
+Time of the model: 2.4473581314086914
+Time of the transfer: 46.84795618057251
+Time of the indexing: 3.9042112827301025
+T_indexing = 64.1932418346405
+stat
+Loaded pretrained weights for efficientnet-b0
+Pretrained weights found at /home/labarvr4090/Documents/Axelle/cytomine/cbir-tfe/weights_folder/Dino/Vit_scratch/checkpoint0099_scratch.pth and loaded with msg: <All keys matched successfully>
+Top 1 accuracy:  0.6639215686274511  +-  0.00628980977739037
+Top 5 accuracy:  0.8303921568627451  +-  0.007492146342957976
+Maj accuracy:  0.6650980392156864  +-  0.008075004032146678
+Top 1 accuracy on project:  0.9297058823529412  +-  0.00339759283356145
+Top 5 accuracy on project:  0.9571568627450981  +-  0.0026324944278622777
+Maj accuracy on project:  0.9300980392156862  +-  0.0032530705927523527
+Top 1 accuracy on sim:  0.931078431372549  +-  0.003101821964618886
+Top 5 accuracy on sim:  0.9587254901960784  +-  0.002338600086642455
+Maj accuracy on sim:  0.9318627450980392  +-  0.0030138090488116363
+t_tot: 0.009549001221563302 +- 0.0002418944125258936
+t_model: 0.001522948227676691 +- 0.00020036378000614735
+t_transfer: 9.86329480713489e-05 +- 1.6545556182790899e-06
+t model complet: 0.0016215811757480394 +- 0.00020130848391313385
+t_search: 0.00777423758132785 +- 8.419288791770992e-05
+all
+Loaded pretrained weights for efficientnet-b0
+Pretrained weights found at /home/labarvr4090/Documents/Axelle/cytomine/cbir-tfe/weights_folder/Dino/Vit_scratch/checkpoint0099_scratch.pth and loaded with msg: <All keys matched successfully>
+top-1 accuracy :  [0.7758312]
+top-5 accuracy :  [0.89353153]
+top-1 accuracy proj :  [0.93130764]
+top-5 accuracy proj :  [0.94880603]
+top-1 accuracy sim :  [0.93360814]
+top-5 accuracy sim :  [0.95158537]
+maj accuracy class :  [0.78370079]
+maj accuracy proj :  [0.92867404]
+maj accuracy sim :  [0.93138051]
+t_tot: 890.7079815864563
+t_model: 138.95169377326965
+t_transfer: 9.588081121444702
+t_search: 727.5826239585876
+weighted
+Loaded pretrained weights for efficientnet-b0
+Pretrained weights found at /home/labarvr4090/Documents/Axelle/cytomine/cbir-tfe/weights_folder/Dino/Vit_scratch/checkpoint0099_scratch.pth and loaded with msg: <All keys matched successfully>
+top-1 accuracy :  [0.66962864]
+top-5 accuracy :  [0.82875951]
+top-1 accuracy proj :  [0.93436069]
+top-5 accuracy proj :  [0.96067039]
+top-1 accuracy sim :  [0.93527481]
+top-5 accuracy sim :  [0.96160987]
+maj accuracy class :  [0.65325271]
+maj accuracy proj :  [0.930846]
+maj accuracy sim :  [0.9319816]
+t_tot: 892.1752872467041
+t_model: 138.57681035995483
+t_transfer: 10.48127794265747
+t_search: 728.6718420982361
+-----------------------------------------------------------------------------------------------
+------------------------------------- Model 11 --------------------------------------------------
+-----------------------------------------------------------------------------------------------
+Weights: /home/labarvr4090/Documents/Axelle/cytomine/cbir-tfe/weights_folder/Dino/Vit_tiny/checkpoint.pth
+Indexing
+Loaded pretrained weights for efficientnet-b0
+stat
+Loaded pretrained weights for efficientnet-b0
+all
+Loaded pretrained weights for efficientnet-b0
+weighted
+Loaded pretrained weights for efficientnet-b0

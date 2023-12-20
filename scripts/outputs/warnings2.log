@@ -1,0 +1,153 @@
+<frozen importlib._bootstrap>:228: RuntimeWarning: scipy._lib.messagestream.MessageStream size changed, may indicate binary incompatibility. Expected 56 from C header, got 64 from PyObject
+Some weights of the model checkpoint at facebook/deit-base-distilled-patch16-224 were not used when initializing DeiTForImageClassification: ['cls_classifier.weight', 'distillation_classifier.bias', 'cls_classifier.bias', 'distillation_classifier.weight']
+- This IS expected if you are initializing DeiTForImageClassification from the checkpoint of a model trained on another task or with another architecture (e.g. initializing a BertForSequenceClassification model from a BertForPreTraining model).
+- This IS NOT expected if you are initializing DeiTForImageClassification from the checkpoint of a model that you expect to be exactly identical (initializing a BertForSequenceClassification model from a BertForSequenceClassification model).
+Some weights of DeiTForImageClassification were not initialized from the model checkpoint at facebook/deit-base-distilled-patch16-224 and are newly initialized: ['classifier.weight', 'classifier.bias']
+You should probably TRAIN this model on a down-stream task to be able to use it for predictions and inference.
+Traceback (most recent call last):
+  File "/home/labarvr4090/Documents/Axelle/cytomine/cbir-tfe/database/add_images.py", line 96, in <module>
+    database.add_dataset(args.path, args.extractor, args.generalise, label = not args.unlabeled)
+  File "/home/labarvr4090/anaconda3/envs/tfe_byol/lib/python3.9/site-packages/torch/autograd/grad_mode.py", line 27, in decorate_context
+    return func(*args, **kwargs)
+  File "/home/labarvr4090/Documents/Axelle/cytomine/cbir-tfe/database/db.py", line 134, in add_dataset
+    self.add(out.numpy(), list(filenames),  generalise  = generalise)
+  File "/home/labarvr4090/Documents/Axelle/cytomine/cbir-tfe/database/db.py", line 64, in add
+    self.index.add_with_ids(x, np.arange(last_id, last_id + x.shape[0])) 
+  File "/home/labarvr4090/anaconda3/envs/tfe_byol/lib/python3.9/site-packages/faiss/class_wrappers.py", line 247, in replacement_add_with_ids
+    assert d == self.d
+AssertionError
+<frozen importlib._bootstrap>:228: RuntimeWarning: scipy._lib.messagestream.MessageStream size changed, may indicate binary incompatibility. Expected 56 from C header, got 64 from PyObject
+Some weights of the model checkpoint at facebook/deit-base-distilled-patch16-224 were not used when initializing DeiTForImageClassification: ['distillation_classifier.bias', 'cls_classifier.bias', 'cls_classifier.weight', 'distillation_classifier.weight']
+- This IS expected if you are initializing DeiTForImageClassification from the checkpoint of a model trained on another task or with another architecture (e.g. initializing a BertForSequenceClassification model from a BertForPreTraining model).
+- This IS NOT expected if you are initializing DeiTForImageClassification from the checkpoint of a model that you expect to be exactly identical (initializing a BertForSequenceClassification model from a BertForSequenceClassification model).
+Some weights of DeiTForImageClassification were not initialized from the model checkpoint at facebook/deit-base-distilled-patch16-224 and are newly initialized: ['classifier.weight', 'classifier.bias']
+You should probably TRAIN this model on a down-stream task to be able to use it for predictions and inference.
+Traceback (most recent call last):
+  File "/home/labarvr4090/Documents/Axelle/cytomine/cbir-tfe/database/test_accuracy.py", line 731, in <module>
+    stat(model, args.path, args.db_name, args.extractor, args.generalise, args.project_name, args.class_name, args.retrieve_class)
+  File "/home/labarvr4090/Documents/Axelle/cytomine/cbir-tfe/database/test_accuracy.py", line 595, in stat
+    top_1_acc[0][i], top_5_acc[0][i], top_1_acc[1][i], top_5_acc[1][i], top_1_acc[2][i], top_5_acc[2][i], maj_acc[0][i], maj_acc[1][i], maj_acc[2][i], ts[0][i], ts[1][i], ts[2][i], ts[3][i] =  test(model, dataset, db_name, extractor, "random", generalise, project_name, class_name, False, label = label, stat = True)
+  File "/home/labarvr4090/Documents/Axelle/cytomine/cbir-tfe/database/test_accuracy.py", line 505, in test
+    names, _, t_model_tmp, t_search_tmp, t_transfer_tmp = database.search(image, extractor, generalise=generalise)
+  File "/home/labarvr4090/anaconda3/envs/tfe_byol/lib/python3.9/site-packages/torch/autograd/grad_mode.py", line 27, in decorate_context
+    return func(*args, **kwargs)
+  File "/home/labarvr4090/Documents/Axelle/cytomine/cbir-tfe/database/db.py", line 185, in search
+    distance, labels = self.index.search(out, nrt_neigh) 
+  File "/home/labarvr4090/anaconda3/envs/tfe_byol/lib/python3.9/site-packages/faiss/class_wrappers.py", line 329, in replacement_search
+    assert d == self.d
+AssertionError
+<frozen importlib._bootstrap>:228: RuntimeWarning: scipy._lib.messagestream.MessageStream size changed, may indicate binary incompatibility. Expected 56 from C header, got 64 from PyObject
+Some weights of the model checkpoint at facebook/deit-base-distilled-patch16-224 were not used when initializing DeiTForImageClassification: ['cls_classifier.weight', 'cls_classifier.bias', 'distillation_classifier.weight', 'distillation_classifier.bias']
+- This IS expected if you are initializing DeiTForImageClassification from the checkpoint of a model trained on another task or with another architecture (e.g. initializing a BertForSequenceClassification model from a BertForPreTraining model).
+- This IS NOT expected if you are initializing DeiTForImageClassification from the checkpoint of a model that you expect to be exactly identical (initializing a BertForSequenceClassification model from a BertForSequenceClassification model).
+Some weights of DeiTForImageClassification were not initialized from the model checkpoint at facebook/deit-base-distilled-patch16-224 and are newly initialized: ['classifier.weight', 'classifier.bias']
+You should probably TRAIN this model on a down-stream task to be able to use it for predictions and inference.
+Traceback (most recent call last):
+  File "/home/labarvr4090/Documents/Axelle/cytomine/cbir-tfe/database/test_accuracy.py", line 733, in <module>
+    r = test(model, args.path, args.db_name, args.extractor, args.measure, args.generalise, args.project_name, args.class_name, False, label = args.retrieve_class)
+  File "/home/labarvr4090/Documents/Axelle/cytomine/cbir-tfe/database/test_accuracy.py", line 505, in test
+    names, _, t_model_tmp, t_search_tmp, t_transfer_tmp = database.search(image, extractor, generalise=generalise)
+  File "/home/labarvr4090/anaconda3/envs/tfe_byol/lib/python3.9/site-packages/torch/autograd/grad_mode.py", line 27, in decorate_context
+    return func(*args, **kwargs)
+  File "/home/labarvr4090/Documents/Axelle/cytomine/cbir-tfe/database/db.py", line 185, in search
+    distance, labels = self.index.search(out, nrt_neigh) 
+  File "/home/labarvr4090/anaconda3/envs/tfe_byol/lib/python3.9/site-packages/faiss/class_wrappers.py", line 329, in replacement_search
+    assert d == self.d
+AssertionError
+<frozen importlib._bootstrap>:228: RuntimeWarning: scipy._lib.messagestream.MessageStream size changed, may indicate binary incompatibility. Expected 56 from C header, got 64 from PyObject
+Some weights of the model checkpoint at facebook/deit-base-distilled-patch16-224 were not used when initializing DeiTForImageClassification: ['cls_classifier.weight', 'distillation_classifier.bias', 'distillation_classifier.weight', 'cls_classifier.bias']
+- This IS expected if you are initializing DeiTForImageClassification from the checkpoint of a model trained on another task or with another architecture (e.g. initializing a BertForSequenceClassification model from a BertForPreTraining model).
+- This IS NOT expected if you are initializing DeiTForImageClassification from the checkpoint of a model that you expect to be exactly identical (initializing a BertForSequenceClassification model from a BertForSequenceClassification model).
+Some weights of DeiTForImageClassification were not initialized from the model checkpoint at facebook/deit-base-distilled-patch16-224 and are newly initialized: ['classifier.weight', 'classifier.bias']
+You should probably TRAIN this model on a down-stream task to be able to use it for predictions and inference.
+Traceback (most recent call last):
+  File "/home/labarvr4090/Documents/Axelle/cytomine/cbir-tfe/database/test_accuracy.py", line 733, in <module>
+    r = test(model, args.path, args.db_name, args.extractor, args.measure, args.generalise, args.project_name, args.class_name, False, label = args.retrieve_class)
+  File "/home/labarvr4090/Documents/Axelle/cytomine/cbir-tfe/database/test_accuracy.py", line 505, in test
+    names, _, t_model_tmp, t_search_tmp, t_transfer_tmp = database.search(image, extractor, generalise=generalise)
+  File "/home/labarvr4090/anaconda3/envs/tfe_byol/lib/python3.9/site-packages/torch/autograd/grad_mode.py", line 27, in decorate_context
+    return func(*args, **kwargs)
+  File "/home/labarvr4090/Documents/Axelle/cytomine/cbir-tfe/database/db.py", line 185, in search
+    distance, labels = self.index.search(out, nrt_neigh) 
+  File "/home/labarvr4090/anaconda3/envs/tfe_byol/lib/python3.9/site-packages/faiss/class_wrappers.py", line 329, in replacement_search
+    assert d == self.d
+AssertionError
+<frozen importlib._bootstrap>:228: RuntimeWarning: scipy._lib.messagestream.MessageStream size changed, may indicate binary incompatibility. Expected 56 from C header, got 64 from PyObject
+Some weights of the model checkpoint at facebook/deit-base-distilled-patch16-224 were not used when initializing DeiTForImageClassification: ['cls_classifier.bias', 'distillation_classifier.bias', 'cls_classifier.weight', 'distillation_classifier.weight']
+- This IS expected if you are initializing DeiTForImageClassification from the checkpoint of a model trained on another task or with another architecture (e.g. initializing a BertForSequenceClassification model from a BertForPreTraining model).
+- This IS NOT expected if you are initializing DeiTForImageClassification from the checkpoint of a model that you expect to be exactly identical (initializing a BertForSequenceClassification model from a BertForSequenceClassification model).
+Some weights of DeiTForImageClassification were not initialized from the model checkpoint at facebook/deit-base-distilled-patch16-224 and are newly initialized: ['classifier.bias', 'classifier.weight']
+You should probably TRAIN this model on a down-stream task to be able to use it for predictions and inference.
+<frozen importlib._bootstrap>:228: RuntimeWarning: scipy._lib.messagestream.MessageStream size changed, may indicate binary incompatibility. Expected 56 from C header, got 64 from PyObject
+Some weights of the model checkpoint at facebook/deit-base-distilled-patch16-224 were not used when initializing DeiTForImageClassification: ['distillation_classifier.bias', 'cls_classifier.bias', 'distillation_classifier.weight', 'cls_classifier.weight']
+- This IS expected if you are initializing DeiTForImageClassification from the checkpoint of a model trained on another task or with another architecture (e.g. initializing a BertForSequenceClassification model from a BertForPreTraining model).
+- This IS NOT expected if you are initializing DeiTForImageClassification from the checkpoint of a model that you expect to be exactly identical (initializing a BertForSequenceClassification model from a BertForSequenceClassification model).
+Some weights of DeiTForImageClassification were not initialized from the model checkpoint at facebook/deit-base-distilled-patch16-224 and are newly initialized: ['classifier.bias', 'classifier.weight']
+You should probably TRAIN this model on a down-stream task to be able to use it for predictions and inference.
+<frozen importlib._bootstrap>:228: RuntimeWarning: scipy._lib.messagestream.MessageStream size changed, may indicate binary incompatibility. Expected 56 from C header, got 64 from PyObject
+Some weights of the model checkpoint at facebook/deit-base-distilled-patch16-224 were not used when initializing DeiTForImageClassification: ['distillation_classifier.bias', 'distillation_classifier.weight', 'cls_classifier.bias', 'cls_classifier.weight']
+- This IS expected if you are initializing DeiTForImageClassification from the checkpoint of a model trained on another task or with another architecture (e.g. initializing a BertForSequenceClassification model from a BertForPreTraining model).
+- This IS NOT expected if you are initializing DeiTForImageClassification from the checkpoint of a model that you expect to be exactly identical (initializing a BertForSequenceClassification model from a BertForSequenceClassification model).
+Some weights of DeiTForImageClassification were not initialized from the model checkpoint at facebook/deit-base-distilled-patch16-224 and are newly initialized: ['classifier.weight', 'classifier.bias']
+You should probably TRAIN this model on a down-stream task to be able to use it for predictions and inference.
+Traceback (most recent call last):
+  File "/home/labarvr4090/Documents/Axelle/cytomine/cbir-tfe/database/test_accuracy.py", line 733, in <module>
+    r = test(model, args.path, args.db_name, args.extractor, args.measure, args.generalise, args.project_name, args.class_name, False, label = args.retrieve_class)
+  File "/home/labarvr4090/Documents/Axelle/cytomine/cbir-tfe/database/test_accuracy.py", line 505, in test
+    names, _, t_model_tmp, t_search_tmp, t_transfer_tmp = database.search(image, extractor, generalise=generalise)
+  File "/home/labarvr4090/anaconda3/envs/tfe_byol/lib/python3.9/site-packages/torch/autograd/grad_mode.py", line 27, in decorate_context
+    return func(*args, **kwargs)
+  File "/home/labarvr4090/Documents/Axelle/cytomine/cbir-tfe/database/db.py", line 174, in search
+    out = self.model(image)
+  File "/home/labarvr4090/anaconda3/envs/tfe_byol/lib/python3.9/site-packages/torch/nn/modules/module.py", line 1194, in _call_impl
+    return forward_call(*input, **kwargs)
+  File "/home/labarvr4090/Documents/Axelle/cytomine/cbir-tfe/database/models.py", line 207, in forward
+    return self.forward_function(input)
+  File "/home/labarvr4090/anaconda3/envs/tfe_byol/lib/python3.9/site-packages/torchvision/models/resnet.py", line 285, in forward
+    return self._forward_impl(x)
+  File "/home/labarvr4090/anaconda3/envs/tfe_byol/lib/python3.9/site-packages/torchvision/models/resnet.py", line 274, in _forward_impl
+    x = self.layer2(x)
+  File "/home/labarvr4090/anaconda3/envs/tfe_byol/lib/python3.9/site-packages/torch/nn/modules/module.py", line 1194, in _call_impl
+    return forward_call(*input, **kwargs)
+  File "/home/labarvr4090/anaconda3/envs/tfe_byol/lib/python3.9/site-packages/torch/nn/modules/container.py", line 204, in forward
+    input = module(input)
+  File "/home/labarvr4090/anaconda3/envs/tfe_byol/lib/python3.9/site-packages/torch/nn/modules/module.py", line 1194, in _call_impl
+    return forward_call(*input, **kwargs)
+  File "/home/labarvr4090/anaconda3/envs/tfe_byol/lib/python3.9/site-packages/torchvision/models/resnet.py", line 152, in forward
+    out = self.relu(out)
+  File "/home/labarvr4090/anaconda3/envs/tfe_byol/lib/python3.9/site-packages/torch/nn/modules/module.py", line 1256, in __getattr__
+    def __getattr__(self, name: str) -> Union[Tensor, 'Module']:
+KeyboardInterrupt
+<frozen importlib._bootstrap>:228: RuntimeWarning: scipy._lib.messagestream.MessageStream size changed, may indicate binary incompatibility. Expected 56 from C header, got 64 from PyObject
+Some weights of the model checkpoint at facebook/deit-base-distilled-patch16-224 were not used when initializing DeiTForImageClassification: ['cls_classifier.bias', 'distillation_classifier.weight', 'distillation_classifier.bias', 'cls_classifier.weight']
+- This IS expected if you are initializing DeiTForImageClassification from the checkpoint of a model trained on another task or with another architecture (e.g. initializing a BertForSequenceClassification model from a BertForPreTraining model).
+- This IS NOT expected if you are initializing DeiTForImageClassification from the checkpoint of a model that you expect to be exactly identical (initializing a BertForSequenceClassification model from a BertForSequenceClassification model).
+Some weights of DeiTForImageClassification were not initialized from the model checkpoint at facebook/deit-base-distilled-patch16-224 and are newly initialized: ['classifier.bias', 'classifier.weight']
+You should probably TRAIN this model on a down-stream task to be able to use it for predictions and inference.
+<frozen importlib._bootstrap>:228: RuntimeWarning: scipy._lib.messagestream.MessageStream size changed, may indicate binary incompatibility. Expected 56 from C header, got 64 from PyObject
+Traceback (most recent call last):
+  File "/home/labarvr4090/Documents/Axelle/cytomine/cbir-tfe/database/test_accuracy.py", line 1, in <module>
+    from models import Model
+  File "/home/labarvr4090/Documents/Axelle/cytomine/cbir-tfe/database/models.py", line 26, in <module>
+    "vision": models.vit_b_16(weights = 'ViT_B_16_Weights.DEFAULT'), "cvt":ConvNextForImageClassification.from_pretrained('facebook/convnext-tiny-224'),
+  File "/home/labarvr4090/anaconda3/envs/tfe_byol/lib/python3.9/site-packages/torchvision/models/_utils.py", line 142, in wrapper
+    return fn(*args, **kwargs)
+  File "/home/labarvr4090/anaconda3/envs/tfe_byol/lib/python3.9/site-packages/torchvision/models/_utils.py", line 228, in inner_wrapper
+    return builder(*args, **kwargs)
+  File "/home/labarvr4090/anaconda3/envs/tfe_byol/lib/python3.9/site-packages/torchvision/models/vision_transformer.py", line 621, in vit_b_16
+    return _vision_transformer(
+  File "/home/labarvr4090/anaconda3/envs/tfe_byol/lib/python3.9/site-packages/torchvision/models/vision_transformer.py", line 324, in _vision_transformer
+    model = VisionTransformer(
+  File "/home/labarvr4090/anaconda3/envs/tfe_byol/lib/python3.9/site-packages/torchvision/models/vision_transformer.py", line 223, in __init__
+    self.encoder = Encoder(
+  File "/home/labarvr4090/anaconda3/envs/tfe_byol/lib/python3.9/site-packages/torchvision/models/vision_transformer.py", line 143, in __init__
+    layers[f"encoder_layer_{i}"] = EncoderBlock(
+  File "/home/labarvr4090/anaconda3/envs/tfe_byol/lib/python3.9/site-packages/torchvision/models/vision_transformer.py", line 108, in __init__
+    self.mlp = MLPBlock(hidden_dim, mlp_dim, dropout)
+  File "/home/labarvr4090/anaconda3/envs/tfe_byol/lib/python3.9/site-packages/torchvision/models/vision_transformer.py", line 50, in __init__
+    nn.init.xavier_uniform_(m.weight)
+  File "/home/labarvr4090/anaconda3/envs/tfe_byol/lib/python3.9/site-packages/torch/nn/init.py", line 327, in xavier_uniform_
+    return _no_grad_uniform_(tensor, -a, a)
+  File "/home/labarvr4090/anaconda3/envs/tfe_byol/lib/python3.9/site-packages/torch/nn/init.py", line 14, in _no_grad_uniform_
+    return tensor.uniform_(a, b)
+KeyboardInterrupt

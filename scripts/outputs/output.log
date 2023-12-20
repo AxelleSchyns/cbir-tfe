@@ -1,0 +1,484 @@
+-----------------------------------------------------------------------------------------------
+------------------------------------- Model 1 --------------------------------------------------
+-----------------------------------------------------------------------------------------------
+Indexing
+Loaded pretrained weights for efficientnet-b0
+Time of the model: 3.631845712661743
+Time of the transfer: 46.142956495285034
+Time of the indexing: 3.921743154525757
+T_indexing = 64.63228487968445
+stat
+Loaded pretrained weights for efficientnet-b0
+Top 1 accuracy:  0.7751960784313725  +-  0.006503924819851755
+Top 5 accuracy:  0.8836274509803921  +-  0.00812070132936424
+Maj accuracy:  0.7869607843137254  +-  0.009270280509805953
+Top 1 accuracy on project:  0.9504901960784313  +-  0.0030769323189167226
+Top 5 accuracy on project:  0.9663725490196077  +-  0.0035362134895826213
+Maj accuracy on project:  0.9517647058823527  +-  0.003155583713613974
+Top 1 accuracy on sim:  0.9511764705882353  +-  0.0030940654584430648
+Top 5 accuracy on sim:  0.9663725490196077  +-  0.0035362134895826213
+Maj accuracy on sim:  0.9520588235294116  +-  0.0032648678049699777
+t_tot: 0.005890712948406444 +- 0.00020073688301080618
+t_model: 0.002584251352384979 +- 0.00020753764385558795
+t_transfer: 0.00025772386906193755 +- 2.2161487308754524e-06
+t model complet: 0.002841975221446916 +- 0.0002057598743664559
+t_search: 0.0028939391584957347 +- 7.591676216235053e-05
+all
+Loaded pretrained weights for efficientnet-b0
+top-1 accuracy :  [0.83016884]
+top-5 accuracy :  [0.92854912]
+top-1 accuracy proj :  [0.94881644]
+top-5 accuracy proj :  [0.96221348]
+top-1 accuracy sim :  [0.94885808]
+top-5 accuracy sim :  [0.96222389]
+maj accuracy class :  [0.85469365]
+maj accuracy proj :  [0.94928487]
+maj accuracy sim :  [0.9493265]
+t_tot: 541.2154769897461
+t_model: 236.77006912231445
+t_transfer: 25.141062021255493
+t_search: 264.55087661743164
+weighted
+Loaded pretrained weights for efficientnet-b0
+top-1 accuracy :  [0.76625526]
+top-5 accuracy :  [0.87988523]
+top-1 accuracy proj :  [0.95288718]
+top-5 accuracy proj :  [0.97257138]
+top-1 accuracy sim :  [0.95333775]
+top-5 accuracy sim :  [0.97257376]
+maj accuracy class :  [0.77377969]
+maj accuracy proj :  [0.94858862]
+maj accuracy sim :  [0.94875389]
+t_tot: 540.2029070854187
+t_model: 238.0890986919403
+t_transfer: 23.807324409484863
+t_search: 263.4293968677521
+-----------------------------------------------------------------------------------------------
+------------------------------------- Model 2 --------------------------------------------------
+-----------------------------------------------------------------------------------------------
+Indexing
+Loaded pretrained weights for efficientnet-b0
+Time of the model: 3.636535406112671
+Time of the transfer: 46.22313690185547
+Time of the indexing: 3.910491466522217
+T_indexing = 64.6954836845398
+stat
+Loaded pretrained weights for efficientnet-b0
+Top 1 accuracy:  0.6801960784313726  +-  0.017694924192436835
+Top 5 accuracy:  0.8317647058823529  +-  0.012874158016611369
+Maj accuracy:  0.6622549019607844  +-  0.014303313430338633
+Top 1 accuracy on project:  0.9268627450980391  +-  0.008015268014105776
+Top 5 accuracy on project:  0.9505882352941176  +-  0.005618254424272344
+Maj accuracy on project:  0.9170588235294119  +-  0.007339202851848213
+Top 1 accuracy on sim:  0.9274509803921568  +-  0.0076319609631484596
+Top 5 accuracy on sim:  0.9515686274509803  +-  0.005426804903175733
+Maj accuracy on sim:  0.9180392156862747  +-  0.006935191836795074
+t_tot: 0.005856514561410044 +- 0.00018977957075355255
+t_model: 0.0025564685054853846 +- 0.00021347930029265764
+t_transfer: 0.00024937477766298784 +- 2.089965713120134e-06
+t model complet: 0.002805843283148373 +- 0.00021245803347026918
+t_search: 0.002897426030215095 +- 4.6670334826353735e-05
+all
+Loaded pretrained weights for efficientnet-b0
+top-1 accuracy :  [0.82637978]
+top-5 accuracy :  [0.92372952]
+top-1 accuracy proj :  [0.94386151]
+top-5 accuracy proj :  [0.95965274]
+top-1 accuracy sim :  [0.9440697]
+top-5 accuracy sim :  [0.95996502]
+maj accuracy class :  [0.84641809]
+maj accuracy proj :  [0.94340349]
+maj accuracy sim :  [0.94366373]
+t_tot: 543.2656197547913
+t_model: 239.2443118095398
+t_transfer: 23.591749906539917
+t_search: 265.86405968666077
+weighted
+Loaded pretrained weights for efficientnet-b0
+top-1 accuracy :  [0.67115877]
+top-5 accuracy :  [0.81457038]
+top-1 accuracy proj :  [0.9316523]
+top-5 accuracy proj :  [0.95102751]
+top-1 accuracy sim :  [0.93228604]
+top-5 accuracy sim :  [0.95174272]
+maj accuracy class :  [0.64557904]
+maj accuracy proj :  [0.91735539]
+maj accuracy sim :  [0.91800629]
+t_tot: 547.4951267242432
+t_model: 240.78170943260193
+t_transfer: 24.494091510772705
+t_search: 267.39954948425293
+-----------------------------------------------------------------------------------------------
+------------------------------------- Model 3 --------------------------------------------------
+-----------------------------------------------------------------------------------------------
+Indexing
+Loaded pretrained weights for efficientnet-b0
+Time of the model: 3.8042502403259277
+Time of the transfer: 46.04863429069519
+Time of the indexing: 3.7925193309783936
+T_indexing = 64.64135026931763
+stat
+Loaded pretrained weights for efficientnet-b0
+Top 1 accuracy:  0.6718627450980393  +-  0.010008166599972779
+Top 5 accuracy:  0.8380392156862744  +-  0.011253603805711176
+Maj accuracy:  0.6622549019607844  +-  0.005703995375603453
+Top 1 accuracy on project:  0.9315686274509805  +-  0.0038423368514245797
+Top 5 accuracy on project:  0.9589215686274508  +-  0.0032352941176470476
+Maj accuracy on project:  0.9280392156862745  +-  0.004255398904747216
+Top 1 accuracy on sim:  0.9319607843137255  +-  0.003950870917570551
+Top 5 accuracy on sim:  0.9589215686274508  +-  0.0032352941176470476
+Maj accuracy on sim:  0.9283333333333333  +-  0.004437831489316188
+t_tot: 0.005906229720396153 +- 0.0001893539555204657
+t_model: 0.0025779992225123385 +- 0.00020959224359147225
+t_transfer: 0.0002474999194051705 +- 1.8759953512164598e-06
+t model complet: 0.002825499141917509 +- 0.0002092045322587975
+t_search: 0.002925160702537088 +- 4.5632880371681154e-05
+all
+Loaded pretrained weights for efficientnet-b0
+top-1 accuracy :  [0.82560948]
+top-5 accuracy :  [0.9317032]
+top-1 accuracy proj :  [0.94653676]
+top-5 accuracy proj :  [0.9689172]
+top-1 accuracy sim :  [0.94683863]
+top-5 accuracy sim :  [0.96906294]
+maj accuracy class :  [0.84505444]
+maj accuracy proj :  [0.94651594]
+maj accuracy sim :  [0.94682822]
+t_tot: 542.6061239242554
+t_model: 241.46258115768433
+t_transfer: 23.061387300491333
+t_search: 263.2274992465973
+weighted
+Loaded pretrained weights for efficientnet-b0
+top-1 accuracy :  [0.65992407]
+top-5 accuracy :  [0.82164571]
+top-1 accuracy proj :  [0.93543311]
+top-5 accuracy proj :  [0.96239776]
+top-1 accuracy sim :  [0.93566531]
+top-5 accuracy sim :  [0.96243854]
+maj accuracy class :  [0.64591839]
+maj accuracy proj :  [0.92748958]
+maj accuracy sim :  [0.92768499]
+t_tot: 542.1976056098938
+t_model: 240.15876936912537
+t_transfer: 23.496950149536133
+t_search: 263.88936495780945
+-----------------------------------------------------------------------------------------------
+------------------------------------- Model 4 --------------------------------------------------
+-----------------------------------------------------------------------------------------------
+Indexing
+Loaded pretrained weights for efficientnet-b0
+Time of the model: 3.418372631072998
+Time of the transfer: 46.13509964942932
+Time of the indexing: 3.7861640453338623
+T_indexing = 64.6716833114624
+stat
+Loaded pretrained weights for efficientnet-b0
+Top 1 accuracy:  0.7451960784313726  +-  0.011512409098225504
+Top 5 accuracy:  0.8817647058823528  +-  0.007286629088651782
+Maj accuracy:  0.7448039215686275  +-  0.010065624731247233
+Top 1 accuracy on project:  0.9446078431372549  +-  0.004000432502569234
+Top 5 accuracy on project:  0.9646078431372549  +-  0.003264867804969932
+Maj accuracy on project:  0.9405882352941175  +-  0.0044106752467458635
+Top 1 accuracy on sim:  0.945392156862745  +-  0.00374735585365026
+Top 5 accuracy on sim:  0.9649999999999999  +-  0.0032233886711320664
+Maj accuracy on sim:  0.9409803921568628  +-  0.004246354476021105
+t_tot: 0.005873542018965178 +- 0.00018654302745259034
+t_model: 0.0025703775181489833 +- 0.00019551219600238236
+t_transfer: 0.00025332661236033714 +- 1.9147359109136535e-06
+t model complet: 0.0028237041305093206 +- 0.0001958848064685877
+t_search: 0.0028930873263115975 +- 5.835479505255136e-05
+all
+Loaded pretrained weights for efficientnet-b0
+top-1 accuracy :  [0.83106406]
+top-5 accuracy :  [0.93190098]
+top-1 accuracy proj :  [0.95066933]
+top-5 accuracy proj :  [0.9637645]
+top-1 accuracy sim :  [0.95073179]
+top-5 accuracy sim :  [0.96379572]
+maj accuracy class :  [0.85363188]
+maj accuracy proj :  [0.95114817]
+maj accuracy sim :  [0.95121063]
+t_tot: 538.2524189949036
+t_model: 240.84028816223145
+t_transfer: 23.468745231628418
+t_search: 259.2793478965759
+weighted
+Loaded pretrained weights for efficientnet-b0
+top-1 accuracy :  [0.75315064]
+top-5 accuracy :  [0.8733154]
+top-1 accuracy proj :  [0.94844504]
+top-5 accuracy proj :  [0.96550622]
+top-1 accuracy sim :  [0.94921317]
+top-5 accuracy sim :  [0.96595441]
+maj accuracy class :  [0.73210363]
+maj accuracy proj :  [0.93819879]
+maj accuracy sim :  [0.93865729]
+t_tot: 535.9011096954346
+t_model: 239.51770114898682
+t_transfer: 23.68883490562439
+t_search: 257.90258860588074
+-----------------------------------------------------------------------------------------------
+------------------------------------- Model 5 --------------------------------------------------
+-----------------------------------------------------------------------------------------------
+Indexing
+Loaded pretrained weights for efficientnet-b0
+Time of the model: 2.674675464630127
+Time of the transfer: 135.55010080337524
+Time of the indexing: 3.4999873638153076
+T_indexing = 153.26420950889587
+stat
+Loaded pretrained weights for efficientnet-b0
+Top 1 accuracy:  0.5541176470588235  +-  0.008188475693263175
+Top 5 accuracy:  0.7490196078431373  +-  0.008341979367130443
+Maj accuracy:  0.5292156862745098  +-  0.005992434035269048
+Top 1 accuracy on project:  0.8792156862745099  +-  0.004975912760960579
+Top 5 accuracy on project:  0.9190196078431372  +-  0.00192116842571231
+Maj accuracy on project:  0.8724509803921568  +-  0.00421568627450979
+Top 1 accuracy on sim:  0.8837254901960785  +-  0.005041160836149979
+Top 5 accuracy on sim:  0.9204901960784314  +-  0.0021231772380105956
+Maj accuracy on sim:  0.8770588235294119  +-  0.0050791505282308125
+t_tot: 0.006133920865900378 +- 0.00021651114044338296
+t_model: 0.0019182872304729388 +- 0.00021852128838089404
+t_transfer: 0.0012555660920984606 +- 7.523517572611657e-06
+t model complet: 0.0031738533225713988 +- 0.00022292366038067883
+t_search: 0.0028040620158700383 +- 3.016947237225379e-05
+all
+Loaded pretrained weights for efficientnet-b0
+top-1 accuracy :  [0.75304478]
+top-5 accuracy :  [0.88554744]
+top-1 accuracy proj :  [0.93308767]
+top-5 accuracy proj :  [0.95165823]
+top-1 accuracy sim :  [0.93573168]
+top-5 accuracy sim :  [0.95256386]
+maj accuracy class :  [0.7588637]
+maj accuracy proj :  [0.93058939]
+maj accuracy sim :  [0.9335561]
+t_tot: 571.9730937480927
+t_model: 176.0169746875763
+t_transfer: 122.17904710769653
+t_search: 258.87698578834534
+weighted
+Loaded pretrained weights for efficientnet-b0
+top-1 accuracy :  [0.5707613]
+top-5 accuracy :  [0.75511569]
+top-1 accuracy proj :  [0.8888521]
+top-5 accuracy proj :  [0.92919546]
+top-1 accuracy sim :  [0.89211027]
+top-5 accuracy sim :  [0.93046195]
+maj accuracy class :  [0.51598637]
+maj accuracy proj :  [0.87885587]
+maj accuracy sim :  [0.88259568]
+t_tot: 581.6259479522705
+t_model: 177.8083839416504
+t_transfer: 122.70947265625
+t_search: 266.02000522613525
+-----------------------------------------------------------------------------------------------
+------------------------------------- Model 6 --------------------------------------------------
+-----------------------------------------------------------------------------------------------
+Indexing
+Loaded pretrained weights for efficientnet-b0
+Time of the model: 2.7183079719543457
+Time of the transfer: 135.30835247039795
+Time of the indexing: 3.585026741027832
+T_indexing = 153.01598691940308
+stat
+Loaded pretrained weights for efficientnet-b0
+Top 1 accuracy:  0.29460784313725485  +-  0.010303450484557847
+Top 5 accuracy:  0.513921568627451  +-  0.012204208878114067
+Maj accuracy:  0.22950980392156867  +-  0.011849774143461868
+Top 1 accuracy on project:  0.5956862745098038  +-  0.012262350677454572
+Top 5 accuracy on project:  0.7872549019607843  +-  0.009872310490332633
+Maj accuracy on project:  0.5530392156862745  +-  0.015089442421357598
+Top 1 accuracy on sim:  0.6794117647058824  +-  0.01127237831514103
+Top 5 accuracy on sim:  0.8499019607843137  +-  0.007250263488033065
+Maj accuracy on sim:  0.6505882352941177  +-  0.01357197057307624
+t_tot: 0.006221994044733984 +- 0.00022932019161496666
+t_model: 0.001917587518692017 +- 0.00022299518875347542
+t_transfer: 0.0012880403855267694 +- 9.515570282901481e-06
+t model complet: 0.0032056279042187857 +- 0.00022548814000056356
+t_search: 0.0028587128368078494 +- 5.292796383180148e-05
+all
+Loaded pretrained weights for efficientnet-b0
+top-1 accuracy :  [0.55574293]
+top-5 accuracy :  [0.76604626]
+top-1 accuracy proj :  [0.70758645]
+top-5 accuracy proj :  [0.86461391]
+top-1 accuracy sim :  [0.82846168]
+top-5 accuracy sim :  [0.93987467]
+maj accuracy class :  [0.52903212]
+maj accuracy proj :  [0.7039223]
+maj accuracy sim :  [0.83913143]
+t_tot: 589.5335597991943
+t_model: 176.2173457145691
+t_transfer: 123.14599800109863
+t_search: 275.1488230228424
+weighted
+Loaded pretrained weights for efficientnet-b0
+top-1 accuracy :  [0.28858375]
+top-5 accuracy :  [0.47856968]
+top-1 accuracy proj :  [0.57242626]
+top-5 accuracy proj :  [0.76186924]
+top-1 accuracy sim :  [0.63816329]
+top-5 accuracy sim :  [0.80942146]
+maj accuracy class :  [0.20194556]
+maj accuracy proj :  [0.51120152]
+maj accuracy sim :  [0.58857983]
+t_tot: 582.4580514431
+t_model: 174.59966278076172
+t_transfer: 123.21594500541687
+t_search: 269.8011009693146
+-----------------------------------------------------------------------------------------------
+------------------------------------- Model 7 --------------------------------------------------
+-----------------------------------------------------------------------------------------------
+Indexing
+Loaded pretrained weights for efficientnet-b0
+Time of the model: 2.710981607437134
+Time of the transfer: 136.03483486175537
+Time of the indexing: 3.6190037727355957
+T_indexing = 153.93883347511292
+stat
+Loaded pretrained weights for efficientnet-b0
+Top 1 accuracy:  0.5259803921568628  +-  0.008425100266134826
+Top 5 accuracy:  0.7370588235294118  +-  0.012172665251112751
+Maj accuracy:  0.4987254901960784  +-  0.008434222044707092
+Top 1 accuracy on project:  0.8619607843137256  +-  0.004509803921568649
+Top 5 accuracy on project:  0.9157843137254902  +-  0.004910776386811071
+Maj accuracy on project:  0.8508823529411764  +-  0.0039325825725748335
+Top 1 accuracy on sim:  0.8707843137254901  +-  0.004697705314004273
+Top 5 accuracy on sim:  0.9197058823529412  +-  0.00454483411235267
+Maj accuracy on sim:  0.8586274509803923  +-  0.004718121339418055
+t_tot: 0.006257248883153878 +- 0.00023325465282564658
+t_model: 0.00192805105564641 +- 0.0002310457774324918
+t_transfer: 0.0012758286092795577 +- 6.349315044637718e-06
+t model complet: 0.003203879664925968 +- 0.00023562629898072682
+t_search: 0.0028941010026370785 +- 2.2804527353694042e-05
+all
+Loaded pretrained weights for efficientnet-b0
+top-1 accuracy :  [0.73045614]
+top-5 accuracy :  [0.87768826]
+top-1 accuracy proj :  [0.9203152]
+top-5 accuracy proj :  [0.94651594]
+top-1 accuracy sim :  [0.92701892]
+top-5 accuracy sim :  [0.94987821]
+maj accuracy class :  [0.73787813]
+maj accuracy proj :  [0.91889951]
+maj accuracy sim :  [0.92561364]
+t_tot: 587.8011763095856
+t_model: 178.10331892967224
+t_transfer: 121.40796780586243
+t_search: 273.2983522415161
+weighted
+Loaded pretrained weights for efficientnet-b0
+top-1 accuracy :  [0.52483295]
+top-5 accuracy :  [0.72976816]
+top-1 accuracy proj :  [0.85231193]
+top-5 accuracy proj :  [0.91061965]
+top-1 accuracy sim :  [0.860033]
+top-5 accuracy sim :  [0.91327642]
+maj accuracy class :  [0.48570459]
+maj accuracy proj :  [0.84407317]
+maj accuracy sim :  [0.85075604]
+t_tot: 591.0227546691895
+t_model: 177.6787977218628
+t_transfer: 121.95510387420654
+t_search: 276.17949056625366
+-----------------------------------------------------------------------------------------------
+------------------------------------- Model 8 --------------------------------------------------
+-----------------------------------------------------------------------------------------------
+Indexing
+Loaded pretrained weights for efficientnet-b0
+Time of the model: 2.8493430614471436
+Time of the transfer: 136.03444385528564
+Time of the indexing: 3.6857612133026123
+T_indexing = 153.74576234817505
+stat
+Loaded pretrained weights for efficientnet-b0
+Top 1 accuracy:  0.5054901960784314  +-  0.009030257991897614
+Top 5 accuracy:  0.7214705882352941  +-  0.0069938458145144345
+Maj accuracy:  0.46872549019607845  +-  0.00703495419643538
+Top 1 accuracy on project:  0.8525490196078431  +-  0.008355794412808834
+Top 5 accuracy on project:  0.9069607843137254  +-  0.004891164581673089
+Maj accuracy on project:  0.8472549019607843  +-  0.006197443384031001
+Top 1 accuracy on sim:  0.8642156862745098  +-  0.008760669334123571
+Top 5 accuracy on sim:  0.9140196078431371  +-  0.003995624288689169
+Maj accuracy on sim:  0.860686274509804  +-  0.00563959883069401
+t_tot: 0.006229455961900598 +- 0.00023860742532258615
+t_model: 0.0019157341648550594 +- 0.00022273558130929622
+t_transfer: 0.0012721623860153498 +- 7.767482944136508e-06
+t model complet: 0.0031878965508704096 +- 0.0002263286129300407
+t_search: 0.002882594851886525 +- 5.25965912066945e-05
+all
+Loaded pretrained weights for efficientnet-b0
+top-1 accuracy :  [0.7228572]
+top-5 accuracy :  [0.86541544]
+top-1 accuracy proj :  [0.91120688]
+top-5 accuracy proj :  [0.94076989]
+top-1 accuracy sim :  [0.92421877]
+top-5 accuracy sim :  [0.94858743]
+maj accuracy class :  [0.72520975]
+maj accuracy proj :  [0.90967668]
+maj accuracy sim :  [0.92319863]
+t_tot: 579.4190964698792
+t_model: 176.59943652153015
+t_transfer: 121.7436773777008
+t_search: 266.278183221817
+weighted
+Loaded pretrained weights for efficientnet-b0
+top-1 accuracy :  [0.49417756]
+top-5 accuracy :  [0.69955055]
+top-1 accuracy proj :  [0.8413077]
+top-5 accuracy proj :  [0.90092047]
+top-1 accuracy sim :  [0.85046521]
+top-5 accuracy sim :  [0.90584419]
+maj accuracy class :  [0.44855957]
+maj accuracy proj :  [0.82386203]
+maj accuracy sim :  [0.83407444]
+t_tot: 579.9218113422394
+t_model: 173.99289464950562
+t_transfer: 125.64088368415833
+t_search: 265.3126337528229
+-----------------------------------------------------------------------------------------------
+------------------------------------- Model 9 --------------------------------------------------
+-----------------------------------------------------------------------------------------------
+Indexing
+Loaded pretrained weights for efficientnet-b0
+stat
+Loaded pretrained weights for efficientnet-b0
+all
+Loaded pretrained weights for efficientnet-b0
+weighted
+Loaded pretrained weights for efficientnet-b0
+-----------------------------------------------------------------------------------------------
+------------------------------------- Model 10 --------------------------------------------------
+-----------------------------------------------------------------------------------------------
+Indexing
+Loaded pretrained weights for efficientnet-b0
+stat
+Loaded pretrained weights for efficientnet-b0
+all
+Loaded pretrained weights for efficientnet-b0
+weighted
+Loaded pretrained weights for efficientnet-b0
+-----------------------------------------------------------------------------------------------
+------------------------------------- Model 11 --------------------------------------------------
+-----------------------------------------------------------------------------------------------
+Indexing
+Loaded pretrained weights for efficientnet-b0
+stat
+Loaded pretrained weights for efficientnet-b0
+all
+Loaded pretrained weights for efficientnet-b0
+weighted
+Loaded pretrained weights for efficientnet-b0
+-----------------------------------------------------------------------------------------------
+------------------------------------- Model 12 --------------------------------------------------
+-----------------------------------------------------------------------------------------------
+Indexing
+Loaded pretrained weights for efficientnet-b0
+stat
+Loaded pretrained weights for efficientnet-b0
+all
+Loaded pretrained weights for efficientnet-b0
+weighted
+Loaded pretrained weights for efficientnet-b0

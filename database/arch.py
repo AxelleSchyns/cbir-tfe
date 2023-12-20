@@ -7,8 +7,8 @@ from torch import Tensor
 from torch.nn import Identity
 from torchvision import models as torchvision_models
 import vision_transformer as vits
-
-
+import utils_dino
+from vision_transformer import DINOHead
 """from pytorch_lightning import LightningModule
 from lightly.models.modules import BYOLPredictionHead, BYOLProjectionHead
 from lightly.utils.benchmarking import OnlineLinearClassifier
@@ -56,6 +56,13 @@ class DINO():
         elif model_name in torchvision_models.__dict__.keys():
             self.model = torchvision_models.__dict__[model_name]()
 
+        self.model = utils_dino.MultiCropWrapper(self.model, DINOHead(
+        2048,
+        65536,
+        use_bn=False,
+        norm_last_layer=True
+        ))
+        self.model = self.model.backbone
     def load_weights(self, weight_path):
         state_dict = torch.load(weight_path)
         # remove `module.` prefix

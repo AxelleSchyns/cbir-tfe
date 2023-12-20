@@ -80,7 +80,6 @@ if __name__ == "__main__":
         print("The path mentionned is not a folder")
         exit(-1)
     
-
     # Load the feature extractor 
     model = models.Model(model=args.extractor, use_dr=args.dr_model, num_features=args.num_features, weight=args.weights,
                            device=device)

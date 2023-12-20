@@ -26,8 +26,8 @@ archs_weighted = {"resnet": models.resnet50(weights='ResNet50_Weights.DEFAULT'),
                   "vision": models.vit_b_16(weights = 'ViT_B_16_Weights.DEFAULT'), "cvt":ConvNextForImageClassification.from_pretrained('facebook/convnext-tiny-224'),
                   "deit": DeiTForImageClassification.from_pretrained('facebook/deit-base-distilled-patch16-224'), 
                   "vae": ae.VAE(), "auto":ae.AutoEncoder(), "resnet50": ae.BuildAutoEncoder("resnet50"),
-                  "dino_vit": DINO("vit_small"), "dino_resnet": DINO("resnet50")} # 'vit_tiny', 'vit_small', 'vit_base', n'importe lequel des CNNs de torchvision
-                  #"byol": models.resnet50(weights='ResNet50_Weights.DEFAULT'), "byol2": BYOL(64,67)}
+                  "dino_vit": DINO("vit_small"), "dino_resnet": DINO("resnet50"), "dino_tiny": DINO("vit_tiny"), # 'vit_tiny', 'vit_small', 'vit_base', n'importe lequel des CNNs de torchvision
+                  "byol": models.resnet50(weights='ResNet50_Weights.DEFAULT')}#,"byol2": BYOL(64,67)}
 
 
 class Model(nn.Module):
@@ -156,7 +156,7 @@ class Model(nn.Module):
             elif model == 'byol2':
                 self.model.load_state_dict(torch.load(weight)["state_dict"])
                 self.forward_function = self.model.forward
-            elif model == 'dino_vit' or model == 'dino_resnet':
+            elif model == 'dino_vit' or model == 'dino_resnet' or model == 'dino_tiny':
                 self.model.load_weights(weight)
                 self.model = self.model.model
                 self.forward_function = self.model.forward
@@ -717,9 +717,9 @@ if __name__ == "__main__":
         exit(-1)
     if args.i_sampling is None:
         if args.model in ['auto', 'vae', 'resnet50', 'byol', 'byol2']:
-            args.i_sampling = False
+            args.i_sampling = "False"
         else:
-            args.i_sampling = True
+            args.i_sampling = "True"
     m = Model(model=args.model, eval=False, batch_size=args.batch_size,
               num_features=args.num_features, weight=args.weights,
               use_dr=args.dr_model, device=device, freeze=args.freeze, classification = args.classification, parallel=args.parallel, scratch=args.scratch)

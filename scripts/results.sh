@@ -5,7 +5,7 @@
 # aschyns
 
 # Number of models to test
-nb_models=10
+nb_models=11
 
 # path to data
 path_test='/home/labarvr4090/Documents/Axelle/cytomine/Data/test'
@@ -17,6 +17,8 @@ weights=("$common_path/resnet/v0_alan/epoch_49" "$common_path/resnet/version_1/l
         "$common_path/resnet/version_3/last_epoch" "$common_path/resnet/version_2/epoch_49"
          "$common_path/deit/v0_alan/last_epoch" "$common_path/deit/v1_alan/epoch_49"
          "$common_path/deit/version_1/last_epoch" "$common_path/deit/v2_alan/last_epoch"
+         "$common_path/deit/v4_alan/last_epoch" "$common_path/deit/version_0/epoch_43"
+         "$common_path/deit/v5_alan/last_epoch"
          "$common_path/Dino/Resnet_scratch/checkpoint_res.pth" "$common_path/Dino/Resnet_pre/checkpoint.pth" 
          "$common_path/Dino/Vit_scratch/checkpoint0099_scratch.pth" "$common_path/Dino/Vit_tiny/checkpoint.pth"
          "$common_path/Dino/Vit_pretrained/checkpoint0099_pretrained.pth"
@@ -24,19 +26,19 @@ weights=("$common_path/resnet/v0_alan/epoch_49" "$common_path/resnet/version_1/l
           )
 
 # Extractors
-extractors=('resnet' 'resnet' 'resnet' 'resnet' 'deit' 'deit' 'deit' 'deit' 'dino_resnet' 'dino_resnet' 'dino_vit'  'dino_tiny' 'dino_vit' 'dino_vit' )
+extractors=('resnet' 'resnet' 'resnet' 'resnet' 'deit' 'deit' 'deit' 'deit' 'deit' 'deit' 'deit' 'dino_resnet' 'dino_resnet' 'dino_vit'  'dino_tiny' 'dino_vit' 'dino_vit' )
 
 # Number of features
-num_features=(128 128 128 128 128 128 128 128 2048 2048 384 192 384 384)
+num_features=(128 128 128 128 128 128 128 128 128 128 128 2048 2048 384 192 384 384)
 
 # Type of measure
 measures=('stat' 'all' 'weighted')
 
 # Output files
-output_file='output_res_pre.log'
-warnings_file='warnings_res_pre.log'
+output_file='output_deit.log'
+warnings_file='warnings_deit.log'
 
-for ((nb=9; nb<nb_models; nb++)); do
+for ((nb=8; nb<nb_models; nb++)); do
     echo "-----------------------------------------------------------------------------------------------" >> "$output_file"
     echo "------------------------------------- Model $((nb+1)) --------------------------------------------------" >> "$output_file"
     echo "-----------------------------------------------------------------------------------------------" >> "$output_file"

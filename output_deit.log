@@ -1,0 +1,168 @@
+-----------------------------------------------------------------------------------------------
+------------------------------------- Model 9 --------------------------------------------------
+-----------------------------------------------------------------------------------------------
+Weights: /home/labarvr4090/Documents/Axelle/cytomine/cbir-tfe/weights_folder/deit/v4_alan/last_epoch
+Indexing
+Loaded pretrained weights for efficientnet-b0
+Time of the model: 2.886340856552124
+Time of the transfer: 133.4719114303589
+Time of the indexing: 3.901716947555542
+T_indexing = 152.3578610420227
+stat
+Loaded pretrained weights for efficientnet-b0
+Top 1 accuracy:  0.11980392156862747  +-  0.008611839708234413
+Top 5 accuracy:  0.28656862745098033  +-  0.011707787147550526
+Maj accuracy:  0.05794117647058824  +-  0.0061764705882352946
+Top 1 accuracy on project:  0.2649019607843137  +-  0.014353959033875456
+Top 5 accuracy on project:  0.5422549019607843  +-  0.013587895760124313
+Maj accuracy on project:  0.17941176470588235  +-  0.006848725175126661
+Top 1 accuracy on sim:  0.3515686274509804  +-  0.011758168118090148
+Top 5 accuracy on sim:  0.6583333333333334  +-  0.009538061917610698
+Maj accuracy on sim:  0.27088235294117646  +-  0.008284748799342352
+t_tot: 0.006730000598757875 +- 0.0002590619518977752
+t_model: 0.002455505319670135 +- 0.00025805079011179854
+t_transfer: 0.0009456989811915978 +- 9.02297280803425e-06
+t model complet: 0.0034012043008617328 +- 0.0002596751862239012
+t_search: 0.00307273362197128 +- 3.397038274830937e-05
+all
+Loaded pretrained weights for efficientnet-b0
+top-1 accuracy :  [0.39735182]
+top-5 accuracy :  [0.63004601]
+top-1 accuracy proj :  [0.4771199]
+top-5 accuracy proj :  [0.7327046]
+top-1 accuracy sim :  [0.57047238]
+top-5 accuracy sim :  [0.85030083]
+maj accuracy class :  [0.36056461]
+maj accuracy proj :  [0.45040909]
+maj accuracy sim :  [0.56141611]
+t_tot: 642.6249811649323
+t_model: 223.6693103313446
+t_transfer: 98.4194712638855
+t_search: 295.8959059715271
+weighted
+Loaded pretrained weights for efficientnet-b0
+top-1 accuracy :  [0.10469604]
+top-5 accuracy :  [0.25320561]
+top-1 accuracy proj :  [0.2742206]
+top-5 accuracy proj :  [0.52692912]
+top-1 accuracy sim :  [0.34511309]
+top-5 accuracy sim :  [0.61951906]
+maj accuracy class :  [0.05306838]
+maj accuracy proj :  [0.17610616]
+maj accuracy sim :  [0.25257375]
+t_tot: 642.6096398830414
+t_model: 224.59578132629395
+t_transfer: 96.3761785030365
+t_search: 297.0250680446625
+-----------------------------------------------------------------------------------------------
+------------------------------------- Model 10 --------------------------------------------------
+-----------------------------------------------------------------------------------------------
+Weights: /home/labarvr4090/Documents/Axelle/cytomine/cbir-tfe/weights_folder/deit/version_0/epoch_43
+Indexing
+Loaded pretrained weights for efficientnet-b0
+Time of the model: 3.328972101211548
+Time of the transfer: 135.7868459224701
+Time of the indexing: 4.019669532775879
+T_indexing = 159.99513983726501
+stat
+Loaded pretrained weights for efficientnet-b0
+Top 1 accuracy:  0.7544117647058823  +-  0.0076351088127205955
+Top 5 accuracy:  0.8709803921568628  +-  0.006401893222476255
+Maj accuracy:  0.759313725490196  +-  0.008217183634431479
+Top 1 accuracy on project:  0.9476470588235294  +-  0.003926467528333474
+Top 5 accuracy on project:  0.9651960784313726  +-  0.004984597576033771
+Maj accuracy on project:  0.9445098039215685  +-  0.003167744004196756
+Top 1 accuracy on sim:  0.9484313725490194  +-  0.003999230991053171
+Top 5 accuracy on sim:  0.9654901960784313  +-  0.004917622040778199
+Maj accuracy on sim:  0.9448039215686274  +-  0.0031934308774318183
+t_tot: 0.00685130189446842 +- 0.00024780365338121914
+t_model: 0.0024692580980413097 +- 0.0002467698264269831
+t_transfer: 0.0009602026378407198 +- 8.800801902227354e-06
+t model complet: 0.00342946073588203 +- 0.0002464465643164082
+t_search: 0.0031629191660413553 +- 2.4938800749376075e-05
+all
+Loaded pretrained weights for efficientnet-b0
+top-1 accuracy :  [0.81712573]
+top-5 accuracy :  [0.9250203]
+top-1 accuracy proj :  [0.94677617]
+top-5 accuracy proj :  [0.96479504]
+top-1 accuracy sim :  [0.94693232]
+top-5 accuracy sim :  [0.96491995]
+maj accuracy class :  [0.83882955]
+maj accuracy proj :  [0.94547499]
+maj accuracy sim :  [0.94566236]
+t_tot: 645.1464958190918
+t_model: 224.26404571533203
+t_transfer: 96.87623286247253
+t_search: 299.3836805820465
+weighted
+Loaded pretrained weights for efficientnet-b0
+top-1 accuracy :  [0.74735986]
+top-5 accuracy :  [0.86892405]
+top-1 accuracy proj :  [0.94553922]
+top-5 accuracy proj :  [0.97100576]
+top-1 accuracy sim :  [0.94606586]
+top-5 accuracy sim :  [0.97136951]
+maj accuracy class :  [0.75401993]
+maj accuracy proj :  [0.93239703]
+maj accuracy sim :  [0.93278257]
+t_tot: 642.1993188858032
+t_model: 227.59130859375
+t_transfer: 94.57869672775269
+t_search: 295.3899064064026
+-----------------------------------------------------------------------------------------------
+------------------------------------- Model 11 --------------------------------------------------
+-----------------------------------------------------------------------------------------------
+Weights: /home/labarvr4090/Documents/Axelle/cytomine/cbir-tfe/weights_folder/deit/v5_alan/last_epoch
+Indexing
+Loaded pretrained weights for efficientnet-b0
+Time of the model: 3.458643913269043
+Time of the transfer: 135.48206043243408
+Time of the indexing: 4.2851338386535645
+T_indexing = 160.0338921546936
+stat
+Loaded pretrained weights for efficientnet-b0
+Top 1 accuracy:  0.5172549019607843  +-  0.011518669131548642
+Top 5 accuracy:  0.7307843137254902  +-  0.006781026065015924
+Maj accuracy:  0.4793137254901961  +-  0.009580292632295491
+Top 1 accuracy on project:  0.8534313725490197  +-  0.004867526112669179
+Top 5 accuracy on project:  0.9124509803921568  +-  0.004296981764864912
+Maj accuracy on project:  0.8384313725490197  +-  0.004975912760960578
+Top 1 accuracy on sim:  0.8637254901960786  +-  0.005187747668754112
+Top 5 accuracy on sim:  0.9172549019607843  +-  0.004322628957852679
+Maj accuracy on sim:  0.8488235294117648  +-  0.005559783089708931
+t_tot: 0.006774245781057021 +- 0.0002600469647801763
+t_model: 0.00248727373048371 +- 0.0002575345812885613
+t_transfer: 0.0009234524240680768 +- 1.3938035258086238e-05
+t model complet: 0.0034107261545517865 +- 0.00026133389705473316
+t_search: 0.003104206744362326 +- 5.5846832654015e-05
+all
+Loaded pretrained weights for efficientnet-b0
+top-1 accuracy :  [0.73327712]
+top-5 accuracy :  [0.87571045]
+top-1 accuracy proj :  [0.91640122]
+top-5 accuracy proj :  [0.94805654]
+top-1 accuracy sim :  [0.92718548]
+top-5 accuracy sim :  [0.95346949]
+maj accuracy class :  [0.73725355]
+maj accuracy proj :  [0.91482939]
+maj accuracy sim :  [0.92572815]
+t_tot: 638.899927854538
+t_model: 228.39005661010742
+t_transfer: 91.82172966003418
+t_search: 293.7690715789795
+weighted
+Loaded pretrained weights for efficientnet-b0
+top-1 accuracy :  [0.49693793]
+top-5 accuracy :  [0.70693754]
+top-1 accuracy proj :  [0.8403201]
+top-5 accuracy proj :  [0.90894037]
+top-1 accuracy sim :  [0.84903997]
+top-5 accuracy sim :  [0.91373519]
+maj accuracy class :  [0.44242191]
+maj accuracy proj :  [0.80414371]
+maj accuracy sim :  [0.81315043]
+t_tot: 642.0640709400177
+t_model: 226.09207463264465
+t_transfer: 95.84628367424011
+t_search: 295.4470658302307

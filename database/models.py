@@ -343,6 +343,8 @@ class Model(nn.Module):
                         # Byol training
                         elif self.model_name == "byol":
                             loss = self.model(images_gpu)
+                            loss = torch.mean(loss)
+                            print(loss)
                     
                         # Supervised training
                         else:
@@ -354,7 +356,6 @@ class Model(nn.Module):
                                 print("This model requires a specific loss. Please specifiy one. ")
                                 exit(-1)
                             loss = loss_function(out, labels_gpu)
-                        
                         if j == 0:
                             # Update
                             optimizer.zero_grad(set_to_none=True)
@@ -362,7 +363,10 @@ class Model(nn.Module):
                             optimizer.step()
 
                             if self.model_name == "byol":
-                                self.model.update_moving_average()
+                                try:
+                                    self.model.update_moving_average()
+                                except:
+                                    self.model.module.update_moving_average()
 
                         loss_lists[j].append(loss.item())
                 

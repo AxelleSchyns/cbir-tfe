@@ -231,8 +231,9 @@ def display_cm(ground_truth, data, predictions, predictions_maj):
     df_cm = pd.DataFrame(cm[np.ix_(rows, columns)], index=rows_lab, columns=columns_lab)
     plt.figure(figsize = (10,7))
     sn.heatmap(df_cm, annot=True, xticklabels=True, yticklabels=True)
-    plt.show()
-    
+    #plt.show()
+    # save the confusion matrix
+    plt.savefig('/home/labarvr4090/Documents/Axelle/cytomine/cbir-tfe/cms/confusion_matrix_top1.png')
     # Confusion matrix based on maj_class accuracy:
     columns = []
     columns_lab = []
@@ -247,8 +248,9 @@ def display_cm(ground_truth, data, predictions, predictions_maj):
     df_cm = pd.DataFrame(cm[np.ix_(rows, columns)], index=rows_lab, columns=columns_lab)
     plt.figure(figsize = (10,7))
     sn.heatmap(df_cm, annot=True, xticklabels=True, yticklabels=True)
-    plt.show()
-
+    #plt.show()
+    # save the confusion matrix
+    plt.savefig('/home/labarvr4090/Documents/Axelle/cytomine/cbir-tfe/cms/confusion_matrix_maj.png')
 # Compute the metrics per class of the dataset 
 # - model = python object containing the feature extractor
 # - dataset = path to the dataset from which to get the queries
@@ -730,4 +732,4 @@ if __name__ == "__main__":
         if args.measure == "stat":
             stat(model, args.path, args.db_name, args.extractor, args.generalise, args.project_name, args.class_name, args.retrieve_class)
         else: # Other protocols: weighted - default - remove - random 
-            r = test(model, args.path, args.db_name, args.extractor, args.measure, args.generalise, args.project_name, args.class_name, False, label = args.retrieve_class)
+            r = test(model, args.path, args.db_name, args.extractor, args.measure, args.generalise, args.project_name, args.class_name, True, label = args.retrieve_class)

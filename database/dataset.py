@@ -241,20 +241,21 @@ class TrainingDataset(Dataset):
                     files.sort()
                     for file in files:
                         if need_val != 1:
-                            if need_val == 0 or cpt_c <= 0.85 * nb_im_c:
+                            if need_val == 0 or cpt_c <= 0.98 * nb_im_c:
                                 img = os.path.join(dir, file)
                                 cls = dir[dir.rfind("/") + 1:]
                                 self.image_dict[i] = (img, self.conversion[cls])
                                 self.image_list[self.conversion[cls]].append(img)
                                 i += 1
                         else:
-                            if cpt_c > 0.85 * nb_im_c:
+                            if cpt_c > 0.98 * nb_im_c:
                                 img = os.path.join(dir, file)
                                 cls = dir[dir.rfind("/") + 1:]
                                 self.image_dict[i] = (img, self.conversion[cls])
                                 self.image_list[self.conversion[cls]].append(img)
                                 i += 1
                         cpt_c += 1
+        # Remove empty entries 
         
         # 4. Create the transformation to apply to the images (depends on model)
         if model_name == 'deit' or model_name == 'cvt' or model_name == 'conv':
@@ -312,7 +313,7 @@ class TrainingDataset(Dataset):
 
     # https://github.com/Confusezius/Deep-Metric-Learning-Baselines/blob/60772745e28bc90077831bb4c9f07a233e602797/datasets.py#L428
     def __getitem__(self, idx):
-        if self.informative_samp == "False" or self.needs_val == 2:
+        if self.informative_samp == "False" or self.needs_val == 1:
             img = Image.open(self.image_dict[idx][0]).convert('RGB')
             return self.image_dict[idx][1], self.transform(img), 
         else:

@@ -344,7 +344,6 @@ class Model(nn.Module):
                         elif self.model_name == "byol":
                             loss = self.model(images_gpu)
                             loss = torch.mean(loss)
-                            print(loss)
                     
                         # Supervised training
                         else:

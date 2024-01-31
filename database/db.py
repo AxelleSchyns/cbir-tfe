@@ -182,6 +182,11 @@ class Database:
             t_model = time.time()
             out, emb = self.model.model(image, return_embedding=True)
             t_model = time.time() - t_model
+        elif extractor == "cdpath":
+            t = time.time()
+            image = arch.scale_generator(image, 224, 1, 112, rescale_size=224)
+            out = self.model.model.encode(image)
+            t_im = time.time() - t
         else:
             t_model = time.time()
             out = self.model(image)

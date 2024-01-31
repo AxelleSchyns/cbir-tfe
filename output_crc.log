@@ -1,0 +1,384 @@
+-----------------------------------------------------------------------------------------------
+------------------------------------- Model 1 --------------------------------------------------
+-----------------------------------------------------------------------------------------------
+Weights: /home/labsig/Documents/Axelle/cytomine/cbir-tfe/weights_folder/test_env/test_env_v4_expo
+Indexing
+Loaded pretrained weights for efficientnet-b0
+Time of the model: 2.483450412750244
+Time of the transfer: 228.2861454486847
+Time of the indexing: 3.091831922531128
+T_indexing = 244.6189820766449
+stat
+Loaded pretrained weights for efficientnet-b0
+Top 1 accuracy:  0.39801587301587305  +-  0.011490819234579565
+Top 5 accuracy:  0.7241071428571428  +-  0.01542299822996852
+Maj accuracy:  0.33561507936507934  +-  0.013258437726589866
+Top 1 accuracy on project:  1.0  +-  0.0
+Top 5 accuracy on project:  1.0  +-  0.0
+Maj accuracy on project:  1.0  +-  0.0
+Top 1 accuracy on sim:  1.0  +-  0.0
+Top 5 accuracy on sim:  1.0  +-  0.0
+Maj accuracy on sim:  1.0  +-  0.0
+t_tot: 0.01073110211129282 +- 0.0007907750568660223
+t_model: 0.002865243168438182 +- 0.0004953658040039475
+t_transfer: 0.0019201152932410148 +- 0.00029025472008911116
+t model complet: 0.004785358461679197 +- 0.00020780247653025158
+t_search: 0.005753522784102197 +- 0.000575049466968338
+all
+Loaded pretrained weights for efficientnet-b0
+top-1 accuracy :  [0.41922006]
+top-5 accuracy :  [0.75181058]
+top-1 accuracy proj :  [1.]
+top-5 accuracy proj :  [1.]
+top-1 accuracy sim :  [1.]
+top-5 accuracy sim :  [1.]
+maj accuracy class :  [0.37116992]
+maj accuracy proj :  [1.]
+maj accuracy sim :  [1.]
+t_tot: 76.32912015914917
+t_model: 19.964739322662354
+t_transfer: 14.468353986740112
+t_search: 40.52767586708069
+weighted
+Loaded pretrained weights for efficientnet-b0
+top-1 accuracy :  [0.39910765]
+top-5 accuracy :  [0.72780819]
+top-1 accuracy proj :  [1.]
+top-5 accuracy proj :  [1.]
+top-1 accuracy sim :  [1.]
+top-5 accuracy sim :  [1.]
+maj accuracy class :  [0.33510405]
+maj accuracy proj :  [1.]
+maj accuracy sim :  [1.]
+t_tot: 76.69482040405273
+t_model: 21.284653425216675
+t_transfer: 13.31461501121521
+t_search: 40.717339515686035
+-----------------------------------------------------------------------------------------------
+------------------------------------- Model 1 --------------------------------------------------
+-----------------------------------------------------------------------------------------------
+Weights: /home/labsig/Documents/Axelle/cytomine/cbir-tfe/weights_folder/test_env/test_env_v4
+Indexing
+Loaded pretrained weights for efficientnet-b0
+Time of the model: 2.3906402587890625
+Time of the transfer: 223.53387236595154
+Time of the indexing: 3.207383871078491
+T_indexing = 239.85050916671753
+stat
+Loaded pretrained weights for efficientnet-b0
+Top 1 accuracy:  0.11111111111111112  +-  1.3877787807814457e-17
+Top 5 accuracy:  0.4444444444444445  +-  5.551115123125783e-17
+Maj accuracy:  0.0  +-  0.0
+Top 1 accuracy on project:  1.0  +-  0.0
+Top 5 accuracy on project:  1.0  +-  0.0
+Maj accuracy on project:  1.0  +-  0.0
+Top 1 accuracy on sim:  1.0  +-  0.0
+Top 5 accuracy on sim:  1.0  +-  0.0
+Maj accuracy on sim:  1.0  +-  0.0
+t_tot: 0.010438068520789054 +- 0.0006445499824400503
+t_model: 0.0026483266260109695 +- 0.00044110513794322484
+t_transfer: 0.0020143691464966423 +- 0.00028982131930882163
+t model complet: 0.0046626957725076105 +- 0.0001543512709171618
+t_search: 0.0055849074148664295 +- 0.0004849442292142053
+all
+Loaded pretrained weights for efficientnet-b0
+top-1 accuracy :  [0.14415042]
+top-5 accuracy :  [0.44554318]
+top-1 accuracy proj :  [1.]
+top-5 accuracy proj :  [1.]
+top-1 accuracy sim :  [1.]
+top-5 accuracy sim :  [1.]
+maj accuracy class :  [0.]
+maj accuracy proj :  [1.]
+maj accuracy sim :  [1.]
+t_tot: 77.25076699256897
+t_model: 21.050872087478638
+t_transfer: 13.563158512115479
+t_search: 41.22645044326782
+weighted
+Loaded pretrained weights for efficientnet-b0
+top-1 accuracy :  [0.11111111]
+top-5 accuracy :  [0.44444444]
+top-1 accuracy proj :  [1.]
+top-5 accuracy proj :  [1.]
+top-1 accuracy sim :  [1.]
+top-5 accuracy sim :  [1.]
+maj accuracy class :  [0.]
+maj accuracy proj :  [1.]
+maj accuracy sim :  [1.]
+t_tot: 75.9831120967865
+t_model: 19.78615951538086
+t_transfer: 14.324929237365723
+t_search: 40.486507177352905
+-----------------------------------------------------------------------------------------------
+------------------------------------- Model 1 --------------------------------------------------
+-----------------------------------------------------------------------------------------------
+Weights: /home/labsig/Documents/Axelle/cytomine/cbir-tfe/weights_folder/test_env/test_env_v4_expo
+Indexing
+Loaded pretrained weights for efficientnet-b0
+:(:(:(:())))
+/home/labsig/Documents/Axelle/cytomine/Data/test
+The path mentionned is not a folder
+stat
+Loaded pretrained weights for efficientnet-b0
+Path mentionned is not a folder
+all
+Loaded pretrained weights for efficientnet-b0
+Path mentionned is not a folder
+weighted
+Loaded pretrained weights for efficientnet-b0
+Path mentionned is not a folder
+-----------------------------------------------------------------------------------------------
+------------------------------------- Model 2 --------------------------------------------------
+-----------------------------------------------------------------------------------------------
+Weights: /home/labsig/Documents/Axelle/cytomine/cbir-tfe/weights_folder/test_env/test_env_v4
+Indexing
+Loaded pretrained weights for efficientnet-b0
+:(:(:(:())))
+/home/labsig/Documents/Axelle/cytomine/Data/test
+The path mentionned is not a folder
+stat
+Loaded pretrained weights for efficientnet-b0
+Path mentionned is not a folder
+all
+Loaded pretrained weights for efficientnet-b0
+Path mentionned is not a folder
+weighted
+Loaded pretrained weights for efficientnet-b0
+Path mentionned is not a folder
+-----------------------------------------------------------------------------------------------
+------------------------------------- Model 1 --------------------------------------------------
+-----------------------------------------------------------------------------------------------
+Weights: /home/labsig/Documents/Axelle/cytomine/cbir-tfe/weights_folder/test_env/test_env_v4_expo
+Indexing
+Loaded pretrained weights for efficientnet-b0
+Time of the model: 2.4280431270599365
+Time of the transfer: 241.9296534061432
+Time of the indexing: 3.561262369155884
+T_indexing = 259.48104095458984
+stat
+Loaded pretrained weights for efficientnet-b0
+Top 1 accuracy:  0.07578431372549019  +-  0.004902941078450976
+Top 5 accuracy:  0.17362745098039217  +-  0.007873104514868178
+Maj accuracy:  0.037941176470588235  +-  0.005424147526911002
+Top 1 accuracy on project:  0.16754901960784316  +-  0.00502684068364481
+Top 5 accuracy on project:  0.34176470588235297  +-  0.009961479055592568
+Maj accuracy on project:  0.09901960784313725  +-  0.005597687224949097
+Top 1 accuracy on sim:  0.23607843137254902  +-  0.0068177798630249834
+Top 5 accuracy on sim:  0.4424509803921569  +-  0.007806901588869985
+Maj accuracy on sim:  0.17784313725490197  +-  0.010057504786848751
+t_tot: 0.011321794519237444 +- 0.0006505298202516147
+t_model: 0.002905535464193307 +- 0.00041092377767897964
+t_transfer: 0.0019286774887758147 +- 0.0002737161844881833
+t model complet: 0.00483421295296912 +- 0.0001401848151863176
+t_search: 0.006293345830019783 +- 0.0005058166782579627
+all
+Loaded pretrained weights for efficientnet-b0
+top-1 accuracy :  [0.3488435]
+top-5 accuracy :  [0.64264152]
+top-1 accuracy proj :  [0.44147773]
+top-5 accuracy proj :  [0.76363125]
+top-1 accuracy sim :  [0.55901151]
+top-5 accuracy sim :  [0.87505465]
+maj accuracy class :  [0.27649741]
+maj accuracy proj :  [0.38368413]
+maj accuracy sim :  [0.55146462]
+t_tot: 1084.7926387786865
+t_model: 279.35213327407837
+t_transfer: 183.10132694244385
+t_search: 603.5218842029572
+weighted
+Loaded pretrained weights for efficientnet-b0
+top-1 accuracy :  [0.05953399]
+top-5 accuracy :  [0.14058719]
+top-1 accuracy proj :  [0.14456832]
+top-5 accuracy proj :  [0.2898541]
+top-1 accuracy sim :  [0.19995847]
+top-5 accuracy sim :  [0.37047583]
+maj accuracy class :  [0.03022721]
+maj accuracy proj :  [0.07904638]
+maj accuracy sim :  [0.14378366]
+t_tot: 1092.0384340286255
+t_model: 285.17275953292847
+t_transfer: 180.78247141838074
+t_search: 607.237720489502
+-----------------------------------------------------------------------------------------------
+------------------------------------- Model 2 --------------------------------------------------
+-----------------------------------------------------------------------------------------------
+Weights: /home/labsig/Documents/Axelle/cytomine/cbir-tfe/weights_folder/test_env/test_env_v4
+Indexing
+Loaded pretrained weights for efficientnet-b0
+Time of the model: 2.481610059738159
+Time of the transfer: 237.60953879356384
+Time of the indexing: 3.5784432888031006
+T_indexing = 255.29742860794067
+stat
+Loaded pretrained weights for efficientnet-b0
+Top 1 accuracy:  0.018627450980392153  +-  3.469446951953614e-18
+Top 5 accuracy:  0.05588235294117647  +-  0.0
+Maj accuracy:  0.018627450980392153  +-  3.469446951953614e-18
+Top 1 accuracy on project:  0.037254901960784306  +-  6.938893903907228e-18
+Top 5 accuracy on project:  0.11176470588235295  +-  0.0
+Maj accuracy on project:  0.037254901960784306  +-  6.938893903907228e-18
+Top 1 accuracy on sim:  0.037254901960784306  +-  6.938893903907228e-18
+Top 5 accuracy on sim:  0.20490196078431372  +-  0.0
+Maj accuracy on sim:  0.037254901960784306  +-  6.938893903907228e-18
+t_tot: 0.011558568173763798 +- 0.0011465473231038466
+t_model: 0.0030835041579078226 +- 0.0007346736966360739
+t_transfer: 0.00180265136793548 +- 0.0004734769818720847
+t model complet: 0.004886155525843303 +- 0.00026246939504257405
+t_search: 0.006473218249339684 +- 0.0008692475907203556
+all
+Loaded pretrained weights for efficientnet-b0
+top-1 accuracy :  [0.26749318]
+top-5 accuracy :  [0.33398913]
+top-1 accuracy proj :  [0.29094581]
+top-5 accuracy proj :  [0.37422189]
+top-1 accuracy sim :  [0.29094581]
+top-5 accuracy sim :  [0.5091916]
+maj accuracy class :  [0.26749318]
+maj accuracy proj :  [0.29094581]
+maj accuracy sim :  [0.29094581]
+t_tot: 1079.4268412590027
+t_model: 276.74693989753723
+t_transfer: 185.24569177627563
+t_search: 598.82253241539
+weighted
+Loaded pretrained weights for efficientnet-b0
+top-1 accuracy :  [0.01492537]
+top-5 accuracy :  [0.04477612]
+top-1 accuracy proj :  [0.02985075]
+top-5 accuracy proj :  [0.08955224]
+top-1 accuracy sim :  [0.02985075]
+top-5 accuracy sim :  [0.1641791]
+maj accuracy class :  [0.01492537]
+maj accuracy proj :  [0.02985075]
+maj accuracy sim :  [0.02985075]
+t_tot: 1089.4599361419678
+t_model: 287.74292755126953
+t_transfer: 177.79766631126404
+t_search: 604.9186043739319
+-----------------------------------------------------------------------------------------------
+------------------------------------- Model 1 --------------------------------------------------
+-----------------------------------------------------------------------------------------------
+Weights: /home/labsig/Documents/Axelle/cytomine/cbir-tfe/weights_folder/test_env/test_env_og_expo
+Indexing
+Loaded pretrained weights for efficientnet-b0
+Time of the model: 2.5315873622894287
+Time of the transfer: 242.48248386383057
+Time of the indexing: 3.5113003253936768
+T_indexing = 259.96511459350586
+stat
+Loaded pretrained weights for efficientnet-b0
+Top 1 accuracy:  0.35901960784313725  +-  0.008374179021201028
+Top 5 accuracy:  0.6596078431372548  +-  0.012267052799699644
+Maj accuracy:  0.3098039215686274  +-  0.007056099692331994
+Top 1 accuracy on project:  0.7668627450980392  +-  0.0118119964563365
+Top 5 accuracy on project:  0.901470588235294  +-  0.006402643869512015
+Maj accuracy on project:  0.759313725490196  +-  0.007469661823059004
+Top 1 accuracy on sim:  0.8059803921568628  +-  0.010192778500684382
+Top 5 accuracy on sim:  0.9236274509803921  +-  0.006145268213417601
+Maj accuracy on sim:  0.8025490196078431  +-  0.007796429549831782
+t_tot: 0.011100338370192284 +- 0.0006087586875499365
+t_model: 0.0027466461705226526 +- 0.00038168857066141367
+t_transfer: 0.0020100089381722844 +- 0.0002215241831576623
+t model complet: 0.004756655108694937 +- 0.00016271853004672123
+t_search: 0.006150621853622736 +- 0.0004412177070426137
+all
+Loaded pretrained weights for efficientnet-b0
+top-1 accuracy :  [0.58528512]
+top-5 accuracy :  [0.8259634]
+top-1 accuracy proj :  [0.77334333]
+top-5 accuracy proj :  [0.90781338]
+top-1 accuracy sim :  [0.83124102]
+top-5 accuracy sim :  [0.94365332]
+maj accuracy class :  [0.57553141]
+maj accuracy proj :  [0.77802761]
+maj accuracy sim :  [0.84203568]
+t_tot: 1137.4778339862823
+t_model: 312.26073718070984
+t_transfer: 164.64747262001038
+t_search: 640.9340364933014
+weighted
+Loaded pretrained weights for efficientnet-b0
+top-1 accuracy :  [0.33410418]
+top-5 accuracy :  [0.63387975]
+top-1 accuracy proj :  [0.73842131]
+top-5 accuracy proj :  [0.87931883]
+top-1 accuracy sim :  [0.77018591]
+top-5 accuracy sim :  [0.89873075]
+maj accuracy class :  [0.30371585]
+maj accuracy proj :  [0.7315593]
+maj accuracy sim :  [0.76634782]
+t_tot: 1170.8259680271149
+t_model: 330.22609972953796
+t_transfer: 152.02800035476685
+t_search: 668.4271240234375
+-----------------------------------------------------------------------------------------------
+------------------------------------- Model 2 --------------------------------------------------
+-----------------------------------------------------------------------------------------------
+Weights: /home/labsig/Documents/Axelle/cytomine/cbir-tfe/weights_folder/test_env/test_env_v4
+Indexing
+Loaded pretrained weights for efficientnet-b0
+Time of the model: 2.505908250808716
+Time of the transfer: 237.640239238739
+Time of the indexing: 3.5397887229919434
+T_indexing = 255.1153049468994
+stat
+Loaded pretrained weights for efficientnet-b0
+-----------------------------------------------------------------------------------------------
+------------------------------------- Model 2 --------------------------------------------------
+-----------------------------------------------------------------------------------------------
+Weights: /home/labsig/Documents/Axelle/cytomine/cbir-tfe/weights_folder/test_env/old2
+Indexing
+Loaded pretrained weights for efficientnet-b0
+Time of the model: 2.495668649673462
+Time of the transfer: 246.19429922103882
+Time of the indexing: 3.55385684967041
+T_indexing = 264.0589473247528
+stat
+Loaded pretrained weights for efficientnet-b0
+Top 1 accuracy:  0.650686274509804  +-  0.009636312362901156
+Top 5 accuracy:  0.8346078431372549  +-  0.005899484856208002
+Maj accuracy:  0.6597058823529414  +-  0.01216990129380518
+Top 1 accuracy on project:  0.9109803921568627  +-  0.00457329560380022
+Top 5 accuracy on project:  0.9558823529411764  +-  0.004471276176859392
+Maj accuracy on project:  0.9120588235294118  +-  0.004961404285835275
+Top 1 accuracy on sim:  0.9152941176470588  +-  0.005355490307352027
+Top 5 accuracy on sim:  0.9596078431372549  +-  0.004798916960988397
+Maj accuracy on sim:  0.9156862745098039  +-  0.005849581917716205
+t_tot: 0.011576689855725159 +- 0.00045673149810607347
+t_model: 0.0030336385848475436 +- 0.000270475323044412
+t_transfer: 0.0018630115191141765 +- 0.00017351589373723768
+t model complet: 0.004896650103961721 +- 9.989681991986068e-05
+t_search: 0.006475227416730395 +- 0.00035621745596641397
+all
+Loaded pretrained weights for efficientnet-b0
+top-1 accuracy :  [0.76922116]
+top-5 accuracy :  [0.9168072]
+top-1 accuracy proj :  [0.92891346]
+top-5 accuracy proj :  [0.96554452]
+top-1 accuracy sim :  [0.93044365]
+top-5 accuracy sim :  [0.96694981]
+maj accuracy class :  [0.78716716]
+maj accuracy proj :  [0.93026669]
+maj accuracy sim :  [0.93197385]
+t_tot: 1179.7226583957672
+t_model: 335.57598519325256
+t_transfer: 150.19688296318054
+t_search: 673.5104410648346
+weighted
+Loaded pretrained weights for efficientnet-b0
+top-1 accuracy :  [0.64309818]
+top-5 accuracy :  [0.81213875]
+top-1 accuracy proj :  [0.91520315]
+top-5 accuracy proj :  [0.95602997]
+top-1 accuracy sim :  [0.91833415]
+top-5 accuracy sim :  [0.95854052]
+maj accuracy class :  [0.65516505]
+maj accuracy proj :  [0.914616]
+maj accuracy sim :  [0.91720916]
+t_tot: 1175.611709356308
+t_model: 332.2075459957123
+t_transfer: 150.93185925483704
+t_search: 672.0873668193817

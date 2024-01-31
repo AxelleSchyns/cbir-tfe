@@ -9,21 +9,18 @@ with open(log_file, "r") as file:
     log_content = file.read()
 
 # Extract all numbers using regular expression
-numbers = re.findall(r'\b\d+\.\d+\b', log_content)
-numbers_scientific = re.findall(r'\b\d+\.\d+[eE][-+]?\d+\b', log_content)
-
+numbers = re.findall(r'\b(?:0(?:\.\d+)?|\d+\.\d+|\d+e[+-]?\d+)\b', log_content) #re.findall(r'\b\d+\.\d+\b', log_content)
+#numbers_scientific = re.findall(r'\b\d+\.\d+[eE][-+]?\d+\b', log_content)
+print(len(numbers))
+#print(len(numbers_scientific))
 # insert scientific numbers at the right place: Attention peut etre problématique! -> nombre en e changent de model en model -> a adapter
-good_numbers = np.zeros(len(numbers)+len(numbers_scientific))  
+good_numbers = np.zeros(len(numbers))  
 for i in range(len(numbers)):
-    if i < 27:
+    """if i < 27:
         good_numbers[i] = numbers[i]
-    elif i < 30:
-        good_numbers[i+1] = numbers[i]
-    else:
-        good_numbers[i+2] = numbers[i]
-good_numbers[27] = numbers_scientific[0]
-good_numbers[30] = numbers_scientific[1]
-
+    else:"""
+    good_numbers[i] = numbers[i]
+#good_numbers[27] = numbers_scientific[0]
 
 with_uncertainty = []
 # take the uncertainties and create tuples

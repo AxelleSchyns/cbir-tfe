@@ -1,0 +1,921 @@
+/home/labsig/anaconda3/envs/phd/lib/python3.9/site-packages/scipy/__init__.py:138: UserWarning: A NumPy version >=1.16.5 and <1.23.0 is required for this version of SciPy (detected version 1.26.2)
+  warnings.warn(f"A NumPy version >={np_minversion} and <{np_maxversion} is required for this version of "
+Some weights of DeiTForImageClassification were not initialized from the model checkpoint at facebook/deit-base-distilled-patch16-224 and are newly initialized: ['classifier.weight', 'classifier.bias']
+You should probably TRAIN this model on a down-stream task to be able to use it for predictions and inference.
+/home/labsig/anaconda3/envs/phd/lib/python3.9/site-packages/torch/nn/parallel/data_parallel.py:33: UserWarning: 
+    There is an imbalance between your GPUs. You may want to exclude GPU 1 which
+    has less than 75% of the memory or cores of GPU 0. You can do so by setting
+    the device_ids argument to DataParallel, or by setting the CUDA_VISIBLE_DEVICES
+    environment variable.
+  warnings.warn(imbalance_warn.format(device_ids[min_pos], device_ids[max_pos]))
+/home/labsig/anaconda3/envs/phd/lib/python3.9/site-packages/torch/nn/utils/weight_norm.py:30: UserWarning: torch.nn.utils.weight_norm is deprecated in favor of torch.nn.utils.parametrizations.weight_norm.
+  warnings.warn("torch.nn.utils.weight_norm is deprecated in favor of torch.nn.utils.parametrizations.weight_norm.")
+Traceback (most recent call last):
+  File "/home/labsig/anaconda3/envs/phd/lib/python3.9/site-packages/redis/connection.py", line 559, in connect
+    sock = self._connect()
+  File "/home/labsig/anaconda3/envs/phd/lib/python3.9/site-packages/redis/connection.py", line 615, in _connect
+    raise err
+  File "/home/labsig/anaconda3/envs/phd/lib/python3.9/site-packages/redis/connection.py", line 603, in _connect
+    sock.connect(socket_address)
+ConnectionRefusedError: [Errno 111] Connection refused
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/home/labsig/Documents/Axelle/cytomine/cbir-tfe/database/add_images.py", line 93, in <module>
+    database = Database(args.db_name, model, load = not args.rewrite)
+  File "/home/labsig/Documents/Axelle/cytomine/cbir-tfe/database/db.py", line 36, in __init__
+    self.r.flushdb()
+  File "/home/labsig/anaconda3/envs/phd/lib/python3.9/site-packages/redis/client.py", line 1287, in flushdb
+    return self.execute_command('FLUSHDB', *args)
+  File "/home/labsig/anaconda3/envs/phd/lib/python3.9/site-packages/redis/client.py", line 898, in execute_command
+    conn = self.connection or pool.get_connection(command_name, **options)
+  File "/home/labsig/anaconda3/envs/phd/lib/python3.9/site-packages/redis/connection.py", line 1192, in get_connection
+    connection.connect()
+  File "/home/labsig/anaconda3/envs/phd/lib/python3.9/site-packages/redis/connection.py", line 563, in connect
+    raise ConnectionError(self._error_message(e))
+redis.exceptions.ConnectionError: Error 111 connecting to localhost:6379. Connection refused.
+/home/labsig/anaconda3/envs/phd/lib/python3.9/site-packages/scipy/__init__.py:138: UserWarning: A NumPy version >=1.16.5 and <1.23.0 is required for this version of SciPy (detected version 1.26.2)
+  warnings.warn(f"A NumPy version >={np_minversion} and <{np_maxversion} is required for this version of "
+Some weights of DeiTForImageClassification were not initialized from the model checkpoint at facebook/deit-base-distilled-patch16-224 and are newly initialized: ['classifier.bias', 'classifier.weight']
+You should probably TRAIN this model on a down-stream task to be able to use it for predictions and inference.
+/home/labsig/anaconda3/envs/phd/lib/python3.9/site-packages/torch/nn/parallel/data_parallel.py:33: UserWarning: 
+    There is an imbalance between your GPUs. You may want to exclude GPU 1 which
+    has less than 75% of the memory or cores of GPU 0. You can do so by setting
+    the device_ids argument to DataParallel, or by setting the CUDA_VISIBLE_DEVICES
+    environment variable.
+  warnings.warn(imbalance_warn.format(device_ids[min_pos], device_ids[max_pos]))
+/home/labsig/anaconda3/envs/phd/lib/python3.9/site-packages/torch/nn/utils/weight_norm.py:30: UserWarning: torch.nn.utils.weight_norm is deprecated in favor of torch.nn.utils.parametrizations.weight_norm.
+  warnings.warn("torch.nn.utils.weight_norm is deprecated in favor of torch.nn.utils.parametrizations.weight_norm.")
+/home/labsig/anaconda3/envs/phd/lib/python3.9/site-packages/transformers/models/deit/feature_extraction_deit.py:28: FutureWarning: The class DeiTFeatureExtractor is deprecated and will be removed in version 5 of Transformers. Please use DeiTImageProcessor instead.
+  warnings.warn(
+Traceback (most recent call last):
+  File "/home/labsig/anaconda3/envs/phd/lib/python3.9/site-packages/redis/connection.py", line 559, in connect
+    sock = self._connect()
+  File "/home/labsig/anaconda3/envs/phd/lib/python3.9/site-packages/redis/connection.py", line 615, in _connect
+    raise err
+  File "/home/labsig/anaconda3/envs/phd/lib/python3.9/site-packages/redis/connection.py", line 603, in _connect
+    sock.connect(socket_address)
+ConnectionRefusedError: [Errno 111] Connection refused
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/home/labsig/Documents/Axelle/cytomine/cbir-tfe/database/test_accuracy.py", line 733, in <module>
+    stat(model, args.path, args.db_name, args.extractor, args.generalise, args.project_name, args.class_name, args.retrieve_class)
+  File "/home/labsig/Documents/Axelle/cytomine/cbir-tfe/database/test_accuracy.py", line 597, in stat
+    top_1_acc[0][i], top_5_acc[0][i], top_1_acc[1][i], top_5_acc[1][i], top_1_acc[2][i], top_5_acc[2][i], maj_acc[0][i], maj_acc[1][i], maj_acc[2][i], ts[0][i], ts[1][i], ts[2][i], ts[3][i] =  test(model, dataset, db_name, extractor, "random", generalise, project_name, class_name, False, label = label, stat = True)
+  File "/home/labsig/Documents/Axelle/cytomine/cbir-tfe/database/test_accuracy.py", line 507, in test
+    names, _, t_model_tmp, t_search_tmp, t_transfer_tmp = database.search(image, extractor, generalise=generalise)
+  File "/home/labsig/anaconda3/envs/phd/lib/python3.9/site-packages/torch/utils/_contextlib.py", line 115, in decorate_context
+    return func(*args, **kwargs)
+  File "/home/labsig/Documents/Axelle/cytomine/cbir-tfe/database/db.py", line 201, in search
+    v = self.r.get(str(l)).decode('utf-8')
+  File "/home/labsig/anaconda3/envs/phd/lib/python3.9/site-packages/redis/client.py", line 1606, in get
+    return self.execute_command('GET', name)
+  File "/home/labsig/anaconda3/envs/phd/lib/python3.9/site-packages/redis/client.py", line 898, in execute_command
+    conn = self.connection or pool.get_connection(command_name, **options)
+  File "/home/labsig/anaconda3/envs/phd/lib/python3.9/site-packages/redis/connection.py", line 1192, in get_connection
+    connection.connect()
+  File "/home/labsig/anaconda3/envs/phd/lib/python3.9/site-packages/redis/connection.py", line 563, in connect
+    raise ConnectionError(self._error_message(e))
+redis.exceptions.ConnectionError: Error 111 connecting to localhost:6379. Connection refused.
+/home/labsig/anaconda3/envs/phd/lib/python3.9/site-packages/scipy/__init__.py:138: UserWarning: A NumPy version >=1.16.5 and <1.23.0 is required for this version of SciPy (detected version 1.26.2)
+  warnings.warn(f"A NumPy version >={np_minversion} and <{np_maxversion} is required for this version of "
+Some weights of DeiTForImageClassification were not initialized from the model checkpoint at facebook/deit-base-distilled-patch16-224 and are newly initialized: ['classifier.weight', 'classifier.bias']
+You should probably TRAIN this model on a down-stream task to be able to use it for predictions and inference.
+/home/labsig/anaconda3/envs/phd/lib/python3.9/site-packages/torch/nn/parallel/data_parallel.py:33: UserWarning: 
+    There is an imbalance between your GPUs. You may want to exclude GPU 1 which
+    has less than 75% of the memory or cores of GPU 0. You can do so by setting
+    the device_ids argument to DataParallel, or by setting the CUDA_VISIBLE_DEVICES
+    environment variable.
+  warnings.warn(imbalance_warn.format(device_ids[min_pos], device_ids[max_pos]))
+/home/labsig/anaconda3/envs/phd/lib/python3.9/site-packages/torch/nn/utils/weight_norm.py:30: UserWarning: torch.nn.utils.weight_norm is deprecated in favor of torch.nn.utils.parametrizations.weight_norm.
+  warnings.warn("torch.nn.utils.weight_norm is deprecated in favor of torch.nn.utils.parametrizations.weight_norm.")
+/home/labsig/anaconda3/envs/phd/lib/python3.9/site-packages/transformers/models/deit/feature_extraction_deit.py:28: FutureWarning: The class DeiTFeatureExtractor is deprecated and will be removed in version 5 of Transformers. Please use DeiTImageProcessor instead.
+  warnings.warn(
+Traceback (most recent call last):
+  File "/home/labsig/anaconda3/envs/phd/lib/python3.9/site-packages/redis/connection.py", line 559, in connect
+    sock = self._connect()
+  File "/home/labsig/anaconda3/envs/phd/lib/python3.9/site-packages/redis/connection.py", line 615, in _connect
+    raise err
+  File "/home/labsig/anaconda3/envs/phd/lib/python3.9/site-packages/redis/connection.py", line 603, in _connect
+    sock.connect(socket_address)
+ConnectionRefusedError: [Errno 111] Connection refused
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/home/labsig/Documents/Axelle/cytomine/cbir-tfe/database/test_accuracy.py", line 735, in <module>
+    r = test(model, args.path, args.db_name, args.extractor, args.measure, args.generalise, args.project_name, args.class_name, True, label = args.retrieve_class)
+  File "/home/labsig/Documents/Axelle/cytomine/cbir-tfe/database/test_accuracy.py", line 507, in test
+    names, _, t_model_tmp, t_search_tmp, t_transfer_tmp = database.search(image, extractor, generalise=generalise)
+  File "/home/labsig/anaconda3/envs/phd/lib/python3.9/site-packages/torch/utils/_contextlib.py", line 115, in decorate_context
+    return func(*args, **kwargs)
+  File "/home/labsig/Documents/Axelle/cytomine/cbir-tfe/database/db.py", line 201, in search
+    v = self.r.get(str(l)).decode('utf-8')
+  File "/home/labsig/anaconda3/envs/phd/lib/python3.9/site-packages/redis/client.py", line 1606, in get
+    return self.execute_command('GET', name)
+  File "/home/labsig/anaconda3/envs/phd/lib/python3.9/site-packages/redis/client.py", line 898, in execute_command
+    conn = self.connection or pool.get_connection(command_name, **options)
+  File "/home/labsig/anaconda3/envs/phd/lib/python3.9/site-packages/redis/connection.py", line 1192, in get_connection
+    connection.connect()
+  File "/home/labsig/anaconda3/envs/phd/lib/python3.9/site-packages/redis/connection.py", line 563, in connect
+    raise ConnectionError(self._error_message(e))
+redis.exceptions.ConnectionError: Error 111 connecting to localhost:6379. Connection refused.
+/home/labsig/anaconda3/envs/phd/lib/python3.9/site-packages/scipy/__init__.py:138: UserWarning: A NumPy version >=1.16.5 and <1.23.0 is required for this version of SciPy (detected version 1.26.2)
+  warnings.warn(f"A NumPy version >={np_minversion} and <{np_maxversion} is required for this version of "
+Some weights of DeiTForImageClassification were not initialized from the model checkpoint at facebook/deit-base-distilled-patch16-224 and are newly initialized: ['classifier.weight', 'classifier.bias']
+You should probably TRAIN this model on a down-stream task to be able to use it for predictions and inference.
+/home/labsig/anaconda3/envs/phd/lib/python3.9/site-packages/torch/nn/parallel/data_parallel.py:33: UserWarning: 
+    There is an imbalance between your GPUs. You may want to exclude GPU 1 which
+    has less than 75% of the memory or cores of GPU 0. You can do so by setting
+    the device_ids argument to DataParallel, or by setting the CUDA_VISIBLE_DEVICES
+    environment variable.
+  warnings.warn(imbalance_warn.format(device_ids[min_pos], device_ids[max_pos]))
+/home/labsig/anaconda3/envs/phd/lib/python3.9/site-packages/torch/nn/utils/weight_norm.py:30: UserWarning: torch.nn.utils.weight_norm is deprecated in favor of torch.nn.utils.parametrizations.weight_norm.
+  warnings.warn("torch.nn.utils.weight_norm is deprecated in favor of torch.nn.utils.parametrizations.weight_norm.")
+/home/labsig/anaconda3/envs/phd/lib/python3.9/site-packages/transformers/models/deit/feature_extraction_deit.py:28: FutureWarning: The class DeiTFeatureExtractor is deprecated and will be removed in version 5 of Transformers. Please use DeiTImageProcessor instead.
+  warnings.warn(
+Traceback (most recent call last):
+  File "/home/labsig/anaconda3/envs/phd/lib/python3.9/site-packages/redis/connection.py", line 559, in connect
+    sock = self._connect()
+  File "/home/labsig/anaconda3/envs/phd/lib/python3.9/site-packages/redis/connection.py", line 615, in _connect
+    raise err
+  File "/home/labsig/anaconda3/envs/phd/lib/python3.9/site-packages/redis/connection.py", line 603, in _connect
+    sock.connect(socket_address)
+ConnectionRefusedError: [Errno 111] Connection refused
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/home/labsig/Documents/Axelle/cytomine/cbir-tfe/database/test_accuracy.py", line 735, in <module>
+    r = test(model, args.path, args.db_name, args.extractor, args.measure, args.generalise, args.project_name, args.class_name, True, label = args.retrieve_class)
+  File "/home/labsig/Documents/Axelle/cytomine/cbir-tfe/database/test_accuracy.py", line 507, in test
+    names, _, t_model_tmp, t_search_tmp, t_transfer_tmp = database.search(image, extractor, generalise=generalise)
+  File "/home/labsig/anaconda3/envs/phd/lib/python3.9/site-packages/torch/utils/_contextlib.py", line 115, in decorate_context
+    return func(*args, **kwargs)
+  File "/home/labsig/Documents/Axelle/cytomine/cbir-tfe/database/db.py", line 201, in search
+    v = self.r.get(str(l)).decode('utf-8')
+  File "/home/labsig/anaconda3/envs/phd/lib/python3.9/site-packages/redis/client.py", line 1606, in get
+    return self.execute_command('GET', name)
+  File "/home/labsig/anaconda3/envs/phd/lib/python3.9/site-packages/redis/client.py", line 898, in execute_command
+    conn = self.connection or pool.get_connection(command_name, **options)
+  File "/home/labsig/anaconda3/envs/phd/lib/python3.9/site-packages/redis/connection.py", line 1192, in get_connection
+    connection.connect()
+  File "/home/labsig/anaconda3/envs/phd/lib/python3.9/site-packages/redis/connection.py", line 563, in connect
+    raise ConnectionError(self._error_message(e))
+redis.exceptions.ConnectionError: Error 111 connecting to localhost:6379. Connection refused.
+/home/labsig/anaconda3/envs/phd/lib/python3.9/site-packages/scipy/__init__.py:138: UserWarning: A NumPy version >=1.16.5 and <1.23.0 is required for this version of SciPy (detected version 1.26.2)
+  warnings.warn(f"A NumPy version >={np_minversion} and <{np_maxversion} is required for this version of "
+Some weights of DeiTForImageClassification were not initialized from the model checkpoint at facebook/deit-base-distilled-patch16-224 and are newly initialized: ['classifier.bias', 'classifier.weight']
+You should probably TRAIN this model on a down-stream task to be able to use it for predictions and inference.
+/home/labsig/anaconda3/envs/phd/lib/python3.9/site-packages/torch/nn/parallel/data_parallel.py:33: UserWarning: 
+    There is an imbalance between your GPUs. You may want to exclude GPU 1 which
+    has less than 75% of the memory or cores of GPU 0. You can do so by setting
+    the device_ids argument to DataParallel, or by setting the CUDA_VISIBLE_DEVICES
+    environment variable.
+  warnings.warn(imbalance_warn.format(device_ids[min_pos], device_ids[max_pos]))
+/home/labsig/anaconda3/envs/phd/lib/python3.9/site-packages/torch/nn/utils/weight_norm.py:30: UserWarning: torch.nn.utils.weight_norm is deprecated in favor of torch.nn.utils.parametrizations.weight_norm.
+  warnings.warn("torch.nn.utils.weight_norm is deprecated in favor of torch.nn.utils.parametrizations.weight_norm.")
+Traceback (most recent call last):
+  File "/home/labsig/anaconda3/envs/phd/lib/python3.9/site-packages/redis/connection.py", line 559, in connect
+    sock = self._connect()
+  File "/home/labsig/anaconda3/envs/phd/lib/python3.9/site-packages/redis/connection.py", line 615, in _connect
+    raise err
+  File "/home/labsig/anaconda3/envs/phd/lib/python3.9/site-packages/redis/connection.py", line 603, in _connect
+    sock.connect(socket_address)
+ConnectionRefusedError: [Errno 111] Connection refused
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/home/labsig/Documents/Axelle/cytomine/cbir-tfe/database/add_images.py", line 93, in <module>
+    database = Database(args.db_name, model, load = not args.rewrite)
+  File "/home/labsig/Documents/Axelle/cytomine/cbir-tfe/database/db.py", line 36, in __init__
+    self.r.flushdb()
+  File "/home/labsig/anaconda3/envs/phd/lib/python3.9/site-packages/redis/client.py", line 1287, in flushdb
+    return self.execute_command('FLUSHDB', *args)
+  File "/home/labsig/anaconda3/envs/phd/lib/python3.9/site-packages/redis/client.py", line 898, in execute_command
+    conn = self.connection or pool.get_connection(command_name, **options)
+  File "/home/labsig/anaconda3/envs/phd/lib/python3.9/site-packages/redis/connection.py", line 1192, in get_connection
+    connection.connect()
+  File "/home/labsig/anaconda3/envs/phd/lib/python3.9/site-packages/redis/connection.py", line 563, in connect
+    raise ConnectionError(self._error_message(e))
+redis.exceptions.ConnectionError: Error 111 connecting to localhost:6379. Connection refused.
+/home/labsig/anaconda3/envs/phd/lib/python3.9/site-packages/scipy/__init__.py:138: UserWarning: A NumPy version >=1.16.5 and <1.23.0 is required for this version of SciPy (detected version 1.26.2)
+  warnings.warn(f"A NumPy version >={np_minversion} and <{np_maxversion} is required for this version of "
+Some weights of DeiTForImageClassification were not initialized from the model checkpoint at facebook/deit-base-distilled-patch16-224 and are newly initialized: ['classifier.bias', 'classifier.weight']
+You should probably TRAIN this model on a down-stream task to be able to use it for predictions and inference.
+/home/labsig/anaconda3/envs/phd/lib/python3.9/site-packages/torch/nn/parallel/data_parallel.py:33: UserWarning: 
+    There is an imbalance between your GPUs. You may want to exclude GPU 1 which
+    has less than 75% of the memory or cores of GPU 0. You can do so by setting
+    the device_ids argument to DataParallel, or by setting the CUDA_VISIBLE_DEVICES
+    environment variable.
+  warnings.warn(imbalance_warn.format(device_ids[min_pos], device_ids[max_pos]))
+/home/labsig/anaconda3/envs/phd/lib/python3.9/site-packages/torch/nn/utils/weight_norm.py:30: UserWarning: torch.nn.utils.weight_norm is deprecated in favor of torch.nn.utils.parametrizations.weight_norm.
+  warnings.warn("torch.nn.utils.weight_norm is deprecated in favor of torch.nn.utils.parametrizations.weight_norm.")
+/home/labsig/anaconda3/envs/phd/lib/python3.9/site-packages/transformers/models/deit/feature_extraction_deit.py:28: FutureWarning: The class DeiTFeatureExtractor is deprecated and will be removed in version 5 of Transformers. Please use DeiTImageProcessor instead.
+  warnings.warn(
+Traceback (most recent call last):
+  File "/home/labsig/anaconda3/envs/phd/lib/python3.9/site-packages/redis/connection.py", line 559, in connect
+    sock = self._connect()
+  File "/home/labsig/anaconda3/envs/phd/lib/python3.9/site-packages/redis/connection.py", line 615, in _connect
+    raise err
+  File "/home/labsig/anaconda3/envs/phd/lib/python3.9/site-packages/redis/connection.py", line 603, in _connect
+    sock.connect(socket_address)
+ConnectionRefusedError: [Errno 111] Connection refused
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/home/labsig/Documents/Axelle/cytomine/cbir-tfe/database/test_accuracy.py", line 733, in <module>
+    stat(model, args.path, args.db_name, args.extractor, args.generalise, args.project_name, args.class_name, args.retrieve_class)
+  File "/home/labsig/Documents/Axelle/cytomine/cbir-tfe/database/test_accuracy.py", line 597, in stat
+    top_1_acc[0][i], top_5_acc[0][i], top_1_acc[1][i], top_5_acc[1][i], top_1_acc[2][i], top_5_acc[2][i], maj_acc[0][i], maj_acc[1][i], maj_acc[2][i], ts[0][i], ts[1][i], ts[2][i], ts[3][i] =  test(model, dataset, db_name, extractor, "random", generalise, project_name, class_name, False, label = label, stat = True)
+  File "/home/labsig/Documents/Axelle/cytomine/cbir-tfe/database/test_accuracy.py", line 507, in test
+    names, _, t_model_tmp, t_search_tmp, t_transfer_tmp = database.search(image, extractor, generalise=generalise)
+  File "/home/labsig/anaconda3/envs/phd/lib/python3.9/site-packages/torch/utils/_contextlib.py", line 115, in decorate_context
+    return func(*args, **kwargs)
+  File "/home/labsig/Documents/Axelle/cytomine/cbir-tfe/database/db.py", line 201, in search
+    v = self.r.get(str(l)).decode('utf-8')
+  File "/home/labsig/anaconda3/envs/phd/lib/python3.9/site-packages/redis/client.py", line 1606, in get
+    return self.execute_command('GET', name)
+  File "/home/labsig/anaconda3/envs/phd/lib/python3.9/site-packages/redis/client.py", line 898, in execute_command
+    conn = self.connection or pool.get_connection(command_name, **options)
+  File "/home/labsig/anaconda3/envs/phd/lib/python3.9/site-packages/redis/connection.py", line 1192, in get_connection
+    connection.connect()
+  File "/home/labsig/anaconda3/envs/phd/lib/python3.9/site-packages/redis/connection.py", line 563, in connect
+    raise ConnectionError(self._error_message(e))
+redis.exceptions.ConnectionError: Error 111 connecting to localhost:6379. Connection refused.
+/home/labsig/anaconda3/envs/phd/lib/python3.9/site-packages/scipy/__init__.py:138: UserWarning: A NumPy version >=1.16.5 and <1.23.0 is required for this version of SciPy (detected version 1.26.2)
+  warnings.warn(f"A NumPy version >={np_minversion} and <{np_maxversion} is required for this version of "
+Some weights of DeiTForImageClassification were not initialized from the model checkpoint at facebook/deit-base-distilled-patch16-224 and are newly initialized: ['classifier.weight', 'classifier.bias']
+You should probably TRAIN this model on a down-stream task to be able to use it for predictions and inference.
+/home/labsig/anaconda3/envs/phd/lib/python3.9/site-packages/torch/nn/parallel/data_parallel.py:33: UserWarning: 
+    There is an imbalance between your GPUs. You may want to exclude GPU 1 which
+    has less than 75% of the memory or cores of GPU 0. You can do so by setting
+    the device_ids argument to DataParallel, or by setting the CUDA_VISIBLE_DEVICES
+    environment variable.
+  warnings.warn(imbalance_warn.format(device_ids[min_pos], device_ids[max_pos]))
+/home/labsig/anaconda3/envs/phd/lib/python3.9/site-packages/torch/nn/utils/weight_norm.py:30: UserWarning: torch.nn.utils.weight_norm is deprecated in favor of torch.nn.utils.parametrizations.weight_norm.
+  warnings.warn("torch.nn.utils.weight_norm is deprecated in favor of torch.nn.utils.parametrizations.weight_norm.")
+/home/labsig/anaconda3/envs/phd/lib/python3.9/site-packages/transformers/models/deit/feature_extraction_deit.py:28: FutureWarning: The class DeiTFeatureExtractor is deprecated and will be removed in version 5 of Transformers. Please use DeiTImageProcessor instead.
+  warnings.warn(
+Traceback (most recent call last):
+  File "/home/labsig/anaconda3/envs/phd/lib/python3.9/site-packages/redis/connection.py", line 559, in connect
+    sock = self._connect()
+  File "/home/labsig/anaconda3/envs/phd/lib/python3.9/site-packages/redis/connection.py", line 615, in _connect
+    raise err
+  File "/home/labsig/anaconda3/envs/phd/lib/python3.9/site-packages/redis/connection.py", line 603, in _connect
+    sock.connect(socket_address)
+ConnectionRefusedError: [Errno 111] Connection refused
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/home/labsig/Documents/Axelle/cytomine/cbir-tfe/database/test_accuracy.py", line 735, in <module>
+    r = test(model, args.path, args.db_name, args.extractor, args.measure, args.generalise, args.project_name, args.class_name, True, label = args.retrieve_class)
+  File "/home/labsig/Documents/Axelle/cytomine/cbir-tfe/database/test_accuracy.py", line 507, in test
+    names, _, t_model_tmp, t_search_tmp, t_transfer_tmp = database.search(image, extractor, generalise=generalise)
+  File "/home/labsig/anaconda3/envs/phd/lib/python3.9/site-packages/torch/utils/_contextlib.py", line 115, in decorate_context
+    return func(*args, **kwargs)
+  File "/home/labsig/Documents/Axelle/cytomine/cbir-tfe/database/db.py", line 201, in search
+    v = self.r.get(str(l)).decode('utf-8')
+  File "/home/labsig/anaconda3/envs/phd/lib/python3.9/site-packages/redis/client.py", line 1606, in get
+    return self.execute_command('GET', name)
+  File "/home/labsig/anaconda3/envs/phd/lib/python3.9/site-packages/redis/client.py", line 898, in execute_command
+    conn = self.connection or pool.get_connection(command_name, **options)
+  File "/home/labsig/anaconda3/envs/phd/lib/python3.9/site-packages/redis/connection.py", line 1192, in get_connection
+    connection.connect()
+  File "/home/labsig/anaconda3/envs/phd/lib/python3.9/site-packages/redis/connection.py", line 563, in connect
+    raise ConnectionError(self._error_message(e))
+redis.exceptions.ConnectionError: Error 111 connecting to localhost:6379. Connection refused.
+/home/labsig/anaconda3/envs/phd/lib/python3.9/site-packages/scipy/__init__.py:138: UserWarning: A NumPy version >=1.16.5 and <1.23.0 is required for this version of SciPy (detected version 1.26.2)
+  warnings.warn(f"A NumPy version >={np_minversion} and <{np_maxversion} is required for this version of "
+Some weights of DeiTForImageClassification were not initialized from the model checkpoint at facebook/deit-base-distilled-patch16-224 and are newly initialized: ['classifier.weight', 'classifier.bias']
+You should probably TRAIN this model on a down-stream task to be able to use it for predictions and inference.
+/home/labsig/anaconda3/envs/phd/lib/python3.9/site-packages/torch/nn/parallel/data_parallel.py:33: UserWarning: 
+    There is an imbalance between your GPUs. You may want to exclude GPU 1 which
+    has less than 75% of the memory or cores of GPU 0. You can do so by setting
+    the device_ids argument to DataParallel, or by setting the CUDA_VISIBLE_DEVICES
+    environment variable.
+  warnings.warn(imbalance_warn.format(device_ids[min_pos], device_ids[max_pos]))
+/home/labsig/anaconda3/envs/phd/lib/python3.9/site-packages/torch/nn/utils/weight_norm.py:30: UserWarning: torch.nn.utils.weight_norm is deprecated in favor of torch.nn.utils.parametrizations.weight_norm.
+  warnings.warn("torch.nn.utils.weight_norm is deprecated in favor of torch.nn.utils.parametrizations.weight_norm.")
+/home/labsig/anaconda3/envs/phd/lib/python3.9/site-packages/transformers/models/deit/feature_extraction_deit.py:28: FutureWarning: The class DeiTFeatureExtractor is deprecated and will be removed in version 5 of Transformers. Please use DeiTImageProcessor instead.
+  warnings.warn(
+Traceback (most recent call last):
+  File "/home/labsig/anaconda3/envs/phd/lib/python3.9/site-packages/redis/connection.py", line 559, in connect
+    sock = self._connect()
+  File "/home/labsig/anaconda3/envs/phd/lib/python3.9/site-packages/redis/connection.py", line 615, in _connect
+    raise err
+  File "/home/labsig/anaconda3/envs/phd/lib/python3.9/site-packages/redis/connection.py", line 603, in _connect
+    sock.connect(socket_address)
+ConnectionRefusedError: [Errno 111] Connection refused
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/home/labsig/Documents/Axelle/cytomine/cbir-tfe/database/test_accuracy.py", line 735, in <module>
+    r = test(model, args.path, args.db_name, args.extractor, args.measure, args.generalise, args.project_name, args.class_name, True, label = args.retrieve_class)
+  File "/home/labsig/Documents/Axelle/cytomine/cbir-tfe/database/test_accuracy.py", line 507, in test
+    names, _, t_model_tmp, t_search_tmp, t_transfer_tmp = database.search(image, extractor, generalise=generalise)
+  File "/home/labsig/anaconda3/envs/phd/lib/python3.9/site-packages/torch/utils/_contextlib.py", line 115, in decorate_context
+    return func(*args, **kwargs)
+  File "/home/labsig/Documents/Axelle/cytomine/cbir-tfe/database/db.py", line 201, in search
+    v = self.r.get(str(l)).decode('utf-8')
+  File "/home/labsig/anaconda3/envs/phd/lib/python3.9/site-packages/redis/client.py", line 1606, in get
+    return self.execute_command('GET', name)
+  File "/home/labsig/anaconda3/envs/phd/lib/python3.9/site-packages/redis/client.py", line 898, in execute_command
+    conn = self.connection or pool.get_connection(command_name, **options)
+  File "/home/labsig/anaconda3/envs/phd/lib/python3.9/site-packages/redis/connection.py", line 1192, in get_connection
+    connection.connect()
+  File "/home/labsig/anaconda3/envs/phd/lib/python3.9/site-packages/redis/connection.py", line 563, in connect
+    raise ConnectionError(self._error_message(e))
+redis.exceptions.ConnectionError: Error 111 connecting to localhost:6379. Connection refused.
+/home/labsig/anaconda3/envs/phd/lib/python3.9/site-packages/scipy/__init__.py:138: UserWarning: A NumPy version >=1.16.5 and <1.23.0 is required for this version of SciPy (detected version 1.26.2)
+  warnings.warn(f"A NumPy version >={np_minversion} and <{np_maxversion} is required for this version of "
+Some weights of DeiTForImageClassification were not initialized from the model checkpoint at facebook/deit-base-distilled-patch16-224 and are newly initialized: ['classifier.weight', 'classifier.bias']
+You should probably TRAIN this model on a down-stream task to be able to use it for predictions and inference.
+/home/labsig/anaconda3/envs/phd/lib/python3.9/site-packages/torch/nn/parallel/data_parallel.py:33: UserWarning: 
+    There is an imbalance between your GPUs. You may want to exclude GPU 1 which
+    has less than 75% of the memory or cores of GPU 0. You can do so by setting
+    the device_ids argument to DataParallel, or by setting the CUDA_VISIBLE_DEVICES
+    environment variable.
+  warnings.warn(imbalance_warn.format(device_ids[min_pos], device_ids[max_pos]))
+/home/labsig/anaconda3/envs/phd/lib/python3.9/site-packages/torch/nn/utils/weight_norm.py:30: UserWarning: torch.nn.utils.weight_norm is deprecated in favor of torch.nn.utils.parametrizations.weight_norm.
+  warnings.warn("torch.nn.utils.weight_norm is deprecated in favor of torch.nn.utils.parametrizations.weight_norm.")
+Traceback (most recent call last):
+  File "/home/labsig/anaconda3/envs/phd/lib/python3.9/site-packages/redis/connection.py", line 559, in connect
+    sock = self._connect()
+  File "/home/labsig/anaconda3/envs/phd/lib/python3.9/site-packages/redis/connection.py", line 615, in _connect
+    raise err
+  File "/home/labsig/anaconda3/envs/phd/lib/python3.9/site-packages/redis/connection.py", line 603, in _connect
+    sock.connect(socket_address)
+ConnectionRefusedError: [Errno 111] Connection refused
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/home/labsig/Documents/Axelle/cytomine/cbir-tfe/database/add_images.py", line 93, in <module>
+    database = Database(args.db_name, model, load = not args.rewrite)
+  File "/home/labsig/Documents/Axelle/cytomine/cbir-tfe/database/db.py", line 36, in __init__
+    self.r.flushdb()
+  File "/home/labsig/anaconda3/envs/phd/lib/python3.9/site-packages/redis/client.py", line 1287, in flushdb
+    return self.execute_command('FLUSHDB', *args)
+  File "/home/labsig/anaconda3/envs/phd/lib/python3.9/site-packages/redis/client.py", line 898, in execute_command
+    conn = self.connection or pool.get_connection(command_name, **options)
+  File "/home/labsig/anaconda3/envs/phd/lib/python3.9/site-packages/redis/connection.py", line 1192, in get_connection
+    connection.connect()
+  File "/home/labsig/anaconda3/envs/phd/lib/python3.9/site-packages/redis/connection.py", line 563, in connect
+    raise ConnectionError(self._error_message(e))
+redis.exceptions.ConnectionError: Error 111 connecting to localhost:6379. Connection refused.
+/home/labsig/anaconda3/envs/phd/lib/python3.9/site-packages/scipy/__init__.py:138: UserWarning: A NumPy version >=1.16.5 and <1.23.0 is required for this version of SciPy (detected version 1.26.2)
+  warnings.warn(f"A NumPy version >={np_minversion} and <{np_maxversion} is required for this version of "
+Some weights of DeiTForImageClassification were not initialized from the model checkpoint at facebook/deit-base-distilled-patch16-224 and are newly initialized: ['classifier.weight', 'classifier.bias']
+You should probably TRAIN this model on a down-stream task to be able to use it for predictions and inference.
+/home/labsig/anaconda3/envs/phd/lib/python3.9/site-packages/torch/nn/parallel/data_parallel.py:33: UserWarning: 
+    There is an imbalance between your GPUs. You may want to exclude GPU 1 which
+    has less than 75% of the memory or cores of GPU 0. You can do so by setting
+    the device_ids argument to DataParallel, or by setting the CUDA_VISIBLE_DEVICES
+    environment variable.
+  warnings.warn(imbalance_warn.format(device_ids[min_pos], device_ids[max_pos]))
+/home/labsig/anaconda3/envs/phd/lib/python3.9/site-packages/torch/nn/utils/weight_norm.py:30: UserWarning: torch.nn.utils.weight_norm is deprecated in favor of torch.nn.utils.parametrizations.weight_norm.
+  warnings.warn("torch.nn.utils.weight_norm is deprecated in favor of torch.nn.utils.parametrizations.weight_norm.")
+/home/labsig/anaconda3/envs/phd/lib/python3.9/site-packages/transformers/models/deit/feature_extraction_deit.py:28: FutureWarning: The class DeiTFeatureExtractor is deprecated and will be removed in version 5 of Transformers. Please use DeiTImageProcessor instead.
+  warnings.warn(
+Traceback (most recent call last):
+  File "/home/labsig/anaconda3/envs/phd/lib/python3.9/site-packages/redis/connection.py", line 559, in connect
+    sock = self._connect()
+  File "/home/labsig/anaconda3/envs/phd/lib/python3.9/site-packages/redis/connection.py", line 615, in _connect
+    raise err
+  File "/home/labsig/anaconda3/envs/phd/lib/python3.9/site-packages/redis/connection.py", line 603, in _connect
+    sock.connect(socket_address)
+ConnectionRefusedError: [Errno 111] Connection refused
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/home/labsig/Documents/Axelle/cytomine/cbir-tfe/database/test_accuracy.py", line 733, in <module>
+    stat(model, args.path, args.db_name, args.extractor, args.generalise, args.project_name, args.class_name, args.retrieve_class)
+  File "/home/labsig/Documents/Axelle/cytomine/cbir-tfe/database/test_accuracy.py", line 597, in stat
+    top_1_acc[0][i], top_5_acc[0][i], top_1_acc[1][i], top_5_acc[1][i], top_1_acc[2][i], top_5_acc[2][i], maj_acc[0][i], maj_acc[1][i], maj_acc[2][i], ts[0][i], ts[1][i], ts[2][i], ts[3][i] =  test(model, dataset, db_name, extractor, "random", generalise, project_name, class_name, False, label = label, stat = True)
+  File "/home/labsig/Documents/Axelle/cytomine/cbir-tfe/database/test_accuracy.py", line 507, in test
+    names, _, t_model_tmp, t_search_tmp, t_transfer_tmp = database.search(image, extractor, generalise=generalise)
+  File "/home/labsig/anaconda3/envs/phd/lib/python3.9/site-packages/torch/utils/_contextlib.py", line 115, in decorate_context
+    return func(*args, **kwargs)
+  File "/home/labsig/Documents/Axelle/cytomine/cbir-tfe/database/db.py", line 201, in search
+    v = self.r.get(str(l)).decode('utf-8')
+  File "/home/labsig/anaconda3/envs/phd/lib/python3.9/site-packages/redis/client.py", line 1606, in get
+    return self.execute_command('GET', name)
+  File "/home/labsig/anaconda3/envs/phd/lib/python3.9/site-packages/redis/client.py", line 898, in execute_command
+    conn = self.connection or pool.get_connection(command_name, **options)
+  File "/home/labsig/anaconda3/envs/phd/lib/python3.9/site-packages/redis/connection.py", line 1192, in get_connection
+    connection.connect()
+  File "/home/labsig/anaconda3/envs/phd/lib/python3.9/site-packages/redis/connection.py", line 563, in connect
+    raise ConnectionError(self._error_message(e))
+redis.exceptions.ConnectionError: Error 111 connecting to localhost:6379. Connection refused.
+/home/labsig/anaconda3/envs/phd/lib/python3.9/site-packages/scipy/__init__.py:138: UserWarning: A NumPy version >=1.16.5 and <1.23.0 is required for this version of SciPy (detected version 1.26.2)
+  warnings.warn(f"A NumPy version >={np_minversion} and <{np_maxversion} is required for this version of "
+Some weights of DeiTForImageClassification were not initialized from the model checkpoint at facebook/deit-base-distilled-patch16-224 and are newly initialized: ['classifier.weight', 'classifier.bias']
+You should probably TRAIN this model on a down-stream task to be able to use it for predictions and inference.
+/home/labsig/anaconda3/envs/phd/lib/python3.9/site-packages/torch/nn/parallel/data_parallel.py:33: UserWarning: 
+    There is an imbalance between your GPUs. You may want to exclude GPU 1 which
+    has less than 75% of the memory or cores of GPU 0. You can do so by setting
+    the device_ids argument to DataParallel, or by setting the CUDA_VISIBLE_DEVICES
+    environment variable.
+  warnings.warn(imbalance_warn.format(device_ids[min_pos], device_ids[max_pos]))
+/home/labsig/anaconda3/envs/phd/lib/python3.9/site-packages/torch/nn/utils/weight_norm.py:30: UserWarning: torch.nn.utils.weight_norm is deprecated in favor of torch.nn.utils.parametrizations.weight_norm.
+  warnings.warn("torch.nn.utils.weight_norm is deprecated in favor of torch.nn.utils.parametrizations.weight_norm.")
+/home/labsig/anaconda3/envs/phd/lib/python3.9/site-packages/transformers/models/deit/feature_extraction_deit.py:28: FutureWarning: The class DeiTFeatureExtractor is deprecated and will be removed in version 5 of Transformers. Please use DeiTImageProcessor instead.
+  warnings.warn(
+Traceback (most recent call last):
+  File "/home/labsig/anaconda3/envs/phd/lib/python3.9/site-packages/redis/connection.py", line 559, in connect
+    sock = self._connect()
+  File "/home/labsig/anaconda3/envs/phd/lib/python3.9/site-packages/redis/connection.py", line 615, in _connect
+    raise err
+  File "/home/labsig/anaconda3/envs/phd/lib/python3.9/site-packages/redis/connection.py", line 603, in _connect
+    sock.connect(socket_address)
+ConnectionRefusedError: [Errno 111] Connection refused
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/home/labsig/Documents/Axelle/cytomine/cbir-tfe/database/test_accuracy.py", line 735, in <module>
+    r = test(model, args.path, args.db_name, args.extractor, args.measure, args.generalise, args.project_name, args.class_name, True, label = args.retrieve_class)
+  File "/home/labsig/Documents/Axelle/cytomine/cbir-tfe/database/test_accuracy.py", line 507, in test
+    names, _, t_model_tmp, t_search_tmp, t_transfer_tmp = database.search(image, extractor, generalise=generalise)
+  File "/home/labsig/anaconda3/envs/phd/lib/python3.9/site-packages/torch/utils/_contextlib.py", line 115, in decorate_context
+    return func(*args, **kwargs)
+  File "/home/labsig/Documents/Axelle/cytomine/cbir-tfe/database/db.py", line 201, in search
+    v = self.r.get(str(l)).decode('utf-8')
+  File "/home/labsig/anaconda3/envs/phd/lib/python3.9/site-packages/redis/client.py", line 1606, in get
+    return self.execute_command('GET', name)
+  File "/home/labsig/anaconda3/envs/phd/lib/python3.9/site-packages/redis/client.py", line 898, in execute_command
+    conn = self.connection or pool.get_connection(command_name, **options)
+  File "/home/labsig/anaconda3/envs/phd/lib/python3.9/site-packages/redis/connection.py", line 1192, in get_connection
+    connection.connect()
+  File "/home/labsig/anaconda3/envs/phd/lib/python3.9/site-packages/redis/connection.py", line 563, in connect
+    raise ConnectionError(self._error_message(e))
+redis.exceptions.ConnectionError: Error 111 connecting to localhost:6379. Connection refused.
+/home/labsig/anaconda3/envs/phd/lib/python3.9/site-packages/scipy/__init__.py:138: UserWarning: A NumPy version >=1.16.5 and <1.23.0 is required for this version of SciPy (detected version 1.26.2)
+  warnings.warn(f"A NumPy version >={np_minversion} and <{np_maxversion} is required for this version of "
+Some weights of DeiTForImageClassification were not initialized from the model checkpoint at facebook/deit-base-distilled-patch16-224 and are newly initialized: ['classifier.bias', 'classifier.weight']
+You should probably TRAIN this model on a down-stream task to be able to use it for predictions and inference.
+/home/labsig/anaconda3/envs/phd/lib/python3.9/site-packages/torch/nn/parallel/data_parallel.py:33: UserWarning: 
+    There is an imbalance between your GPUs. You may want to exclude GPU 1 which
+    has less than 75% of the memory or cores of GPU 0. You can do so by setting
+    the device_ids argument to DataParallel, or by setting the CUDA_VISIBLE_DEVICES
+    environment variable.
+  warnings.warn(imbalance_warn.format(device_ids[min_pos], device_ids[max_pos]))
+/home/labsig/anaconda3/envs/phd/lib/python3.9/site-packages/torch/nn/utils/weight_norm.py:30: UserWarning: torch.nn.utils.weight_norm is deprecated in favor of torch.nn.utils.parametrizations.weight_norm.
+  warnings.warn("torch.nn.utils.weight_norm is deprecated in favor of torch.nn.utils.parametrizations.weight_norm.")
+/home/labsig/anaconda3/envs/phd/lib/python3.9/site-packages/transformers/models/deit/feature_extraction_deit.py:28: FutureWarning: The class DeiTFeatureExtractor is deprecated and will be removed in version 5 of Transformers. Please use DeiTImageProcessor instead.
+  warnings.warn(
+Traceback (most recent call last):
+  File "/home/labsig/anaconda3/envs/phd/lib/python3.9/site-packages/redis/connection.py", line 559, in connect
+    sock = self._connect()
+  File "/home/labsig/anaconda3/envs/phd/lib/python3.9/site-packages/redis/connection.py", line 615, in _connect
+    raise err
+  File "/home/labsig/anaconda3/envs/phd/lib/python3.9/site-packages/redis/connection.py", line 603, in _connect
+    sock.connect(socket_address)
+ConnectionRefusedError: [Errno 111] Connection refused
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/home/labsig/Documents/Axelle/cytomine/cbir-tfe/database/test_accuracy.py", line 735, in <module>
+    r = test(model, args.path, args.db_name, args.extractor, args.measure, args.generalise, args.project_name, args.class_name, True, label = args.retrieve_class)
+  File "/home/labsig/Documents/Axelle/cytomine/cbir-tfe/database/test_accuracy.py", line 507, in test
+    names, _, t_model_tmp, t_search_tmp, t_transfer_tmp = database.search(image, extractor, generalise=generalise)
+  File "/home/labsig/anaconda3/envs/phd/lib/python3.9/site-packages/torch/utils/_contextlib.py", line 115, in decorate_context
+    return func(*args, **kwargs)
+  File "/home/labsig/Documents/Axelle/cytomine/cbir-tfe/database/db.py", line 201, in search
+    v = self.r.get(str(l)).decode('utf-8')
+  File "/home/labsig/anaconda3/envs/phd/lib/python3.9/site-packages/redis/client.py", line 1606, in get
+    return self.execute_command('GET', name)
+  File "/home/labsig/anaconda3/envs/phd/lib/python3.9/site-packages/redis/client.py", line 898, in execute_command
+    conn = self.connection or pool.get_connection(command_name, **options)
+  File "/home/labsig/anaconda3/envs/phd/lib/python3.9/site-packages/redis/connection.py", line 1192, in get_connection
+    connection.connect()
+  File "/home/labsig/anaconda3/envs/phd/lib/python3.9/site-packages/redis/connection.py", line 563, in connect
+    raise ConnectionError(self._error_message(e))
+redis.exceptions.ConnectionError: Error 111 connecting to localhost:6379. Connection refused.
+/home/labsig/anaconda3/envs/phd/lib/python3.9/site-packages/scipy/__init__.py:138: UserWarning: A NumPy version >=1.16.5 and <1.23.0 is required for this version of SciPy (detected version 1.26.2)
+  warnings.warn(f"A NumPy version >={np_minversion} and <{np_maxversion} is required for this version of "
+Some weights of DeiTForImageClassification were not initialized from the model checkpoint at facebook/deit-base-distilled-patch16-224 and are newly initialized: ['classifier.weight', 'classifier.bias']
+You should probably TRAIN this model on a down-stream task to be able to use it for predictions and inference.
+/home/labsig/anaconda3/envs/phd/lib/python3.9/site-packages/torch/nn/parallel/data_parallel.py:33: UserWarning: 
+    There is an imbalance between your GPUs. You may want to exclude GPU 1 which
+    has less than 75% of the memory or cores of GPU 0. You can do so by setting
+    the device_ids argument to DataParallel, or by setting the CUDA_VISIBLE_DEVICES
+    environment variable.
+  warnings.warn(imbalance_warn.format(device_ids[min_pos], device_ids[max_pos]))
+/home/labsig/anaconda3/envs/phd/lib/python3.9/site-packages/torch/nn/utils/weight_norm.py:30: UserWarning: torch.nn.utils.weight_norm is deprecated in favor of torch.nn.utils.parametrizations.weight_norm.
+  warnings.warn("torch.nn.utils.weight_norm is deprecated in favor of torch.nn.utils.parametrizations.weight_norm.")
+Traceback (most recent call last):
+  File "/home/labsig/anaconda3/envs/phd/lib/python3.9/site-packages/redis/connection.py", line 559, in connect
+    sock = self._connect()
+  File "/home/labsig/anaconda3/envs/phd/lib/python3.9/site-packages/redis/connection.py", line 615, in _connect
+    raise err
+  File "/home/labsig/anaconda3/envs/phd/lib/python3.9/site-packages/redis/connection.py", line 603, in _connect
+    sock.connect(socket_address)
+ConnectionRefusedError: [Errno 111] Connection refused
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/home/labsig/Documents/Axelle/cytomine/cbir-tfe/database/add_images.py", line 93, in <module>
+    database = Database(args.db_name, model, load = not args.rewrite)
+  File "/home/labsig/Documents/Axelle/cytomine/cbir-tfe/database/db.py", line 36, in __init__
+    self.r.flushdb()
+  File "/home/labsig/anaconda3/envs/phd/lib/python3.9/site-packages/redis/client.py", line 1287, in flushdb
+    return self.execute_command('FLUSHDB', *args)
+  File "/home/labsig/anaconda3/envs/phd/lib/python3.9/site-packages/redis/client.py", line 898, in execute_command
+    conn = self.connection or pool.get_connection(command_name, **options)
+  File "/home/labsig/anaconda3/envs/phd/lib/python3.9/site-packages/redis/connection.py", line 1192, in get_connection
+    connection.connect()
+  File "/home/labsig/anaconda3/envs/phd/lib/python3.9/site-packages/redis/connection.py", line 563, in connect
+    raise ConnectionError(self._error_message(e))
+redis.exceptions.ConnectionError: Error 111 connecting to localhost:6379. Connection refused.
+/home/labsig/anaconda3/envs/phd/lib/python3.9/site-packages/scipy/__init__.py:138: UserWarning: A NumPy version >=1.16.5 and <1.23.0 is required for this version of SciPy (detected version 1.26.2)
+  warnings.warn(f"A NumPy version >={np_minversion} and <{np_maxversion} is required for this version of "
+Some weights of DeiTForImageClassification were not initialized from the model checkpoint at facebook/deit-base-distilled-patch16-224 and are newly initialized: ['classifier.weight', 'classifier.bias']
+You should probably TRAIN this model on a down-stream task to be able to use it for predictions and inference.
+/home/labsig/anaconda3/envs/phd/lib/python3.9/site-packages/torch/nn/parallel/data_parallel.py:33: UserWarning: 
+    There is an imbalance between your GPUs. You may want to exclude GPU 1 which
+    has less than 75% of the memory or cores of GPU 0. You can do so by setting
+    the device_ids argument to DataParallel, or by setting the CUDA_VISIBLE_DEVICES
+    environment variable.
+  warnings.warn(imbalance_warn.format(device_ids[min_pos], device_ids[max_pos]))
+/home/labsig/anaconda3/envs/phd/lib/python3.9/site-packages/torch/nn/utils/weight_norm.py:30: UserWarning: torch.nn.utils.weight_norm is deprecated in favor of torch.nn.utils.parametrizations.weight_norm.
+  warnings.warn("torch.nn.utils.weight_norm is deprecated in favor of torch.nn.utils.parametrizations.weight_norm.")
+Traceback (most recent call last):
+  File "/home/labsig/Documents/Axelle/cytomine/cbir-tfe/database/test_accuracy.py", line 733, in <module>
+    stat(model, args.path, args.db_name, args.extractor, args.generalise, args.project_name, args.class_name, args.retrieve_class)
+  File "/home/labsig/Documents/Axelle/cytomine/cbir-tfe/database/test_accuracy.py", line 597, in stat
+    top_1_acc[0][i], top_5_acc[0][i], top_1_acc[1][i], top_5_acc[1][i], top_1_acc[2][i], top_5_acc[2][i], maj_acc[0][i], maj_acc[1][i], maj_acc[2][i], ts[0][i], ts[1][i], ts[2][i], ts[3][i] =  test(model, dataset, db_name, extractor, "random", generalise, project_name, class_name, False, label = label, stat = True)
+  File "/home/labsig/Documents/Axelle/cytomine/cbir-tfe/database/test_accuracy.py", line 507, in test
+    names, _, t_model_tmp, t_search_tmp, t_transfer_tmp = database.search(image, extractor, generalise=generalise)
+  File "/home/labsig/anaconda3/envs/phd/lib/python3.9/site-packages/torch/utils/_contextlib.py", line 115, in decorate_context
+    return func(*args, **kwargs)
+  File "/home/labsig/Documents/Axelle/cytomine/cbir-tfe/database/db.py", line 185, in search
+    distance, labels = self.index.search(out, nrt_neigh) 
+  File "/home/labsig/anaconda3/envs/phd/lib/python3.9/site-packages/faiss/__init__.py", line 132, in replacement_search
+    assert d == self.d
+AssertionError
+/home/labsig/anaconda3/envs/phd/lib/python3.9/site-packages/scipy/__init__.py:138: UserWarning: A NumPy version >=1.16.5 and <1.23.0 is required for this version of SciPy (detected version 1.26.2)
+  warnings.warn(f"A NumPy version >={np_minversion} and <{np_maxversion} is required for this version of "
+Some weights of DeiTForImageClassification were not initialized from the model checkpoint at facebook/deit-base-distilled-patch16-224 and are newly initialized: ['classifier.weight', 'classifier.bias']
+You should probably TRAIN this model on a down-stream task to be able to use it for predictions and inference.
+/home/labsig/anaconda3/envs/phd/lib/python3.9/site-packages/torch/nn/parallel/data_parallel.py:33: UserWarning: 
+    There is an imbalance between your GPUs. You may want to exclude GPU 1 which
+    has less than 75% of the memory or cores of GPU 0. You can do so by setting
+    the device_ids argument to DataParallel, or by setting the CUDA_VISIBLE_DEVICES
+    environment variable.
+  warnings.warn(imbalance_warn.format(device_ids[min_pos], device_ids[max_pos]))
+/home/labsig/anaconda3/envs/phd/lib/python3.9/site-packages/torch/nn/utils/weight_norm.py:30: UserWarning: torch.nn.utils.weight_norm is deprecated in favor of torch.nn.utils.parametrizations.weight_norm.
+  warnings.warn("torch.nn.utils.weight_norm is deprecated in favor of torch.nn.utils.parametrizations.weight_norm.")
+Traceback (most recent call last):
+  File "/home/labsig/Documents/Axelle/cytomine/cbir-tfe/database/test_accuracy.py", line 735, in <module>
+    r = test(model, args.path, args.db_name, args.extractor, args.measure, args.generalise, args.project_name, args.class_name, True, label = args.retrieve_class)
+  File "/home/labsig/Documents/Axelle/cytomine/cbir-tfe/database/test_accuracy.py", line 507, in test
+    names, _, t_model_tmp, t_search_tmp, t_transfer_tmp = database.search(image, extractor, generalise=generalise)
+  File "/home/labsig/anaconda3/envs/phd/lib/python3.9/site-packages/torch/utils/_contextlib.py", line 115, in decorate_context
+    return func(*args, **kwargs)
+  File "/home/labsig/Documents/Axelle/cytomine/cbir-tfe/database/db.py", line 185, in search
+    distance, labels = self.index.search(out, nrt_neigh) 
+  File "/home/labsig/anaconda3/envs/phd/lib/python3.9/site-packages/faiss/__init__.py", line 132, in replacement_search
+    assert d == self.d
+AssertionError
+/home/labsig/anaconda3/envs/phd/lib/python3.9/site-packages/scipy/__init__.py:138: UserWarning: A NumPy version >=1.16.5 and <1.23.0 is required for this version of SciPy (detected version 1.26.2)
+  warnings.warn(f"A NumPy version >={np_minversion} and <{np_maxversion} is required for this version of "
+Some weights of DeiTForImageClassification were not initialized from the model checkpoint at facebook/deit-base-distilled-patch16-224 and are newly initialized: ['classifier.bias', 'classifier.weight']
+You should probably TRAIN this model on a down-stream task to be able to use it for predictions and inference.
+/home/labsig/anaconda3/envs/phd/lib/python3.9/site-packages/torch/nn/parallel/data_parallel.py:33: UserWarning: 
+    There is an imbalance between your GPUs. You may want to exclude GPU 1 which
+    has less than 75% of the memory or cores of GPU 0. You can do so by setting
+    the device_ids argument to DataParallel, or by setting the CUDA_VISIBLE_DEVICES
+    environment variable.
+  warnings.warn(imbalance_warn.format(device_ids[min_pos], device_ids[max_pos]))
+/home/labsig/anaconda3/envs/phd/lib/python3.9/site-packages/torch/nn/utils/weight_norm.py:30: UserWarning: torch.nn.utils.weight_norm is deprecated in favor of torch.nn.utils.parametrizations.weight_norm.
+  warnings.warn("torch.nn.utils.weight_norm is deprecated in favor of torch.nn.utils.parametrizations.weight_norm.")
+Traceback (most recent call last):
+  File "/home/labsig/Documents/Axelle/cytomine/cbir-tfe/database/test_accuracy.py", line 735, in <module>
+    r = test(model, args.path, args.db_name, args.extractor, args.measure, args.generalise, args.project_name, args.class_name, True, label = args.retrieve_class)
+  File "/home/labsig/Documents/Axelle/cytomine/cbir-tfe/database/test_accuracy.py", line 507, in test
+    names, _, t_model_tmp, t_search_tmp, t_transfer_tmp = database.search(image, extractor, generalise=generalise)
+  File "/home/labsig/anaconda3/envs/phd/lib/python3.9/site-packages/torch/utils/_contextlib.py", line 115, in decorate_context
+    return func(*args, **kwargs)
+  File "/home/labsig/Documents/Axelle/cytomine/cbir-tfe/database/db.py", line 185, in search
+    distance, labels = self.index.search(out, nrt_neigh) 
+  File "/home/labsig/anaconda3/envs/phd/lib/python3.9/site-packages/faiss/__init__.py", line 132, in replacement_search
+    assert d == self.d
+AssertionError
+/home/labsig/anaconda3/envs/phd/lib/python3.9/site-packages/scipy/__init__.py:138: UserWarning: A NumPy version >=1.16.5 and <1.23.0 is required for this version of SciPy (detected version 1.26.2)
+  warnings.warn(f"A NumPy version >={np_minversion} and <{np_maxversion} is required for this version of "
+Some weights of DeiTForImageClassification were not initialized from the model checkpoint at facebook/deit-base-distilled-patch16-224 and are newly initialized: ['classifier.bias', 'classifier.weight']
+You should probably TRAIN this model on a down-stream task to be able to use it for predictions and inference.
+/home/labsig/anaconda3/envs/phd/lib/python3.9/site-packages/torch/nn/parallel/data_parallel.py:33: UserWarning: 
+    There is an imbalance between your GPUs. You may want to exclude GPU 1 which
+    has less than 75% of the memory or cores of GPU 0. You can do so by setting
+    the device_ids argument to DataParallel, or by setting the CUDA_VISIBLE_DEVICES
+    environment variable.
+  warnings.warn(imbalance_warn.format(device_ids[min_pos], device_ids[max_pos]))
+/home/labsig/anaconda3/envs/phd/lib/python3.9/site-packages/torch/nn/utils/weight_norm.py:30: UserWarning: torch.nn.utils.weight_norm is deprecated in favor of torch.nn.utils.parametrizations.weight_norm.
+  warnings.warn("torch.nn.utils.weight_norm is deprecated in favor of torch.nn.utils.parametrizations.weight_norm.")
+/home/labsig/anaconda3/envs/phd/lib/python3.9/site-packages/transformers/models/deit/feature_extraction_deit.py:28: FutureWarning: The class DeiTFeatureExtractor is deprecated and will be removed in version 5 of Transformers. Please use DeiTImageProcessor instead.
+  warnings.warn(
+/home/labsig/anaconda3/envs/phd/lib/python3.9/site-packages/scipy/__init__.py:138: UserWarning: A NumPy version >=1.16.5 and <1.23.0 is required for this version of SciPy (detected version 1.26.2)
+  warnings.warn(f"A NumPy version >={np_minversion} and <{np_maxversion} is required for this version of "
+Some weights of DeiTForImageClassification were not initialized from the model checkpoint at facebook/deit-base-distilled-patch16-224 and are newly initialized: ['classifier.bias', 'classifier.weight']
+You should probably TRAIN this model on a down-stream task to be able to use it for predictions and inference.
+/home/labsig/anaconda3/envs/phd/lib/python3.9/site-packages/torch/nn/parallel/data_parallel.py:33: UserWarning: 
+    There is an imbalance between your GPUs. You may want to exclude GPU 1 which
+    has less than 75% of the memory or cores of GPU 0. You can do so by setting
+    the device_ids argument to DataParallel, or by setting the CUDA_VISIBLE_DEVICES
+    environment variable.
+  warnings.warn(imbalance_warn.format(device_ids[min_pos], device_ids[max_pos]))
+/home/labsig/anaconda3/envs/phd/lib/python3.9/site-packages/torch/nn/utils/weight_norm.py:30: UserWarning: torch.nn.utils.weight_norm is deprecated in favor of torch.nn.utils.parametrizations.weight_norm.
+  warnings.warn("torch.nn.utils.weight_norm is deprecated in favor of torch.nn.utils.parametrizations.weight_norm.")
+/home/labsig/anaconda3/envs/phd/lib/python3.9/site-packages/transformers/models/deit/feature_extraction_deit.py:28: FutureWarning: The class DeiTFeatureExtractor is deprecated and will be removed in version 5 of Transformers. Please use DeiTImageProcessor instead.
+  warnings.warn(
+/home/labsig/Documents/Axelle/cytomine/cbir-tfe/database/test_accuracy.py:597: DeprecationWarning: Conversion of an array with ndim > 0 to a scalar is deprecated, and will error in future. Ensure you extract a single element from your array before performing this operation. (Deprecated NumPy 1.25.)
+  top_1_acc[0][i], top_5_acc[0][i], top_1_acc[1][i], top_5_acc[1][i], top_1_acc[2][i], top_5_acc[2][i], maj_acc[0][i], maj_acc[1][i], maj_acc[2][i], ts[0][i], ts[1][i], ts[2][i], ts[3][i] =  test(model, dataset, db_name, extractor, "random", generalise, project_name, class_name, False, label = label, stat = True)
+/home/labsig/anaconda3/envs/phd/lib/python3.9/site-packages/scipy/__init__.py:138: UserWarning: A NumPy version >=1.16.5 and <1.23.0 is required for this version of SciPy (detected version 1.26.2)
+  warnings.warn(f"A NumPy version >={np_minversion} and <{np_maxversion} is required for this version of "
+Some weights of DeiTForImageClassification were not initialized from the model checkpoint at facebook/deit-base-distilled-patch16-224 and are newly initialized: ['classifier.bias', 'classifier.weight']
+You should probably TRAIN this model on a down-stream task to be able to use it for predictions and inference.
+/home/labsig/anaconda3/envs/phd/lib/python3.9/site-packages/torch/nn/parallel/data_parallel.py:33: UserWarning: 
+    There is an imbalance between your GPUs. You may want to exclude GPU 1 which
+    has less than 75% of the memory or cores of GPU 0. You can do so by setting
+    the device_ids argument to DataParallel, or by setting the CUDA_VISIBLE_DEVICES
+    environment variable.
+  warnings.warn(imbalance_warn.format(device_ids[min_pos], device_ids[max_pos]))
+/home/labsig/anaconda3/envs/phd/lib/python3.9/site-packages/torch/nn/utils/weight_norm.py:30: UserWarning: torch.nn.utils.weight_norm is deprecated in favor of torch.nn.utils.parametrizations.weight_norm.
+  warnings.warn("torch.nn.utils.weight_norm is deprecated in favor of torch.nn.utils.parametrizations.weight_norm.")
+/home/labsig/anaconda3/envs/phd/lib/python3.9/site-packages/transformers/models/deit/feature_extraction_deit.py:28: FutureWarning: The class DeiTFeatureExtractor is deprecated and will be removed in version 5 of Transformers. Please use DeiTImageProcessor instead.
+  warnings.warn(
+Traceback (most recent call last):
+  File "/home/labsig/Documents/Axelle/cytomine/cbir-tfe/database/test_accuracy.py", line 735, in <module>
+    r = test(model, args.path, args.db_name, args.extractor, args.measure, args.generalise, args.project_name, args.class_name, True, label = args.retrieve_class)
+  File "/home/labsig/Documents/Axelle/cytomine/cbir-tfe/database/test_accuracy.py", line 574, in test
+    display_cm(ground_truth, data, predictions, predictions_maj)
+  File "/home/labsig/Documents/Axelle/cytomine/cbir-tfe/database/test_accuracy.py", line 236, in display_cm
+    plt.savefig('/home/labarvr4090/Documents/Axelle/cytomine/cbir-tfe/cms/confusion_matrix_top1.png')
+  File "/home/labsig/anaconda3/envs/phd/lib/python3.9/site-packages/matplotlib/pyplot.py", line 859, in savefig
+    res = fig.savefig(*args, **kwargs)
+  File "/home/labsig/anaconda3/envs/phd/lib/python3.9/site-packages/matplotlib/figure.py", line 2311, in savefig
+    self.canvas.print_figure(fname, **kwargs)
+  File "/home/labsig/anaconda3/envs/phd/lib/python3.9/site-packages/matplotlib/backend_bases.py", line 2210, in print_figure
+    result = print_method(
+  File "/home/labsig/anaconda3/envs/phd/lib/python3.9/site-packages/matplotlib/backend_bases.py", line 1639, in wrapper
+    return func(*args, **kwargs)
+  File "/home/labsig/anaconda3/envs/phd/lib/python3.9/site-packages/matplotlib/backends/backend_agg.py", line 510, in print_png
+    mpl.image.imsave(
+  File "/home/labsig/anaconda3/envs/phd/lib/python3.9/site-packages/matplotlib/image.py", line 1611, in imsave
+    image.save(fname, **pil_kwargs)
+  File "/home/labsig/anaconda3/envs/phd/lib/python3.9/site-packages/PIL/Image.py", line 2410, in save
+    fp = builtins.open(filename, "w+b")
+FileNotFoundError: [Errno 2] No such file or directory: '/home/labarvr4090/Documents/Axelle/cytomine/cbir-tfe/cms/confusion_matrix_top1.png'
+/home/labsig/anaconda3/envs/phd/lib/python3.9/site-packages/scipy/__init__.py:138: UserWarning: A NumPy version >=1.16.5 and <1.23.0 is required for this version of SciPy (detected version 1.26.2)
+  warnings.warn(f"A NumPy version >={np_minversion} and <{np_maxversion} is required for this version of "
+Some weights of DeiTForImageClassification were not initialized from the model checkpoint at facebook/deit-base-distilled-patch16-224 and are newly initialized: ['classifier.bias', 'classifier.weight']
+You should probably TRAIN this model on a down-stream task to be able to use it for predictions and inference.
+/home/labsig/anaconda3/envs/phd/lib/python3.9/site-packages/torch/nn/parallel/data_parallel.py:33: UserWarning: 
+    There is an imbalance between your GPUs. You may want to exclude GPU 1 which
+    has less than 75% of the memory or cores of GPU 0. You can do so by setting
+    the device_ids argument to DataParallel, or by setting the CUDA_VISIBLE_DEVICES
+    environment variable.
+  warnings.warn(imbalance_warn.format(device_ids[min_pos], device_ids[max_pos]))
+/home/labsig/anaconda3/envs/phd/lib/python3.9/site-packages/torch/nn/utils/weight_norm.py:30: UserWarning: torch.nn.utils.weight_norm is deprecated in favor of torch.nn.utils.parametrizations.weight_norm.
+  warnings.warn("torch.nn.utils.weight_norm is deprecated in favor of torch.nn.utils.parametrizations.weight_norm.")
+/home/labsig/anaconda3/envs/phd/lib/python3.9/site-packages/transformers/models/deit/feature_extraction_deit.py:28: FutureWarning: The class DeiTFeatureExtractor is deprecated and will be removed in version 5 of Transformers. Please use DeiTImageProcessor instead.
+  warnings.warn(
+Traceback (most recent call last):
+  File "/home/labsig/Documents/Axelle/cytomine/cbir-tfe/database/test_accuracy.py", line 735, in <module>
+    r = test(model, args.path, args.db_name, args.extractor, args.measure, args.generalise, args.project_name, args.class_name, True, label = args.retrieve_class)
+  File "/home/labsig/Documents/Axelle/cytomine/cbir-tfe/database/test_accuracy.py", line 574, in test
+    display_cm(ground_truth, data, predictions, predictions_maj)
+  File "/home/labsig/Documents/Axelle/cytomine/cbir-tfe/database/test_accuracy.py", line 236, in display_cm
+    plt.savefig('/home/labarvr4090/Documents/Axelle/cytomine/cbir-tfe/cms/confusion_matrix_top1.png')
+  File "/home/labsig/anaconda3/envs/phd/lib/python3.9/site-packages/matplotlib/pyplot.py", line 859, in savefig
+    res = fig.savefig(*args, **kwargs)
+  File "/home/labsig/anaconda3/envs/phd/lib/python3.9/site-packages/matplotlib/figure.py", line 2311, in savefig
+    self.canvas.print_figure(fname, **kwargs)
+  File "/home/labsig/anaconda3/envs/phd/lib/python3.9/site-packages/matplotlib/backend_bases.py", line 2210, in print_figure
+    result = print_method(
+  File "/home/labsig/anaconda3/envs/phd/lib/python3.9/site-packages/matplotlib/backend_bases.py", line 1639, in wrapper
+    return func(*args, **kwargs)
+  File "/home/labsig/anaconda3/envs/phd/lib/python3.9/site-packages/matplotlib/backends/backend_agg.py", line 510, in print_png
+    mpl.image.imsave(
+  File "/home/labsig/anaconda3/envs/phd/lib/python3.9/site-packages/matplotlib/image.py", line 1611, in imsave
+    image.save(fname, **pil_kwargs)
+  File "/home/labsig/anaconda3/envs/phd/lib/python3.9/site-packages/PIL/Image.py", line 2410, in save
+    fp = builtins.open(filename, "w+b")
+FileNotFoundError: [Errno 2] No such file or directory: '/home/labarvr4090/Documents/Axelle/cytomine/cbir-tfe/cms/confusion_matrix_top1.png'
+/home/labsig/anaconda3/envs/phd/lib/python3.9/site-packages/scipy/__init__.py:138: UserWarning: A NumPy version >=1.16.5 and <1.23.0 is required for this version of SciPy (detected version 1.26.2)
+  warnings.warn(f"A NumPy version >={np_minversion} and <{np_maxversion} is required for this version of "
+Some weights of DeiTForImageClassification were not initialized from the model checkpoint at facebook/deit-base-distilled-patch16-224 and are newly initialized: ['classifier.weight', 'classifier.bias']
+You should probably TRAIN this model on a down-stream task to be able to use it for predictions and inference.
+/home/labsig/anaconda3/envs/phd/lib/python3.9/site-packages/torch/nn/parallel/data_parallel.py:33: UserWarning: 
+    There is an imbalance between your GPUs. You may want to exclude GPU 1 which
+    has less than 75% of the memory or cores of GPU 0. You can do so by setting
+    the device_ids argument to DataParallel, or by setting the CUDA_VISIBLE_DEVICES
+    environment variable.
+  warnings.warn(imbalance_warn.format(device_ids[min_pos], device_ids[max_pos]))
+/home/labsig/anaconda3/envs/phd/lib/python3.9/site-packages/torch/nn/utils/weight_norm.py:30: UserWarning: torch.nn.utils.weight_norm is deprecated in favor of torch.nn.utils.parametrizations.weight_norm.
+  warnings.warn("torch.nn.utils.weight_norm is deprecated in favor of torch.nn.utils.parametrizations.weight_norm.")
+/home/labsig/anaconda3/envs/phd/lib/python3.9/site-packages/transformers/models/deit/feature_extraction_deit.py:28: FutureWarning: The class DeiTFeatureExtractor is deprecated and will be removed in version 5 of Transformers. Please use DeiTImageProcessor instead.
+  warnings.warn(
+/home/labsig/anaconda3/envs/phd/lib/python3.9/site-packages/scipy/__init__.py:138: UserWarning: A NumPy version >=1.16.5 and <1.23.0 is required for this version of SciPy (detected version 1.26.2)
+  warnings.warn(f"A NumPy version >={np_minversion} and <{np_maxversion} is required for this version of "
+Some weights of DeiTForImageClassification were not initialized from the model checkpoint at facebook/deit-base-distilled-patch16-224 and are newly initialized: ['classifier.bias', 'classifier.weight']
+You should probably TRAIN this model on a down-stream task to be able to use it for predictions and inference.
+/home/labsig/anaconda3/envs/phd/lib/python3.9/site-packages/torch/nn/parallel/data_parallel.py:33: UserWarning: 
+    There is an imbalance between your GPUs. You may want to exclude GPU 1 which
+    has less than 75% of the memory or cores of GPU 0. You can do so by setting
+    the device_ids argument to DataParallel, or by setting the CUDA_VISIBLE_DEVICES
+    environment variable.
+  warnings.warn(imbalance_warn.format(device_ids[min_pos], device_ids[max_pos]))
+/home/labsig/anaconda3/envs/phd/lib/python3.9/site-packages/torch/nn/utils/weight_norm.py:30: UserWarning: torch.nn.utils.weight_norm is deprecated in favor of torch.nn.utils.parametrizations.weight_norm.
+  warnings.warn("torch.nn.utils.weight_norm is deprecated in favor of torch.nn.utils.parametrizations.weight_norm.")
+/home/labsig/anaconda3/envs/phd/lib/python3.9/site-packages/transformers/models/deit/feature_extraction_deit.py:28: FutureWarning: The class DeiTFeatureExtractor is deprecated and will be removed in version 5 of Transformers. Please use DeiTImageProcessor instead.
+  warnings.warn(
+/home/labsig/Documents/Axelle/cytomine/cbir-tfe/database/test_accuracy.py:597: DeprecationWarning: Conversion of an array with ndim > 0 to a scalar is deprecated, and will error in future. Ensure you extract a single element from your array before performing this operation. (Deprecated NumPy 1.25.)
+  top_1_acc[0][i], top_5_acc[0][i], top_1_acc[1][i], top_5_acc[1][i], top_1_acc[2][i], top_5_acc[2][i], maj_acc[0][i], maj_acc[1][i], maj_acc[2][i], ts[0][i], ts[1][i], ts[2][i], ts[3][i] =  test(model, dataset, db_name, extractor, "random", generalise, project_name, class_name, False, label = label, stat = True)
+/home/labsig/anaconda3/envs/phd/lib/python3.9/site-packages/scipy/__init__.py:138: UserWarning: A NumPy version >=1.16.5 and <1.23.0 is required for this version of SciPy (detected version 1.26.2)
+  warnings.warn(f"A NumPy version >={np_minversion} and <{np_maxversion} is required for this version of "
+Some weights of DeiTForImageClassification were not initialized from the model checkpoint at facebook/deit-base-distilled-patch16-224 and are newly initialized: ['classifier.bias', 'classifier.weight']
+You should probably TRAIN this model on a down-stream task to be able to use it for predictions and inference.
+/home/labsig/anaconda3/envs/phd/lib/python3.9/site-packages/torch/nn/parallel/data_parallel.py:33: UserWarning: 
+    There is an imbalance between your GPUs. You may want to exclude GPU 1 which
+    has less than 75% of the memory or cores of GPU 0. You can do so by setting
+    the device_ids argument to DataParallel, or by setting the CUDA_VISIBLE_DEVICES
+    environment variable.
+  warnings.warn(imbalance_warn.format(device_ids[min_pos], device_ids[max_pos]))
+/home/labsig/anaconda3/envs/phd/lib/python3.9/site-packages/torch/nn/utils/weight_norm.py:30: UserWarning: torch.nn.utils.weight_norm is deprecated in favor of torch.nn.utils.parametrizations.weight_norm.
+  warnings.warn("torch.nn.utils.weight_norm is deprecated in favor of torch.nn.utils.parametrizations.weight_norm.")
+/home/labsig/anaconda3/envs/phd/lib/python3.9/site-packages/transformers/models/deit/feature_extraction_deit.py:28: FutureWarning: The class DeiTFeatureExtractor is deprecated and will be removed in version 5 of Transformers. Please use DeiTImageProcessor instead.
+  warnings.warn(
+Traceback (most recent call last):
+  File "/home/labsig/Documents/Axelle/cytomine/cbir-tfe/database/test_accuracy.py", line 735, in <module>
+    r = test(model, args.path, args.db_name, args.extractor, args.measure, args.generalise, args.project_name, args.class_name, True, label = args.retrieve_class)
+  File "/home/labsig/Documents/Axelle/cytomine/cbir-tfe/database/test_accuracy.py", line 574, in test
+    display_cm(ground_truth, data, predictions, predictions_maj)
+  File "/home/labsig/Documents/Axelle/cytomine/cbir-tfe/database/test_accuracy.py", line 236, in display_cm
+    plt.savefig('/home/labarvr4090/Documents/Axelle/cytomine/cbir-tfe/cms/confusion_matrix_top1.png')
+  File "/home/labsig/anaconda3/envs/phd/lib/python3.9/site-packages/matplotlib/pyplot.py", line 859, in savefig
+    res = fig.savefig(*args, **kwargs)
+  File "/home/labsig/anaconda3/envs/phd/lib/python3.9/site-packages/matplotlib/figure.py", line 2311, in savefig
+    self.canvas.print_figure(fname, **kwargs)
+  File "/home/labsig/anaconda3/envs/phd/lib/python3.9/site-packages/matplotlib/backend_bases.py", line 2210, in print_figure
+    result = print_method(
+  File "/home/labsig/anaconda3/envs/phd/lib/python3.9/site-packages/matplotlib/backend_bases.py", line 1639, in wrapper
+    return func(*args, **kwargs)
+  File "/home/labsig/anaconda3/envs/phd/lib/python3.9/site-packages/matplotlib/backends/backend_agg.py", line 510, in print_png
+    mpl.image.imsave(
+  File "/home/labsig/anaconda3/envs/phd/lib/python3.9/site-packages/matplotlib/image.py", line 1611, in imsave
+    image.save(fname, **pil_kwargs)
+  File "/home/labsig/anaconda3/envs/phd/lib/python3.9/site-packages/PIL/Image.py", line 2410, in save
+    fp = builtins.open(filename, "w+b")
+FileNotFoundError: [Errno 2] No such file or directory: '/home/labarvr4090/Documents/Axelle/cytomine/cbir-tfe/cms/confusion_matrix_top1.png'
+/home/labsig/anaconda3/envs/phd/lib/python3.9/site-packages/scipy/__init__.py:138: UserWarning: A NumPy version >=1.16.5 and <1.23.0 is required for this version of SciPy (detected version 1.26.2)
+  warnings.warn(f"A NumPy version >={np_minversion} and <{np_maxversion} is required for this version of "
+Some weights of DeiTForImageClassification were not initialized from the model checkpoint at facebook/deit-base-distilled-patch16-224 and are newly initialized: ['classifier.bias', 'classifier.weight']
+You should probably TRAIN this model on a down-stream task to be able to use it for predictions and inference.
+/home/labsig/anaconda3/envs/phd/lib/python3.9/site-packages/torch/nn/parallel/data_parallel.py:33: UserWarning: 
+    There is an imbalance between your GPUs. You may want to exclude GPU 1 which
+    has less than 75% of the memory or cores of GPU 0. You can do so by setting
+    the device_ids argument to DataParallel, or by setting the CUDA_VISIBLE_DEVICES
+    environment variable.
+  warnings.warn(imbalance_warn.format(device_ids[min_pos], device_ids[max_pos]))
+/home/labsig/anaconda3/envs/phd/lib/python3.9/site-packages/torch/nn/utils/weight_norm.py:30: UserWarning: torch.nn.utils.weight_norm is deprecated in favor of torch.nn.utils.parametrizations.weight_norm.
+  warnings.warn("torch.nn.utils.weight_norm is deprecated in favor of torch.nn.utils.parametrizations.weight_norm.")
+/home/labsig/anaconda3/envs/phd/lib/python3.9/site-packages/transformers/models/deit/feature_extraction_deit.py:28: FutureWarning: The class DeiTFeatureExtractor is deprecated and will be removed in version 5 of Transformers. Please use DeiTImageProcessor instead.
+  warnings.warn(
+Traceback (most recent call last):
+  File "/home/labsig/Documents/Axelle/cytomine/cbir-tfe/database/test_accuracy.py", line 735, in <module>
+    r = test(model, args.path, args.db_name, args.extractor, args.measure, args.generalise, args.project_name, args.class_name, True, label = args.retrieve_class)
+  File "/home/labsig/Documents/Axelle/cytomine/cbir-tfe/database/test_accuracy.py", line 574, in test
+    display_cm(ground_truth, data, predictions, predictions_maj)
+  File "/home/labsig/Documents/Axelle/cytomine/cbir-tfe/database/test_accuracy.py", line 236, in display_cm
+    plt.savefig('/home/labarvr4090/Documents/Axelle/cytomine/cbir-tfe/cms/confusion_matrix_top1.png')
+  File "/home/labsig/anaconda3/envs/phd/lib/python3.9/site-packages/matplotlib/pyplot.py", line 859, in savefig
+    res = fig.savefig(*args, **kwargs)
+  File "/home/labsig/anaconda3/envs/phd/lib/python3.9/site-packages/matplotlib/figure.py", line 2311, in savefig
+    self.canvas.print_figure(fname, **kwargs)
+  File "/home/labsig/anaconda3/envs/phd/lib/python3.9/site-packages/matplotlib/backend_bases.py", line 2210, in print_figure
+    result = print_method(
+  File "/home/labsig/anaconda3/envs/phd/lib/python3.9/site-packages/matplotlib/backend_bases.py", line 1639, in wrapper
+    return func(*args, **kwargs)
+  File "/home/labsig/anaconda3/envs/phd/lib/python3.9/site-packages/matplotlib/backends/backend_agg.py", line 510, in print_png
+    mpl.image.imsave(
+  File "/home/labsig/anaconda3/envs/phd/lib/python3.9/site-packages/matplotlib/image.py", line 1611, in imsave
+    image.save(fname, **pil_kwargs)
+  File "/home/labsig/anaconda3/envs/phd/lib/python3.9/site-packages/PIL/Image.py", line 2410, in save
+    fp = builtins.open(filename, "w+b")
+FileNotFoundError: [Errno 2] No such file or directory: '/home/labarvr4090/Documents/Axelle/cytomine/cbir-tfe/cms/confusion_matrix_top1.png'
+/home/labsig/anaconda3/envs/phd/lib/python3.9/site-packages/scipy/__init__.py:138: UserWarning: A NumPy version >=1.16.5 and <1.23.0 is required for this version of SciPy (detected version 1.26.2)
+  warnings.warn(f"A NumPy version >={np_minversion} and <{np_maxversion} is required for this version of "
+Some weights of DeiTForImageClassification were not initialized from the model checkpoint at facebook/deit-base-distilled-patch16-224 and are newly initialized: ['classifier.bias', 'classifier.weight']
+You should probably TRAIN this model on a down-stream task to be able to use it for predictions and inference.
+/home/labsig/anaconda3/envs/phd/lib/python3.9/site-packages/torch/nn/parallel/data_parallel.py:33: UserWarning: 
+    There is an imbalance between your GPUs. You may want to exclude GPU 1 which
+    has less than 75% of the memory or cores of GPU 0. You can do so by setting
+    the device_ids argument to DataParallel, or by setting the CUDA_VISIBLE_DEVICES
+    environment variable.
+  warnings.warn(imbalance_warn.format(device_ids[min_pos], device_ids[max_pos]))
+/home/labsig/anaconda3/envs/phd/lib/python3.9/site-packages/torch/nn/utils/weight_norm.py:30: UserWarning: torch.nn.utils.weight_norm is deprecated in favor of torch.nn.utils.parametrizations.weight_norm.
+  warnings.warn("torch.nn.utils.weight_norm is deprecated in favor of torch.nn.utils.parametrizations.weight_norm.")
+/home/labsig/anaconda3/envs/phd/lib/python3.9/site-packages/transformers/models/deit/feature_extraction_deit.py:28: FutureWarning: The class DeiTFeatureExtractor is deprecated and will be removed in version 5 of Transformers. Please use DeiTImageProcessor instead.
+  warnings.warn(
+/home/labsig/anaconda3/envs/phd/lib/python3.9/site-packages/scipy/__init__.py:138: UserWarning: A NumPy version >=1.16.5 and <1.23.0 is required for this version of SciPy (detected version 1.26.2)
+  warnings.warn(f"A NumPy version >={np_minversion} and <{np_maxversion} is required for this version of "
+Some weights of DeiTForImageClassification were not initialized from the model checkpoint at facebook/deit-base-distilled-patch16-224 and are newly initialized: ['classifier.bias', 'classifier.weight']
+You should probably TRAIN this model on a down-stream task to be able to use it for predictions and inference.
+/home/labsig/anaconda3/envs/phd/lib/python3.9/site-packages/torch/nn/parallel/data_parallel.py:33: UserWarning: 
+    There is an imbalance between your GPUs. You may want to exclude GPU 1 which
+    has less than 75% of the memory or cores of GPU 0. You can do so by setting
+    the device_ids argument to DataParallel, or by setting the CUDA_VISIBLE_DEVICES
+    environment variable.
+  warnings.warn(imbalance_warn.format(device_ids[min_pos], device_ids[max_pos]))
+/home/labsig/anaconda3/envs/phd/lib/python3.9/site-packages/torch/nn/utils/weight_norm.py:30: UserWarning: torch.nn.utils.weight_norm is deprecated in favor of torch.nn.utils.parametrizations.weight_norm.
+  warnings.warn("torch.nn.utils.weight_norm is deprecated in favor of torch.nn.utils.parametrizations.weight_norm.")
+/home/labsig/anaconda3/envs/phd/lib/python3.9/site-packages/transformers/models/deit/feature_extraction_deit.py:28: FutureWarning: The class DeiTFeatureExtractor is deprecated and will be removed in version 5 of Transformers. Please use DeiTImageProcessor instead.
+  warnings.warn(
+/home/labsig/Documents/Axelle/cytomine/cbir-tfe/database/test_accuracy.py:597: DeprecationWarning: Conversion of an array with ndim > 0 to a scalar is deprecated, and will error in future. Ensure you extract a single element from your array before performing this operation. (Deprecated NumPy 1.25.)
+  top_1_acc[0][i], top_5_acc[0][i], top_1_acc[1][i], top_5_acc[1][i], top_1_acc[2][i], top_5_acc[2][i], maj_acc[0][i], maj_acc[1][i], maj_acc[2][i], ts[0][i], ts[1][i], ts[2][i], ts[3][i] =  test(model, dataset, db_name, extractor, "random", generalise, project_name, class_name, False, label = label, stat = True)
+/home/labsig/anaconda3/envs/phd/lib/python3.9/site-packages/scipy/__init__.py:138: UserWarning: A NumPy version >=1.16.5 and <1.23.0 is required for this version of SciPy (detected version 1.26.2)
+  warnings.warn(f"A NumPy version >={np_minversion} and <{np_maxversion} is required for this version of "
+Some weights of DeiTForImageClassification were not initialized from the model checkpoint at facebook/deit-base-distilled-patch16-224 and are newly initialized: ['classifier.bias', 'classifier.weight']
+You should probably TRAIN this model on a down-stream task to be able to use it for predictions and inference.
+/home/labsig/anaconda3/envs/phd/lib/python3.9/site-packages/torch/nn/parallel/data_parallel.py:33: UserWarning: 
+    There is an imbalance between your GPUs. You may want to exclude GPU 1 which
+    has less than 75% of the memory or cores of GPU 0. You can do so by setting
+    the device_ids argument to DataParallel, or by setting the CUDA_VISIBLE_DEVICES
+    environment variable.
+  warnings.warn(imbalance_warn.format(device_ids[min_pos], device_ids[max_pos]))
+/home/labsig/anaconda3/envs/phd/lib/python3.9/site-packages/torch/nn/utils/weight_norm.py:30: UserWarning: torch.nn.utils.weight_norm is deprecated in favor of torch.nn.utils.parametrizations.weight_norm.
+  warnings.warn("torch.nn.utils.weight_norm is deprecated in favor of torch.nn.utils.parametrizations.weight_norm.")
+/home/labsig/anaconda3/envs/phd/lib/python3.9/site-packages/transformers/models/deit/feature_extraction_deit.py:28: FutureWarning: The class DeiTFeatureExtractor is deprecated and will be removed in version 5 of Transformers. Please use DeiTImageProcessor instead.
+  warnings.warn(
+Traceback (most recent call last):
+  File "/home/labsig/Documents/Axelle/cytomine/cbir-tfe/database/test_accuracy.py", line 735, in <module>
+    r = test(model, args.path, args.db_name, args.extractor, args.measure, args.generalise, args.project_name, args.class_name, True, label = args.retrieve_class)
+  File "/home/labsig/Documents/Axelle/cytomine/cbir-tfe/database/test_accuracy.py", line 574, in test
+    display_cm(ground_truth, data, predictions, predictions_maj)
+  File "/home/labsig/Documents/Axelle/cytomine/cbir-tfe/database/test_accuracy.py", line 236, in display_cm
+    plt.savefig('/home/labarvr4090/Documents/Axelle/cytomine/cbir-tfe/cms/confusion_matrix_top1.png')
+  File "/home/labsig/anaconda3/envs/phd/lib/python3.9/site-packages/matplotlib/pyplot.py", line 859, in savefig
+    res = fig.savefig(*args, **kwargs)
+  File "/home/labsig/anaconda3/envs/phd/lib/python3.9/site-packages/matplotlib/figure.py", line 2311, in savefig
+    self.canvas.print_figure(fname, **kwargs)
+  File "/home/labsig/anaconda3/envs/phd/lib/python3.9/site-packages/matplotlib/backend_bases.py", line 2210, in print_figure
+    result = print_method(
+  File "/home/labsig/anaconda3/envs/phd/lib/python3.9/site-packages/matplotlib/backend_bases.py", line 1639, in wrapper
+    return func(*args, **kwargs)
+  File "/home/labsig/anaconda3/envs/phd/lib/python3.9/site-packages/matplotlib/backends/backend_agg.py", line 510, in print_png
+    mpl.image.imsave(
+  File "/home/labsig/anaconda3/envs/phd/lib/python3.9/site-packages/matplotlib/image.py", line 1611, in imsave
+    image.save(fname, **pil_kwargs)
+  File "/home/labsig/anaconda3/envs/phd/lib/python3.9/site-packages/PIL/Image.py", line 2410, in save
+    fp = builtins.open(filename, "w+b")
+FileNotFoundError: [Errno 2] No such file or directory: '/home/labarvr4090/Documents/Axelle/cytomine/cbir-tfe/cms/confusion_matrix_top1.png'
+/home/labsig/anaconda3/envs/phd/lib/python3.9/site-packages/scipy/__init__.py:138: UserWarning: A NumPy version >=1.16.5 and <1.23.0 is required for this version of SciPy (detected version 1.26.2)
+  warnings.warn(f"A NumPy version >={np_minversion} and <{np_maxversion} is required for this version of "
+Some weights of DeiTForImageClassification were not initialized from the model checkpoint at facebook/deit-base-distilled-patch16-224 and are newly initialized: ['classifier.bias', 'classifier.weight']
+You should probably TRAIN this model on a down-stream task to be able to use it for predictions and inference.
+/home/labsig/anaconda3/envs/phd/lib/python3.9/site-packages/torch/nn/parallel/data_parallel.py:33: UserWarning: 
+    There is an imbalance between your GPUs. You may want to exclude GPU 1 which
+    has less than 75% of the memory or cores of GPU 0. You can do so by setting
+    the device_ids argument to DataParallel, or by setting the CUDA_VISIBLE_DEVICES
+    environment variable.
+  warnings.warn(imbalance_warn.format(device_ids[min_pos], device_ids[max_pos]))
+/home/labsig/anaconda3/envs/phd/lib/python3.9/site-packages/torch/nn/utils/weight_norm.py:30: UserWarning: torch.nn.utils.weight_norm is deprecated in favor of torch.nn.utils.parametrizations.weight_norm.
+  warnings.warn("torch.nn.utils.weight_norm is deprecated in favor of torch.nn.utils.parametrizations.weight_norm.")
+/home/labsig/anaconda3/envs/phd/lib/python3.9/site-packages/transformers/models/deit/feature_extraction_deit.py:28: FutureWarning: The class DeiTFeatureExtractor is deprecated and will be removed in version 5 of Transformers. Please use DeiTImageProcessor instead.
+  warnings.warn(
+Traceback (most recent call last):
+  File "/home/labsig/Documents/Axelle/cytomine/cbir-tfe/database/test_accuracy.py", line 735, in <module>
+    r = test(model, args.path, args.db_name, args.extractor, args.measure, args.generalise, args.project_name, args.class_name, True, label = args.retrieve_class)
+  File "/home/labsig/Documents/Axelle/cytomine/cbir-tfe/database/test_accuracy.py", line 574, in test
+    display_cm(ground_truth, data, predictions, predictions_maj)
+  File "/home/labsig/Documents/Axelle/cytomine/cbir-tfe/database/test_accuracy.py", line 236, in display_cm
+    plt.savefig('/home/labarvr4090/Documents/Axelle/cytomine/cbir-tfe/cms/confusion_matrix_top1.png')
+  File "/home/labsig/anaconda3/envs/phd/lib/python3.9/site-packages/matplotlib/pyplot.py", line 859, in savefig
+    res = fig.savefig(*args, **kwargs)
+  File "/home/labsig/anaconda3/envs/phd/lib/python3.9/site-packages/matplotlib/figure.py", line 2311, in savefig
+    self.canvas.print_figure(fname, **kwargs)
+  File "/home/labsig/anaconda3/envs/phd/lib/python3.9/site-packages/matplotlib/backend_bases.py", line 2210, in print_figure
+    result = print_method(
+  File "/home/labsig/anaconda3/envs/phd/lib/python3.9/site-packages/matplotlib/backend_bases.py", line 1639, in wrapper
+    return func(*args, **kwargs)
+  File "/home/labsig/anaconda3/envs/phd/lib/python3.9/site-packages/matplotlib/backends/backend_agg.py", line 510, in print_png
+    mpl.image.imsave(
+  File "/home/labsig/anaconda3/envs/phd/lib/python3.9/site-packages/matplotlib/image.py", line 1611, in imsave
+    image.save(fname, **pil_kwargs)
+  File "/home/labsig/anaconda3/envs/phd/lib/python3.9/site-packages/PIL/Image.py", line 2410, in save
+    fp = builtins.open(filename, "w+b")
+FileNotFoundError: [Errno 2] No such file or directory: '/home/labarvr4090/Documents/Axelle/cytomine/cbir-tfe/cms/confusion_matrix_top1.png'

@@ -1,3 +1,5 @@
+from random import shuffle
+import random
 import faiss
 import models
 import struct
@@ -85,7 +87,7 @@ class Database:
     def add_dataset(self, data_root, extractor, generalise=0, label=True):
         # Create a dataset from a directory root
         data = dataset.AddDataset(data_root, extractor, generalise)
-        loader = torch.utils.data.DataLoader(data, batch_size=128, num_workers=12, pin_memory=True)
+        loader = torch.utils.data.DataLoader(data, batch_size=128, num_workers=12, pin_memory=True, shuffle = True)
         t_model = 0
         t_indexing = 0
         t_transfer = 0
@@ -131,6 +133,11 @@ class Database:
                 # check if out contains nan
                 if np.isnan(out.numpy()).any():
                     print("Nan in output")
+                """for el in filenames:
+                    print(utils.get_class(el), end = ", ")
+                exit(0)"""
+                """filenames = list(filenames)
+                random.shuffle(filenames)"""
                 self.add(out.numpy(), list(filenames),  generalise  = generalise)
 
             t_im_ind = time.time() - t

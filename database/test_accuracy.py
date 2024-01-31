@@ -206,7 +206,7 @@ def display_cm_kmeans(ground_truth_k, predictions_k):
     plt.show()
 
 # Creates and displays the confusion matrix relative to top-1 and maj accuracy 
-def display_cm(ground_truth, data, predictions, predictions_maj):
+def display_cm(weight, measure, ground_truth, data, predictions, predictions_maj):
     rows_lab = []
     rows = []
     for el in ground_truth:
@@ -233,7 +233,8 @@ def display_cm(ground_truth, data, predictions, predictions_maj):
     sn.heatmap(df_cm, annot=True, xticklabels=True, yticklabels=True)
     #plt.show()
     # save the confusion matrix
-    plt.savefig('/home/labarvr4090/Documents/Axelle/cytomine/cbir-tfe/cms/confusion_matrix_top1.png')
+    fold_path = weight[0:weight.rfind("/")]
+    plt.savefig(fold_path + '/confusion_matrix_top1_'+measure+ '.png')
     # Confusion matrix based on maj_class accuracy:
     columns = []
     columns_lab = []
@@ -250,7 +251,7 @@ def display_cm(ground_truth, data, predictions, predictions_maj):
     sn.heatmap(df_cm, annot=True, xticklabels=True, yticklabels=True)
     #plt.show()
     # save the confusion matrix
-    plt.savefig('/home/labarvr4090/Documents/Axelle/cytomine/cbir-tfe/cms/confusion_matrix_maj.png')
+    plt.savefig(fold_path + '/confusion_matrix_maj_'+measure+'.png')
 # Compute the metrics per class of the dataset 
 # - model = python object containing the feature extractor
 # - dataset = path to the dataset from which to get the queries
@@ -452,7 +453,7 @@ class TestDataset(Dataset):
 # - see_cms = True if the graphics of the results must be displayed
 # - label = if the database to search into is the labelled, unlabelled or mixed one ("True", "False", "mixed")
 # - stat = True if the protocol is stat, False otherwise. Controls the display of the results in terminal 
-def test(model, dataset, db_name, extractor, measure, generalise, project_name, class_name, see_cms, label, stat = False):
+def test(model, model_weight, dataset, db_name, extractor, measure, generalise, project_name, class_name, see_cms, label, stat = False):
 
     # Load database
     database = db.Database(db_name, model, True)
@@ -571,7 +572,7 @@ def test(model, dataset, db_name, extractor, measure, generalise, project_name, 
 
     # Display results in graphics
     if see_cms:
-        display_cm(ground_truth, data, predictions, predictions_maj)
+        display_cm(model_weight, measure, ground_truth, data, predictions, predictions_maj)
         if generalise == 3:
             display_cm_kmeans(ground_truth_k, predictions_k)
     
@@ -594,7 +595,7 @@ def stat(model, dataset, db_name, extractor, generalise, project_name, class_nam
 
     ts = np.zeros((4,10))
     for i in range(10):
-        top_1_acc[0][i], top_5_acc[0][i], top_1_acc[1][i], top_5_acc[1][i], top_1_acc[2][i], top_5_acc[2][i], maj_acc[0][i], maj_acc[1][i], maj_acc[2][i], ts[0][i], ts[1][i], ts[2][i], ts[3][i] =  test(model, dataset, db_name, extractor, "random", generalise, project_name, class_name, False, label = label, stat = True)
+        top_1_acc[0][i], top_5_acc[0][i], top_1_acc[1][i], top_5_acc[1][i], top_1_acc[2][i], top_5_acc[2][i], maj_acc[0][i], maj_acc[1][i], maj_acc[2][i], ts[0][i], ts[1][i], ts[2][i], ts[3][i] =  test(model, "",  dataset, db_name, extractor, "random", generalise, project_name, class_name, False, label = label, stat = True)
 
 
     print("Top 1 accuracy: ", np.mean(top_1_acc[0]), " +- ", np.std(top_1_acc[0]))
@@ -732,4 +733,4 @@ if __name__ == "__main__":
         if args.measure == "stat":
             stat(model, args.path, args.db_name, args.extractor, args.generalise, args.project_name, args.class_name, args.retrieve_class)
         else: # Other protocols: weighted - default - remove - random 
-            r = test(model, args.path, args.db_name, args.extractor, args.measure, args.generalise, args.project_name, args.class_name, True, label = args.retrieve_class)
+            r = test(model, args.weights, args.path, args.db_name, args.extractor, args.measure, args.generalise, args.project_name, args.class_name, True, label = args.retrieve_class)

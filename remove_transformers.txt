@@ -1,0 +1,16 @@
+certifi
+charset-normalizer
+click
+flielock
+huggingface-hub
+idna
+joblid
+packaging
+pyyaml
+regex
+requests
+sacremoses
+tokenizers
+transformers
+tqdm
+urllib3

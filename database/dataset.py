@@ -255,7 +255,6 @@ class TrainingDataset(Dataset):
                                 self.image_list[self.conversion[cls]].append(img)
                                 i += 1
                         cpt_c += 1
-        # Remove empty entries 
         
         # 4. Create the transformation to apply to the images (depends on model)
         if model_name == 'deit' or model_name == 'cvt' or model_name == 'conv':

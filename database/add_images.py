@@ -77,6 +77,8 @@ if __name__ == "__main__":
         exit(-1)
 
     if not os.path.isdir(args.path):
+        print(":(:(:(:())))")
+        print(args.path)
         print("The path mentionned is not a folder")
         exit(-1)
     

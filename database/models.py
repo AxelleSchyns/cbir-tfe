@@ -15,6 +15,7 @@ import autoencoders as ae
 from byol_pytorch import BYOL as BYOL_pytorch
 from arch import  fully_connected, DINO
 from utils import create_weights_folder, model_saving
+import resnet_ret as ResNet_ret 
 
 # TODO: test unweighted archs
 #archs = { "resnet": models.resnet50(), "densenet": models.densenet121(), "effnet":EffNet().from_name('efficientnet-b0'), "knet": models.densenet121(), 
@@ -27,7 +28,7 @@ archs_weighted = {"resnet": models.resnet50(weights='ResNet50_Weights.DEFAULT'),
                   "deit": DeiTForImageClassification.from_pretrained('facebook/deit-base-distilled-patch16-224'), 
                   "vae": ae.VAE(), "auto":ae.AutoEncoder(), "resnet50": ae.BuildAutoEncoder("resnet50"),
                   "dino_vit": DINO("vit_small"), "dino_resnet": DINO("resnet50"), "dino_tiny": DINO("vit_tiny"), # 'vit_tiny', 'vit_small', 'vit_base', n'importe lequel des CNNs de torchvision
-                  "byol": models.resnet50(weights='ResNet50_Weights.DEFAULT')}#,"byol2": BYOL(64,67)}
+                  "byol": models.resnet50(weights='ResNet50_Weights.DEFAULT'), "ret_ccl": ResNet_ret.resnet50(num_classes=128, mlp=False, two_branch=False, normlinear = True)}#,"byol2": BYOL(64,67)}
 
 
 class Model(nn.Module):
@@ -159,6 +160,11 @@ class Model(nn.Module):
             elif model == 'dino_vit' or model == 'dino_resnet' or model == 'dino_tiny':
                 self.model.load_weights(weight)
                 self.model = self.model.model
+                self.forward_function = self.model.forward
+            elif model == "ret_ccl":
+                pretext_model = torch.load(weight)
+                self.model.fc = nn.Identity()
+                self.model.load_state_dict(pretext_model, strict=True)
                 self.forward_function = self.model.forward
             else:
                 try:

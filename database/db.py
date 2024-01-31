@@ -11,9 +11,10 @@ from transformers import DeiTFeatureExtractor, ConvNextImageProcessor
 import time
 import json
 import argparse
-import builder
+import builder 
 import pickle 
 import utils
+import arch
 # File that contains all functions relative to the manipulation of FAISS and Redis
 
 # Class that represents the database
@@ -114,6 +115,11 @@ class Database:
             elif extractor == 'byol':
                 t = time.time()
                 out, emb = self.model.model(images, return_embedding=True)
+                t_im = time.time() - t
+            elif extractor == "cdpath":
+                t = time.time()
+                images = arch.scale_generator(images, 224, 1, 112, rescale_size=224)
+                out = self.model.model.encode(images)
                 t_im = time.time() - t
             else:
                 t = time.time()

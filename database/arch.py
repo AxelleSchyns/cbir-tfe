@@ -1,19 +1,16 @@
 
 import torch
-import copy
 import torch.nn as nn
-import torchvision.models as models
-from torch import Tensor
-from torch.nn import Identity
+import cdpath_models as cdpath_models 
 from torchvision import models as torchvision_models
 import vision_transformer as vits
-import utils_dino
+import utils_dino 
 from vision_transformer import DINOHead
 """from pytorch_lightning import LightningModule
 from lightly.models.modules import BYOLPredictionHead, BYOLProjectionHead
 from lightly.utils.benchmarking import OnlineLinearClassifier
 from lightly.loss import NegativeCosineSimilarity"""
-
+import torch.nn.functional as F
 # From Kimia Lab implementation 
 class fully_connected(nn.Module):
 	def __init__(self, model, num_ftrs, num_classes):
@@ -48,6 +45,18 @@ class fully_connected(nn.Module):
         x = self.backbone(x)
         return self.projection_head(x)"""
 
+class KNet():
+    def __init__(self, model) -> None:
+        super().__init__()
+        self.model = model
+        for param in model.parameters():
+                param.requires_grad = False
+        self.model.features = nn.Sequential(model.features , nn.AdaptiveAvgPool2d(output_size= (1,1)))
+        num_ftrs = self.model.classifier.in_features
+        self.model = fully_connected(self.model.features, num_ftrs, 30)
+        self.model = nn.DataParallel(self.model)
+        self.model.load_state_dict(torch.load('database/KimiaNet_Weights/weights/KimiaNetPyTorchWeights.pth'))
+        
 class DINO():
     def __init__(self, model_name):
         super().__init__()
@@ -77,3 +86,33 @@ class DINO():
     def to(self, device):
         self.model = self.model.to(device)
         return self
+
+class cdpath():
+    def __init__(self) -> None:
+        super().__init__()
+        self.generator = cdpath_models.Generator(64, 112, 512, backbone=True)
+
+        self.discriminator = cdpath_models.Discriminator(64)
+        self.discriminator_gauss = cdpath_models.Discriminator_Gauss(512)
+    
+    def load_weights(self, weight_path):
+        checkpoint = torch.load(weight_path)
+        self.generator = checkpoint['generator']
+        self.discriminator = checkpoint['discriminator']
+        self.discriminator_gauss = checkpoint['discriminator_gauss']
+    
+    def to(self, device):
+        self.model = self.generator.to(device)
+        return self
+    
+
+def scale_generator(x_batch, size, alpha, x_dim, rescale_size=224):
+
+    x_batch = F.interpolate(x_batch, size=rescale_size, mode='bilinear',
+                            align_corners=True)
+
+    margin = (rescale_size - x_dim) // 2
+    x_crop = x_batch[:, :, margin:rescale_size-margin, margin:rescale_size-margin]
+
+
+    return x_crop

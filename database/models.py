@@ -13,7 +13,7 @@ import os
 import matplotlib.pyplot as plt
 import autoencoders as ae
 from byol_pytorch import BYOL as BYOL_pytorch
-from arch import  fully_connected, DINO
+from arch import  fully_connected, DINO, cdpath, KNet
 from utils import create_weights_folder, model_saving
 import resnet_ret as ResNet_ret 
 
@@ -23,12 +23,13 @@ import resnet_ret as ResNet_ret
 #         "vae": ae.VAE(), "auto":ae.AutoEncoder(), "resnet50": ae.BuildAutoEncoder("resnet50"), 
 #         "byol": models.resnet50(), "byol2": BYOL(64,67)}
 archs_weighted = {"resnet": models.resnet50(weights='ResNet50_Weights.DEFAULT'), "densenet": models.densenet121(weights='DenseNet121_Weights.DEFAULT'),
-                  "effnet":EffNet.from_pretrained('efficientnet-b0'), "knet": models.densenet121(weights='DenseNet121_Weights.DEFAULT'),
+                  "effnet":EffNet.from_pretrained('efficientnet-b0'), "knet": KNet(models.densenet121(weights='DenseNet121_Weights.DEFAULT')),
                   "vision": models.vit_b_16(weights = 'ViT_B_16_Weights.DEFAULT'), "cvt":ConvNextForImageClassification.from_pretrained('facebook/convnext-tiny-224'),
                   "deit": DeiTForImageClassification.from_pretrained('facebook/deit-base-distilled-patch16-224'), 
                   "vae": ae.VAE(), "auto":ae.AutoEncoder(), "resnet50": ae.BuildAutoEncoder("resnet50"),
                   "dino_vit": DINO("vit_small"), "dino_resnet": DINO("resnet50"), "dino_tiny": DINO("vit_tiny"), # 'vit_tiny', 'vit_small', 'vit_base', n'importe lequel des CNNs de torchvision
-                  "byol": models.resnet50(weights='ResNet50_Weights.DEFAULT'), "ret_ccl": ResNet_ret.resnet50(num_classes=128, mlp=False, two_branch=False, normlinear = True)}#,"byol2": BYOL(64,67)}
+                  "byol": models.resnet50(weights='ResNet50_Weights.DEFAULT'), "ret_ccl": ResNet_ret.resnet50(num_classes=128, mlp=False, two_branch=False, normlinear = True),
+                  "cdpath": cdpath()}#,"byol2": BYOL(64,67)}
 
 
 class Model(nn.Module):
@@ -86,7 +87,7 @@ class Model(nn.Module):
 
         
         if model == "knet":
-            for param in self.model.parameters():
+            """for param in self.model.parameters():
                 param.requires_grad = False
             self.model.features = nn.Sequential(self.model.features , nn.AdaptiveAvgPool2d(output_size= (1,1)))
             self.model = self.model.to(device=device)
@@ -94,7 +95,8 @@ class Model(nn.Module):
             self.model = fully_connected(self.model.features, num_ftrs, 30)
             self.model = self.model.to(device=device)
             self.model = nn.DataParallel(self.model)
-            self.model.load_state_dict(torch.load('database/KimiaNet_Weights/weights/KimiaNetPyTorchWeights.pth'))
+            self.model.load_state_dict(torch.load('database/KimiaNet_Weights/weights/KimiaNetPyTorchWeights.pth'))"""
+            pass # TODO test
         elif model == 'vae':
             self.encode = self.model.encode
             self.reparameterize = self.model.reparameterize
@@ -112,6 +114,8 @@ class Model(nn.Module):
                 hidden_layer = 'avgpool',
             )
             self.model = learner
+            
+
         self.model = self.model.to(device=device)
         #----------------------------------------------------------------------------------------------------------------
         #                                  Freeze of model parameters
@@ -157,7 +161,7 @@ class Model(nn.Module):
             elif model == 'byol2':
                 self.model.load_state_dict(torch.load(weight)["state_dict"])
                 self.forward_function = self.model.forward
-            elif model == 'dino_vit' or model == 'dino_resnet' or model == 'dino_tiny':
+            elif model == 'dino_vit' or model == 'dino_resnet' or model == 'dino_tiny' or model == "cdpath":
                 self.model.load_weights(weight)
                 self.model = self.model.model
                 self.forward_function = self.model.forward
